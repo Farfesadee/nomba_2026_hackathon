@@ -1,0 +1,34 @@
+from sqlalchemy import Column, Integer, String, Text, Boolean, DateTime, Date, Time, ForeignKey, JSON, func
+from app.core.database import Base
+
+
+class Event(Base):
+    __tablename__ = "events"
+
+    id = Column(Integer, primary_key=True, index=True)
+    organizer_id = Column(Integer, ForeignKey("users.id"), nullable=False)
+    title = Column(String, nullable=False)
+    slug = Column(String, unique=True, index=True, nullable=True)
+    event_type = Column(String, nullable=False)
+    host_name = Column(String, nullable=False)
+    event_date = Column(Date, nullable=False)
+    event_time = Column(Time, nullable=False)
+    timezone = Column(String, default="WAT")
+    venue = Column(String, nullable=False)
+    map_link = Column(String, nullable=True)
+    dress_code = Column(String, nullable=True)
+    description = Column(Text, nullable=True)
+    cover_image = Column(String, nullable=True)
+    guest_count_range = Column(String, nullable=False)
+    status = Column(String, default="draft")
+    is_public = Column(Boolean, default=False)
+    category = Column(String, nullable=True)
+    ticket_price = Column(Integer, nullable=True)
+    tickets_available = Column(Integer, nullable=True)
+    pass_packages = Column(JSON, nullable=True)
+    lineup = Column(JSON, nullable=True)
+    after_party_enabled = Column(Boolean, default=False)
+    after_party_location = Column(String, nullable=True)
+    after_party_time = Column(String, nullable=True)
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+    updated_at = Column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())

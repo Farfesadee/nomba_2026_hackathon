@@ -1,0 +1,119 @@
+import { apiClient } from "@/lib/api-client";
+import type { PassPackage } from "@/lib/event-form-options";
+
+type SavedLineupPerson = {
+  role: string;
+  name: string;
+  attach_headshot?: boolean;
+  headshot_source?: "upload" | "ai";
+  headshot_file_name?: string;
+  generated_headshot?: boolean;
+};
+
+export type EventData = {
+  id: number;
+  title: string;
+  event_type: string;
+  host_name: string;
+  event_date: string;
+  event_time: string;
+  timezone: string;
+  venue: string;
+  guest_count_range: string;
+  status: string;
+  is_public: boolean;
+  category: string | null;
+  description: string | null;
+  dress_code: string | null;
+  map_link: string | null;
+  cover_image: string | null;
+  ticket_price: number | null;
+  tickets_available: number | null;
+  pass_packages: PassPackage[] | null;
+  lineup: SavedLineupPerson[] | null;
+  after_party_enabled: boolean;
+  after_party_location: string | null;
+  after_party_time: string | null;
+  slug: string | null;
+};
+
+export type EventFilters = {
+  search?: string;
+  category?: string;
+  location?: string;
+  month?: number;
+  price_type?: string;
+  date_from?: string;
+  date_to?: string;
+};
+
+export type CreateEventInput = {
+  title: string;
+  event_type: string;
+  host_name: string;
+  event_date: string;
+  event_time: string;
+  timezone?: string;
+  venue: string;
+  guest_count_range: string;
+  is_public?: boolean;
+  category?: string;
+  description?: string;
+  dress_code?: string;
+  map_link?: string;
+  cover_image?: string;
+  ticket_price?: number;
+  tickets_available?: number;
+  pass_packages?: PassPackage[];
+  lineup?: SavedLineupPerson[];
+  after_party_enabled?: boolean;
+  after_party_location?: string;
+  after_party_time?: string;
+};
+
+export async function getEvents(filters?: EventFilters): Promise<EventData[]> {
+  const params = new URLSearchParams();
+  if (filters?.search) params.set("search", filters.search);
+  if (filters?.category) params.set("category", filters.category);
+  if (filters?.date_from) params.set("date_from", filters.date_from);
+  if (filters?.date_to) params.set("date_to", filters.date_to);
+  const qs = params.toString();
+  return apiClient(`/events/${qs ? `?${qs}` : ""}`);
+}
+
+export async function getPublicEvents(filters?: EventFilters): Promise<EventData[]> {
+  const params = new URLSearchParams();
+  if (filters?.search) params.set("search", filters.search);
+  if (filters?.category) params.set("category", filters.category);
+  if (filters?.location) params.set("location", filters.location);
+  if (filters?.month) params.set("month", String(filters.month));
+  if (filters?.price_type) params.set("price_type", filters.price_type);
+  if (filters?.date_from) params.set("date_from", filters.date_from);
+  if (filters?.date_to) params.set("date_to", filters.date_to);
+  const qs = params.toString();
+  return apiClient(`/events/public${qs ? `?${qs}` : ""}`);
+}
+
+export async function getEvent(id: number): Promise<EventData> {
+  return apiClient(`/events/${id}`);
+}
+
+export async function createEvent(data: CreateEventInput): Promise<EventData> {
+  return apiClient("/events/", {
+    method: "POST",
+    body: data,
+  });
+}
+
+export async function updateEvent(id: number, data: CreateEventInput): Promise<EventData> {
+  return apiClient(`/events/${id}`, {
+    method: "PUT",
+    body: data,
+  });
+}
+
+export async function deleteEvent(id: number): Promise<void> {
+  return apiClient(`/events/${id}`, {
+    method: "DELETE",
+  });
+}
