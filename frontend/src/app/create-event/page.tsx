@@ -8,6 +8,8 @@ import { Footer } from "@/components/shared/footer";
 import { apiClient } from "@/lib/api-client";
 import { aiChat, generateFlier } from "@/lib/api/ai";
 
+const DRAFT_KEY = "accredit_event_draft";
+
 type Mode = "invite" | "event";
 type Channel = "email" | "whatsapp" | "sms";
 type QrDeliveryOption = "with_qr" | "without_qr" | "qr_later";
@@ -222,12 +224,30 @@ export default function CreateEventPage() {
   ]);
 
   useEffect(() => {
+    const saved = localStorage.getItem(DRAFT_KEY);
+    if (saved) {
+      try {
+        const parsed = JSON.parse(saved);
+        if (parsed.form) setForm(parsed.form);
+        if (parsed.passPackages) setPassPackages(parsed.passPackages);
+        if (parsed.socialHandles) setSocialHandles(parsed.socialHandles);
+        if (parsed.lineup) setLineup(parsed.lineup);
+      } catch {}
+    }
     const timer = window.setTimeout(() => {
       setFingerprint(getTrialFingerprint());
       setHydrated(true);
     }, 0);
     return () => window.clearTimeout(timer);
   }, []);
+
+  useEffect(() => {
+    if (!hydrated) return;
+    const timer = setTimeout(() => {
+      localStorage.setItem(DRAFT_KEY, JSON.stringify({ form, passPackages, socialHandles, lineup }));
+    }, 300);
+    return () => clearTimeout(timer);
+  }, [form, passPackages, socialHandles, lineup, hydrated]);
 
   useEffect(() => {
     if (!fingerprint) return;
@@ -383,6 +403,7 @@ export default function CreateEventPage() {
       if (form.venue.trim()) saveVenue(form.venue.trim());
       localStorage.setItem(`accredit_trial_used_${mode}`, "true");
       setUsedTrials((current) => ({ ...current, [mode]: true }));
+      localStorage.removeItem(DRAFT_KEY);
       setTrialComplete(true);
       setMessage(
         mode === "event"
@@ -403,30 +424,25 @@ export default function CreateEventPage() {
       <Navbar variant="light" />
 
       <main className="flex-1">
-        <section
-          className="relative overflow-hidden px-4 py-20 sm:px-6 lg:px-8"
-          style={{
-            backgroundImage:
-              "linear-gradient(90deg, rgba(7,15,28,0.92) 0%, rgba(7,15,28,0.74) 46%, rgba(7,15,28,0.35) 100%), url('https://images.unsplash.com/photo-1492684223066-81342ee5ff30?auto=format&fit=crop&w=2200&q=80')",
-            backgroundSize: "cover",
-            backgroundPosition: "center",
-          }}
-        >
+        <section className="px-4 py-16 sm:px-6 lg:px-8 bg-white border-b border-[#e8edf2]">
           <div className="mx-auto grid max-w-6xl gap-10 lg:grid-cols-[0.95fr_1.05fr] lg:items-center">
             <div>
-              <p className="mb-4 text-xs font-bold uppercase tracking-[0.24em] text-[#ff7abf]">
+              <p className="mb-4 text-xs font-bold uppercase tracking-[0.24em] text-[#E91E8C]">
                 Create Event
               </p>
-              <h1 className="max-w-3xl text-4xl font-black leading-tight text-white sm:text-5xl lg:text-6xl">
+              <h1 className="max-w-3xl text-4xl font-black leading-tight text-[#0D1B2A] sm:text-5xl lg:text-6xl">
                 Test your invite
               </h1>
-              <p className="mt-6 max-w-2xl text-base leading-8 text-white/72 sm:text-lg">
+              <p className="mt-6 max-w-2xl text-base leading-8 text-gray-500 sm:text-lg">
                 Choose CREATE INVITE for private guest lists or POST EVENT for public discovery.
                 The test shows your message, QR preview, channel estimate, and what happens next.
               </p>
             </div>
 
-            <div className="rounded-2xl border border-white/14 bg-white/10 p-4 shadow-2xl backdrop-blur-xl sm:p-5">
+            <div className="rounded-2xl border border-[#e8edf2] bg-[#f8f9fc] p-4 sm:p-5">
+              <p className="mb-3 text-xs font-semibold uppercase tracking-widest text-gray-400">
+                Choose one to get started
+              </p>
               <div className="grid gap-3 sm:grid-cols-2">
                 <button
                   type="button"
@@ -436,20 +452,46 @@ export default function CreateEventPage() {
                     setError("");
                     setTrialComplete(false);
                   }}
-                  className={`rounded-xl border-2 p-6 text-left transition-all duration-200 shadow-lg ${
+                  className={`rounded-xl border-2 p-6 text-left transition-all duration-200 cursor-pointer ${
                     mode === "invite"
-                      ? "border-[#E91E8C] bg-white text-[#07182f] ring-2 ring-[#E91E8C]/20"
-                      : "border-white/30 bg-white/15 text-white hover:border-white hover:bg-white/20 hover:shadow-xl"
+                      ? "border-[#E91E8C] bg-white shadow-[0_4px_20px_rgba(233,30,140,0.14)] ring-2 ring-[#E91E8C]/15"
+                      : "border-[#e2e8f0] bg-white hover:border-[#E91E8C]/50 hover:shadow-md"
                   }`}
                 >
-                  <span className="text-sm font-black uppercase tracking-[0.16em] text-[#E91E8C]">
-                    CREATE INVITE
-                  </span>
-                  <strong className="mt-3 block text-2xl font-black">Private invitation</strong>
-                  <span className="mt-2 block text-sm font-semibold opacity-80">
+                  {/* Selection indicator */}
+                  <div className="mb-4 flex items-center justify-between">
+                    <span className="text-base font-black uppercase tracking-[0.12em] text-[#E91E8C]">
+                      CREATE INVITE
+                    </span>
+                    <span
+                      className="flex h-5 w-5 items-center justify-center rounded-full border-2 transition-all"
+                      style={{
+                        borderColor: mode === "invite" ? "#E91E8C" : "#d1d5db",
+                        background: mode === "invite" ? "#E91E8C" : "white",
+                      }}
+                    >
+                      {mode === "invite" && (
+                        <svg className="h-2.5 w-2.5 text-white" fill="currentColor" viewBox="0 0 20 20">
+                          <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                        </svg>
+                      )}
+                    </span>
+                  </div>
+                  <strong className="block text-xl font-black text-[#07182f]">Private invitation</strong>
+                  <span className="mt-2 block text-sm text-gray-500">
                     Guest upload, RSVP, reminders, WhatsApp/SMS/Email, QR access.
                   </span>
+                  <span
+                    className="mt-4 inline-flex items-center gap-1 text-xs font-bold"
+                    style={{ color: mode === "invite" ? "#E91E8C" : "#9ca3af" }}
+                  >
+                    {mode === "invite" ? "Selected" : "Select"}
+                    <svg className="h-3 w-3" fill="none" stroke="currentColor" strokeWidth={2.5} viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
+                    </svg>
+                  </span>
                 </button>
+
                 <button
                   type="button"
                   onClick={() => {
@@ -459,18 +501,42 @@ export default function CreateEventPage() {
                     setError("");
                     setTrialComplete(false);
                   }}
-                  className={`rounded-xl border-2 p-6 text-left transition-all duration-200 shadow-lg ${
+                  className={`rounded-xl border-2 p-6 text-left transition-all duration-200 cursor-pointer ${
                     mode === "event"
-                      ? "border-[#E91E8C] bg-white text-[#07182f] ring-2 ring-[#E91E8C]/20"
-                      : "border-white/30 bg-white/15 text-white hover:border-white hover:bg-white/20 hover:shadow-xl"
+                      ? "border-[#E91E8C] bg-white shadow-[0_4px_20px_rgba(233,30,140,0.14)] ring-2 ring-[#E91E8C]/15"
+                      : "border-[#e2e8f0] bg-white hover:border-[#E91E8C]/50 hover:shadow-md"
                   }`}
                 >
-                  <span className="text-sm font-black uppercase tracking-[0.16em] text-[#E91E8C]">
-                    POST EVENT
-                  </span>
-                  <strong className="mt-3 block text-2xl font-black">Public event page</strong>
-                  <span className="mt-2 block text-sm font-semibold opacity-80">
+                  <div className="mb-4 flex items-center justify-between">
+                    <span className="text-base font-black uppercase tracking-[0.12em] text-[#E91E8C]">
+                      POST EVENT
+                    </span>
+                    <span
+                      className="flex h-5 w-5 items-center justify-center rounded-full border-2 transition-all"
+                      style={{
+                        borderColor: mode === "event" ? "#E91E8C" : "#d1d5db",
+                        background: mode === "event" ? "#E91E8C" : "white",
+                      }}
+                    >
+                      {mode === "event" && (
+                        <svg className="h-2.5 w-2.5 text-white" fill="currentColor" viewBox="0 0 20 20">
+                          <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                        </svg>
+                      )}
+                    </span>
+                  </div>
+                  <strong className="block text-xl font-black text-[#07182f]">Public event page</strong>
+                  <span className="mt-2 block text-sm text-gray-500">
                     Listing, tickets, event page, flyer/banner direction, discovery.
+                  </span>
+                  <span
+                    className="mt-4 inline-flex items-center gap-1 text-xs font-bold"
+                    style={{ color: mode === "event" ? "#E91E8C" : "#9ca3af" }}
+                  >
+                    {mode === "event" ? "Selected" : "Select"}
+                    <svg className="h-3 w-3" fill="none" stroke="currentColor" strokeWidth={2.5} viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
+                    </svg>
                   </span>
                 </button>
               </div>
