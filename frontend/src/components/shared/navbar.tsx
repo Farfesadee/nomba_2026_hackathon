@@ -3,6 +3,7 @@
 import Link from "next/link";
 import Image from "next/image";
 import { useState, useEffect } from "react";
+import { useAuth } from "@/contexts/auth-context";
 
 interface NavbarProps {
   variant?: "transparent" | "solid" | "light";
@@ -23,9 +24,9 @@ export function Navbar({
     { label: "Contact", href: "/contact" },
   ],
 }: NavbarProps) {
+  const { user, logout } = useAuth();
   const [mobileOpen, setMobileOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
-  const [isLoggedIn, setIsLoggedIn] = useState(false);
 
   useEffect(() => {
     const handleScroll = () => setScrolled(window.scrollY > 20);
@@ -33,18 +34,8 @@ export function Navbar({
     return () => window.removeEventListener("scroll", handleScroll);
   }, []);
 
-  useEffect(() => {
-    const checkAuth = () => {
-      const token = typeof window !== "undefined" ? localStorage.getItem("access_token") : null;
-      setIsLoggedIn(!!token);
-    };
-    checkAuth();
-    window.addEventListener("storage", checkAuth);
-    return () => window.removeEventListener("storage", checkAuth);
-  }, []);
-
   const resolvedAuthLinks = authLinks ?? (
-    isLoggedIn
+    user
       ? [
           { label: "Dashboard", href: "/dashboard" },
           {
@@ -52,7 +43,7 @@ export function Navbar({
             href: "/login",
             primary: false,
             onClick: () => {
-              localStorage.removeItem("access_token");
+              logout();
               window.location.href = "/login";
             },
           },
