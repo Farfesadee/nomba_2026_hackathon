@@ -366,10 +366,27 @@ export default function AdminPage() {
         {/* Sidebar (left, fixed width toggle) */}
         <aside className={`${sidebarOpen ? 'w-56' : 'w-20'} flex-shrink-0 flex flex-col overflow-hidden transition-all duration-200`} style={{ background: "#f8f9fc", borderRight: "1px solid #e8edf2" }}>
           {/* Logo section */}
-          <div className="px-3 py-4 border-b border-[#e8edf2] flex-shrink-0">
-            <button onClick={() => setSidebarOpen(!sidebarOpen)} className="flex items-center gap-3 w-full" title={sidebarOpen ? "Collapse" : "Expand"}>
-              <Image src="/logo-trim.png" alt="accredit.vip" width={4086} height={801} className="h-6 w-auto flex-shrink-0" />
-              {sidebarOpen && <span className="text-xs font-bold text-gray-600">Admin</span>}
+          <div className="px-3 py-4 border-b border-[#e8edf2] flex-shrink-0 flex items-center justify-between">
+            {sidebarOpen && (
+              <Link href="/" className="flex items-center gap-2 flex-1">
+                <Image src="/logo-trim.png" alt="accredit.vip" width={4086} height={801} className="h-6 w-auto" />
+                <span className="text-xs font-bold text-gray-600">Admin</span>
+              </Link>
+            )}
+            <button
+              onClick={() => setSidebarOpen(!sidebarOpen)}
+              className="flex items-center justify-center w-8 h-8 rounded-lg hover:bg-gray-200 text-gray-500 transition-colors flex-shrink-0"
+              title={sidebarOpen ? "Collapse sidebar" : "Expand sidebar"}
+            >
+              {sidebarOpen ? (
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" />
+                </svg>
+              ) : (
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
+                </svg>
+              )}
             </button>
           </div>
 
@@ -381,8 +398,12 @@ export default function AdminPage() {
               return (
                 <div key={group.key}>
                   <button
-                    onClick={() => setOpenPanels((prev: Record<string, boolean>) => ({ ...prev, [group.key]: !prev[group.key] }))}
-                    className="flex items-center gap-2 w-full text-left px-2.5 py-2 text-xs font-bold rounded-lg transition-colors relative group"
+                    onClick={() => {
+                      if (sidebarOpen) {
+                        setOpenPanels((prev: Record<string, boolean>) => ({ ...prev, [group.key]: !prev[group.key] }));
+                      }
+                    }}
+                    className={`flex items-center gap-2 w-full text-left px-2.5 py-2 text-xs font-bold rounded-lg transition-colors relative group ${!sidebarOpen ? 'justify-center' : ''}`}
                     style={{ color: hasActive ? "#E91E8C" : "#64748b" }}
                     title={sidebarOpen ? undefined : group.label}
                   >
