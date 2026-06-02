@@ -119,7 +119,7 @@ async def _send_to_guest(
 
     flyer_result = await db.execute(select(FlierAsset).where(FlierAsset.event_id == event.id).order_by(FlierAsset.created_at.desc()))
     flyer = flyer_result.scalar_one_or_none()
-    flyer_url = flyer.url if flyer else None
+    flyer_url = flyer.url if flyer else event.cover_image
 
     qr_data = qr_token_url
     qr_image_url_obj = qr_gif_to_url(qr_data, size=250, style="pulsing")
