@@ -1,3 +1,5 @@
+import os
+import re
 from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select, func
@@ -9,13 +11,14 @@ from app.core.config import settings
 from app.models.user import User
 from app.models.event import Event
 from app.models.guest import Guest
+from app.models.flier import FlierAsset
 from app.models.invite import InviteBatch, InviteMessage
 from app.models.payment import Payment
 from app.api.qr_codes import get_or_create_guest_qr
-from app.services.email_service import send_email
+from app.services.email_service import send_email, send_email_with_images
 from app.services.sms_service import send_sms
 from app.services.whatsapp_service import send_whatsapp
-import re
+from app.services.qr_service import qr_gif_to_url
 
 RESEND_PRICE_PER_GUEST = 500  # NGN per guest for re-sending
 
@@ -37,9 +40,24 @@ def is_valid_phone(value: str | None) -> bool:
     return bool(re.fullmatch(r"\+?[1-9]\d{7,14}", compact))
 
 
-def _build_invite_message(guest: Guest, event: Event, qr_url: str | None = None) -> tuple[str, str, str]:
+def _upload_path_from_url(url: str) -> str:
+    upload_base = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(__file__))), "uploads")
+    if "/uploads/" in url:
+        relative = url.rstrip("/").split("/uploads/")[-1]
+    elif url.startswith("/uploads/"):
+        relative = url[len("/uploads/"):]
+    else:
+        relative = url.lstrip("/")
+    return os.path.join(upload_base, relative)
+
+
+def _build_invite_message(
+    guest: Guest, event: Event,
+    qr_url: str | None = None,
+    flyer_url: str | None = None,
+    qr_image_url: str | None = None,
+) -> tuple[str, str, str]:
     rsvp_link = f"{settings.FRONTEND_URL}/rsvp/{guest.rsvp_token}"
-    full_qr_url = f"{settings.FRONTEND_URL}{qr_url}" if qr_url else None
     subject = f"You're Invited: {event.title}"
     description = event.description or "You are cordially invited."
     body = (
@@ -51,29 +69,40 @@ def _build_invite_message(guest: Guest, event: Event, qr_url: str | None = None)
         f"Venue: {event.venue}\n"
         f"Dress Code: {event.dress_code or 'Any'}\n\n"
         f"RSVP: {rsvp_link}\n"
-        f"{f'Your unique QR code: {full_qr_url}\n' if full_qr_url else ''}"
+        f"{f'Your unique QR code: {qr_url}\n' if qr_url else ''}"
         f"\n"
         f"Warm regards,\n{event.host_name or 'The Host'}"
     )
     description_html = f"<p>{event.description}</p>" if event.description else ""
-    qr_html = (
-        f'<p style="padding:14px;border:1px dashed #94a3b8;border-radius:12px">Unique animated QR access: <a href="{full_qr_url}">{full_qr_url}</a></p>'
-        if full_qr_url else ""
-    )
+    qr_html = ""
+    if qr_image_url:
+        qr_html = f"""
+        <div style="text-align:center;padding:16px;background:#f8f9fc;border-radius:12px;margin:16px 0">
+            <p style="color:#23466f;font-size:13px;font-weight:bold;margin:0 0 12px">YOUR UNIQUE ENTRY CODE</p>
+            <img src="cid:qr_code" alt="Entry QR Code" style="width:180px;height:180px" />
+            <p style="color:#94a3b8;font-size:11px;margin:8px 0 0">Show this code at the gate to enter</p>
+        </div>"""
+    elif qr_url:
+        qr_html = (
+            f'<p style="padding:14px;border:1px dashed #94a3b8;border-radius:12px">Unique QR access: <a href="{qr_url}">{qr_url}</a></p>'
+        )
+    flyer_html = ""
+    if flyer_url:
+        flyer_html = f'<img src="cid:flyer" alt="{event.title}" style="width:100%;max-width:500px;display:block" />'
     html = (
         '<div style="max-width:640px;border:1px solid #e6edf5;border-radius:16px;overflow:hidden;font-family:Arial,sans-serif;color:#102033">'
-        '<div style="background:#07182f;color:#fff;padding:28px">'
-        '<div style="font-size:12px;letter-spacing:2px;text-transform:uppercase;color:#ffb4d9">Personal invite</div>'
-        f'<h1 style="margin:10px 0 6px;font-size:34px;line-height:1.05">{event.title}</h1>'
-        f'<p style="margin:0;color:#d9e8f7">Hosted by {event.host_name}</p>'
-        '</div>'
+        f'{flyer_html}'
         '<div style="padding:24px;background:#ffffff">'
         f'<p style="font-size:18px;margin-top:0">Dear <strong>{guest.name}</strong>,</p>'
         f'{description_html}'
         f'<p>Date: <strong>{event.event_date}</strong>. Time: <strong>{event.event_time}</strong>. Venue: <strong>{event.venue}</strong>.</p>'
         f'<p><a style="display:inline-block;background:#E91E8C;color:#fff;padding:12px 18px;border-radius:10px;text-decoration:none;font-weight:bold" href="{rsvp_link}">RSVP now</a></p>'
         f'{qr_html}'
-        '</div></div>'
+        '</div>'
+        '<div style="background:#07182f;color:#fff;padding:20px;text-align:center;font-size:12px">'
+        f'<p style="margin:0;color:#d9e8f7">Hosted by {event.host_name}</p>'
+        '</div>'
+        '</div>'
     )
     return subject, body, html
 
@@ -86,8 +115,17 @@ async def _send_to_guest(
     db: AsyncSession,
 ) -> tuple[bool, str]:
     qr = await get_or_create_guest_qr(db, event.id, guest.id)
-    qr_url = f"/api/v1/qr/{qr.token}"
-    subject, body, html = _build_invite_message(guest, event, qr_url)
+    qr_token_url = f"{settings.FRONTEND_URL}/api/v1/qr/{qr.token}"
+
+    flyer_result = await db.execute(select(FlierAsset).where(FlierAsset.event_id == event.id).order_by(FlierAsset.created_at.desc()))
+    flyer = flyer_result.scalar_one_or_none()
+    flyer_url = flyer.url if flyer else None
+
+    qr_data = qr_token_url
+    qr_image_url_obj = qr_gif_to_url(qr_data, size=250, style="pulsing")
+    qr_image_url = qr_image_url_obj if qr_image_url_obj else None
+
+    subject, body, html = _build_invite_message(guest, event, qr_url=qr_token_url, flyer_url=flyer_url, qr_image_url=qr_image_url)
 
     msg = InviteMessage(batch_id=batch_id, guest_id=guest.id, channel=channel)
     db.add(msg)
@@ -95,9 +133,20 @@ async def _send_to_guest(
     try:
         if channel == "email" and guest.email:
             from_addr = f"{event.host_name} via Accredit.vip <noreply@wristbandsng.com>"
-            ok = await send_email(guest.email, subject, html, from_addr=from_addr)
+            email_images = []
+            if flyer_url:
+                email_images.append(("flyer", _upload_path_from_url(flyer_url)))
+            if qr_image_url:
+                email_images.append(("qr_code", _upload_path_from_url(qr_image_url)))
+            if email_images:
+                ok = await send_email_with_images(guest.email, subject, html, email_images, from_addr=from_addr)
+            else:
+                ok = await send_email(guest.email, subject, html, from_addr=from_addr)
         elif channel == "whatsapp" and guest.phone:
-            ok = await send_whatsapp(guest.phone, body)
+            media_to_send = flyer_url or qr_image_url
+            ok = await send_whatsapp(guest.phone, body, media_url=media_to_send)
+            if not ok and qr_image_url and qr_image_url != media_to_send:
+                await send_whatsapp(guest.phone, "Your entry QR code is ready!", media_url=qr_image_url)
         elif channel == "sms" and guest.phone:
             ok = await send_sms(guest.phone, body)
         else:
@@ -117,8 +166,7 @@ async def _send_to_guest(
         return False, "failed"
 
 
-def _build_qr_message(guest: Guest, event: Event, qr_url: str) -> tuple[str, str, str]:
-    full_qr_url = f"{settings.FRONTEND_URL}{qr_url}"
+def _build_qr_message(guest: Guest, event: Event, qr_image_url: str | None = None) -> tuple[str, str, str]:
     subject = f"Your QR Access Code: {event.title}"
     body = (
         f"==============================\n"
@@ -126,10 +174,12 @@ def _build_qr_message(guest: Guest, event: Event, qr_url: str) -> tuple[str, str
         f"QR Access Code for {guest.name}\n"
         f"==============================\n\n"
         f"Your unique QR access code is ready.\n\n"
-        f"QR Code URL: {full_qr_url}\n\n"
         f"Show this at the event entrance for quick access.\n\n"
         f"Warm regards,\n{event.host_name}"
     )
+    qr_img_html = ""
+    if qr_image_url:
+        qr_img_html = f'<img src="cid:qr_code" alt="Entry QR Code" style="width:200px;height:200px" />'
     html = (
         '<div style="max-width:640px;border:1px solid #e6edf5;border-radius:16px;overflow:hidden;font-family:Arial,sans-serif;color:#102033">'
         '<div style="background:#07182f;color:#fff;padding:28px">'
@@ -137,10 +187,9 @@ def _build_qr_message(guest: Guest, event: Event, qr_url: str) -> tuple[str, str
         f'<h1 style="margin:10px 0 6px;font-size:34px;line-height:1.05">{event.title}</h1>'
         f'<p style="margin:0;color:#d9e8f7">Sent to {guest.name}</p>'
         '</div>'
-        '<div style="padding:24px;background:#ffffff">'
+        '<div style="padding:24px;background:#ffffff;text-align:center">'
         f'<p>Your unique QR access code is ready.</p>'
-        f'<p style="padding:14px;border:1px dashed #94a3b8;border-radius:12px;text-align:center">'
-        f'<a href="{full_qr_url}" style="display:inline-block;background:#E91E8C;color:#fff;padding:12px 18px;border-radius:10px;text-decoration:none;font-weight:bold">View Your QR Code</a></p>'
+        f'{qr_img_html}'
         f'<p style="font-size:12px;color:#64748b">Show this QR code at the event entrance for quick access.</p>'
         '</div></div>'
     )
@@ -155,8 +204,12 @@ async def _send_qr_to_guest(
     db: AsyncSession,
 ) -> tuple[bool, str]:
     qr = await get_or_create_guest_qr(db, event.id, guest.id)
-    qr_url = f"/api/v1/qr/{qr.token}"
-    subject, body, html = _build_qr_message(guest, event, qr_url)
+    qr_token_url = f"{settings.FRONTEND_URL}/api/v1/qr/{qr.token}"
+
+    qr_image_url_obj = qr_gif_to_url(qr_token_url, size=250, style="pulsing")
+    qr_image_url = qr_image_url_obj if qr_image_url_obj else None
+
+    subject, body, html = _build_qr_message(guest, event, qr_image_url)
 
     msg = InviteMessage(batch_id=batch_id, guest_id=guest.id, channel=channel)
     db.add(msg)
@@ -164,9 +217,12 @@ async def _send_qr_to_guest(
     try:
         if channel == "email" and guest.email:
             from_addr = f"{event.host_name} via Accredit.vip <noreply@wristbandsng.com>"
-            ok = await send_email(guest.email, subject, html, from_addr=from_addr)
+            if qr_image_url:
+                ok = await send_email_with_images(guest.email, subject, html, [("qr_code", _upload_path_from_url(qr_image_url))], from_addr=from_addr)
+            else:
+                ok = await send_email(guest.email, subject, html, from_addr=from_addr)
         elif channel == "whatsapp" and guest.phone:
-            ok = await send_whatsapp(guest.phone, body)
+            ok = await send_whatsapp(guest.phone, body, media_url=qr_image_url)
         elif channel == "sms" and guest.phone:
             ok = await send_sms(guest.phone, body)
         else:
