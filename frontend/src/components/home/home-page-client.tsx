@@ -214,7 +214,7 @@ export function HomePageClient() {
         {/* Mobile CTA Section — shown only on small screens */}
         <div className="sm:hidden relative mx-4 mb-10 flex flex-col items-center justify-end flex-1" style={{ zIndex: 10 }}>
           {/* Main CTA Buttons */}
-          <div className="flex flex-col gap-4 w-full max-w-xs pb-20">
+          <div className="flex flex-col gap-6 w-full max-w-xs pb-12">
             <Link
               href="/create-event"
               className="btn-primary rounded-xl px-10 py-5 text-base font-black text-center transition-all duration-300 hover:scale-105"
@@ -245,9 +245,9 @@ export function HomePageClient() {
             </Link>
           </div>
 
-          {/* READ MORE Button */}
+          {/* READ MORE / READ LESS Button */}
           <button
-            onClick={() => setMobileExpanded(true)}
+            onClick={() => setMobileExpanded(!mobileExpanded)}
             className="mt-8 inline-flex items-center gap-2 text-xs font-bold uppercase tracking-widest px-4 py-2 rounded-full transition-all duration-300"
             style={{
               border: "1px solid rgba(233,30,140,0.4)",
@@ -257,15 +257,15 @@ export function HomePageClient() {
               animation: mobileExpanded ? "none" : "pulse-breathing 2.5s ease-in-out infinite"
             }}
           >
-            READ MORE
+            {mobileExpanded ? "READ LESS" : "READ MORE"}
             <svg className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth={2.5} viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" d="M19 14l-7 7m0 0l-7-7m7 7V3" />
+              <path strokeLinecap="round" strokeLinejoin="round" d={mobileExpanded ? "M5 10l7-7m0 0l7 7m-7-7v16" : "M19 14l-7 7m0 0l-7-7m7 7V3"} />
             </svg>
           </button>
         </div>
 
-        {/* Desktop hero - shown only on desktop */}
-        <div className="hidden sm:flex relative flex-1 max-w-7xl mx-auto w-full px-4 sm:px-6 lg:px-8 pt-10 sm:pt-14 lg:pt-20 pb-12 flex-col" style={{ zIndex: 10 }}>
+        {/* Desktop hero - shown on desktop or mobile when expanded */}
+        <div className={`relative flex-1 max-w-7xl mx-auto w-full px-4 sm:px-6 lg:px-8 pt-10 sm:pt-14 lg:pt-20 pb-12 flex-col ${!mobileExpanded && 'hidden sm:flex'} ${mobileExpanded && 'sm:flex'}`} style={{ zIndex: 10 }}>
           <div className="grid gap-12 lg:grid-cols-2 lg:gap-8 lg:items-center lg:min-h-[80vh]">
             {/* LEFT: Text column */}
             <div className="flex flex-col items-start justify-center">
@@ -483,10 +483,9 @@ export function HomePageClient() {
         </div>
       </section>
 
-      {/* Remaining sections hidden on mobile unless expanded */}
-      {mobileExpanded && (
-        <>
-          {/* HOW IT WORKS */}
+      {/* Remaining sections: hidden on mobile unless expanded, always shown on desktop */}
+      <div className={`${mobileExpanded ? 'block' : 'hidden'} sm:block`}>
+        {/* HOW IT WORKS */}
           <section className="py-28" style={{ background: "linear-gradient(180deg,#f6f8fc 0%,#eef1f8 100%)" }}>
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
               <div className="text-center mb-16">
@@ -586,15 +585,105 @@ export function HomePageClient() {
             </div>
           </section>
 
-          <GetStartedGuide />
-          <Footer />
-        </>
-      )}
+        {/* PRICING */}
+        <section className="bg-[#07182f] px-4 py-28 text-white sm:px-6 lg:px-8">
+          <div className="mx-auto max-w-6xl">
+            <p className="text-xs font-bold uppercase tracking-[0.22em] text-[#ff7abf] mb-4">
+              Channel pricing
+            </p>
+            <div className="mb-16">
+              <h2 className="text-3xl sm:text-4xl lg:text-5xl font-extrabold leading-tight">
+                Pay by invite channel,{" "}
+                <span style={{ color: "#E91E8C" }}>not by package.</span>
+              </h2>
+              <p className="mt-6 max-w-2xl text-base leading-relaxed" style={{ color: "rgba(255,255,255,0.68)" }}>
+                Each channel price covers 1-100 guests and includes the QR accreditation flow.
+                Users can test CREATE INVITE or POST EVENT once before creating an account.
+              </p>
+            </div>
 
-      {/* Footer visible on desktop only */}
-      <div className="hidden sm:block">
+            <div className="grid gap-6 lg:grid-cols-3">
+              {[
+                {
+                  id: "email",
+                  name: "Email",
+                  price: "₦100k",
+                  note: "Formal, branded delivery for 1-100 guests.",
+                  features: ["QR code included", "Invite preview", "RSVP tracking", "Delivery report", "Guest list upload"],
+                },
+                {
+                  id: "whatsapp",
+                  name: "WhatsApp",
+                  price: "₦200k",
+                  note: "Fast, familiar delivery for 1-100 guests.",
+                  features: ["QR code included", "Invite preview", "RSVP tracking", "Reminder-ready flow", "Delivery report"],
+                  highlight: true,
+                },
+                {
+                  id: "sms",
+                  name: "SMS",
+                  price: "₦300k",
+                  note: "Reliable delivery for 1-100 guests, even without internet.",
+                  features: ["QR code included", "Short invite message", "RSVP tracking", "Delivery report", "Guest list upload"],
+                },
+              ].map((channel) => (
+                <div
+                  key={channel.id}
+                  className="flex flex-col rounded-2xl border p-8 shadow-lg"
+                  style={{
+                    background: channel.highlight ? "#0D1B2A" : "rgba(255,255,255,0.05)",
+                    borderColor: channel.highlight ? "rgba(233,30,140,0.55)" : "rgba(255,255,255,0.1)",
+                  }}
+                >
+                  {channel.highlight && (
+                    <span className="mb-5 w-fit rounded-full bg-[#E91E8C] px-4 py-1.5 text-xs font-bold uppercase tracking-widest text-white">
+                      Popular
+                    </span>
+                  )}
+                  <h3 className="text-2xl font-extrabold text-white">
+                    {channel.name}
+                  </h3>
+                  <p className="mt-3 text-sm leading-relaxed" style={{ color: "rgba(255,255,255,0.66)" }}>
+                    {channel.note}
+                  </p>
+                  <div className="mt-8">
+                    <span className="text-5xl font-black text-white">
+                      {channel.price}
+                    </span>
+                    <span className="ml-2 text-sm" style={{ color: "rgba(255,255,255,0.48)" }}>
+                      / 1-100 guests
+                    </span>
+                  </div>
+                  <ul className="mt-10 space-y-3 flex-1">
+                    {channel.features.map((feature) => (
+                      <li key={feature} className="flex items-center gap-3 text-sm text-white">
+                        <span className="flex h-5 w-5 items-center justify-center rounded-full bg-[#fff1f8] text-xs font-black text-[#E91E8C]">
+                          ✓
+                        </span>
+                        {feature}
+                      </li>
+                    ))}
+                  </ul>
+                  <Link
+                    href="/create-event"
+                    className={`mt-8 inline-flex h-12 items-center justify-center rounded-xl px-6 text-sm font-bold transition-all ${
+                      channel.highlight
+                        ? "bg-gradient-to-r from-[#E91E8C] to-[#C4166F] text-white hover:scale-105"
+                        : "bg-white text-[#07182f] hover:bg-[#E91E8C] hover:text-white"
+                    }`}
+                  >
+                    Get Started
+                  </Link>
+                </div>
+              ))}
+            </div>
+          </div>
+        </section>
+
+        <GetStartedGuide />
         <Footer />
       </div>
+
     </>
   );
 }

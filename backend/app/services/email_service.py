@@ -12,9 +12,15 @@ from app.core.config import settings
 async def send_email(to: str, subject: str, html: str, from_addr: str | None = None) -> bool:
     sender = from_addr or settings.EMAIL_FROM
     if settings.SMTP_HOST and settings.SMTP_USERNAME:
-        return await _send_smtp(to, subject, html, sender)
+        ok = await _send_smtp(to, subject, html, sender)
+        if ok:
+            return True
+        print("[Email] SMTP failed, trying SendGrid...")
     if settings.SENDGRID_API_KEY:
-        return await _send_sendgrid(to, subject, html, sender)
+        ok = await _send_sendgrid(to, subject, html, sender)
+        if ok:
+            return True
+        print("[Email] SendGrid failed, trying Resend...")
     if settings.RESEND_API_KEY:
         return await _send_resend(to, subject, html, sender)
     print(f"[Email Mock] From: {sender} -> To: {to}, Subject: {subject}")
@@ -24,10 +30,21 @@ async def send_email(to: str, subject: str, html: str, from_addr: str | None = N
 async def send_email_with_images(to: str, subject: str, html: str, images: list[tuple[str, str]], from_addr: str | None = None) -> bool:
     """Send HTML email with inline images embedded as MIME attachments (cid: references).
     images: list of (cid_name, filepath) tuples. HTML should reference them as <img src='cid:cid_name'>.
+    Tries SMTP first, falls back to SendGrid, then Resend if available.
     """
     sender = from_addr or settings.EMAIL_FROM
     if settings.SMTP_HOST and settings.SMTP_USERNAME:
-        return await _send_smtp_with_images(to, subject, html, images, sender)
+        ok = await _send_smtp_with_images(to, subject, html, images, sender)
+        if ok:
+            return True
+        print("[Email] SMTP failed, trying SendGrid...")
+    if settings.SENDGRID_API_KEY:
+        ok = await _send_sendgrid_with_images(to, subject, html, images, sender)
+        if ok:
+            return True
+        print("[Email] SendGrid failed, trying Resend...")
+    if settings.RESEND_API_KEY:
+        return await _send_resend_with_images(to, subject, html, images, sender)
     print(f"[Email Mock] From: {sender} -> To: {to}, Subject: {subject}")
     return True
 
@@ -123,6 +140,82 @@ async def _send_sendgrid(to: str, subject: str, html: str, from_addr: str) -> bo
             return res.is_success
     except Exception as e:
         print(f"[SendGrid Error] {e}")
+        return False
+
+
+async def _send_sendgrid_with_images(to: str, subject: str, html: str, images: list[tuple[str, str]], from_addr: str) -> bool:
+    try:
+        attachments = []
+        for cid, filepath in images:
+            try:
+                with open(filepath, "rb") as f:
+                    img_data = f.read()
+                import base64
+                encoded = base64.b64encode(img_data).decode()
+                subtype = filepath.rsplit(".", 1)[-1] if "." in filepath else "png"
+                attachments.append({
+                    "content": encoded,
+                    "type": f"image/{subtype}",
+                    "filename": f"{cid}.{subtype}",
+                    "disposition": "inline",
+                    "content_id": cid,
+                })
+            except Exception as e:
+                print(f"[SendGrid] Failed to attach {filepath}: {e}")
+        async with httpx.AsyncClient(timeout=30) as client:
+            res = await client.post(
+                "https://api.sendgrid.com/v3/mail/send",
+                headers={
+                    "Authorization": f"Bearer {settings.SENDGRID_API_KEY}",
+                    "Content-Type": "application/json",
+                },
+                json={
+                    "personalizations": [{"to": [{"email": to}]}],
+                    "from": {"email": from_addr},
+                    "subject": subject,
+                    "content": [{"type": "text/html", "value": html}],
+                    "attachments": attachments,
+                },
+            )
+            return res.is_success
+    except Exception as e:
+        print(f"[SendGrid Error] {e}")
+        return False
+
+
+async def _send_resend_with_images(to: str, subject: str, html: str, images: list[tuple[str, str]], from_addr: str) -> bool:
+    try:
+        attachments = []
+        for cid, filepath in images:
+            try:
+                with open(filepath, "rb") as f:
+                    img_data = f.read()
+                import base64
+                encoded = base64.b64encode(img_data).decode()
+                subtype = filepath.rsplit(".", 1)[-1] if "." in filepath else "png"
+                attachments.append({
+                    "content": encoded,
+                    "filename": f"{cid}.{subtype}",
+                    "disposition": "inline",
+                    "content_id": cid,
+                })
+            except Exception as e:
+                print(f"[Resend] Failed to attach {filepath}: {e}")
+        async with httpx.AsyncClient(timeout=30) as client:
+            res = await client.post(
+                "https://api.resend.com/emails",
+                headers={"Authorization": f"Bearer {settings.RESEND_API_KEY}"},
+                json={
+                    "from": from_addr,
+                    "to": [to],
+                    "subject": subject,
+                    "html": html,
+                    "attachments": attachments,
+                },
+            )
+            return res.is_success
+    except Exception as e:
+        print(f"[Resend Error] {e}")
         return False
 
 
