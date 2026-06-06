@@ -239,7 +239,7 @@ async def generate_flier_image(prompt: str) -> str | None:
         try:
             resp = await c.images.generate(
                 model=model,
-                prompt=f"Professional event flier design: {prompt}. Clean layout, vibrant colors, modern typography. Do NOT include any text, words, letters, numbers, dates, or typography on the image — imagery and visual design only.",
+                prompt=f"Professional event visual artwork: {prompt}. Clean layout, vibrant colors, premium event atmosphere. Do NOT include any text, words, letters, numbers, dates, logos, labels, headline copy, or typography on the image - imagery and visual design only.",
                 size="1024x1024",
                 n=1,
                 **kwargs,

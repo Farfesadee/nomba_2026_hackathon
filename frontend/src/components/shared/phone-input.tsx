@@ -3,26 +3,26 @@
 import { useState } from "react";
 
 const COUNTRIES = [
-  { code: "+234", flag: "🇳🇬", name: "Nigeria" },
-  { code: "+233", flag: "🇬🇭", name: "Ghana" },
-  { code: "+254", flag: "🇰🇪", name: "Kenya" },
-  { code: "+27", flag: "🇿🇦", name: "South Africa" },
-  { code: "+256", flag: "🇺🇬", name: "Uganda" },
-  { code: "+255", flag: "🇹🇿", name: "Tanzania" },
-  { code: "+250", flag: "🇷🇼", name: "Rwanda" },
-  { code: "+260", flag: "🇿🇲", name: "Zambia" },
-  { code: "+263", flag: "🇿🇼", name: "Zimbabwe" },
-  { code: "+265", flag: "🇲🇼", name: "Malawi" },
-  { code: "+1", flag: "🇺🇸", name: "USA/Canada" },
-  { code: "+44", flag: "🇬🇧", name: "UK" },
-  { code: "+49", flag: "🇩🇪", name: "Germany" },
-  { code: "+33", flag: "🇫🇷", name: "France" },
-  { code: "+61", flag: "🇦🇺", name: "Australia" },
-  { code: "+91", flag: "🇮🇳", name: "India" },
-  { code: "+86", flag: "🇨🇳", name: "China" },
-  { code: "+55", flag: "🇧🇷", name: "Brazil" },
-  { code: "+81", flag: "🇯🇵", name: "Japan" },
-  { code: "+971", flag: "🇦🇪", name: "UAE" },
+  { code: "+234", countryCode: "NG", name: "Nigeria" },
+  { code: "+233", countryCode: "GH", name: "Ghana" },
+  { code: "+254", countryCode: "KE", name: "Kenya" },
+  { code: "+27", countryCode: "ZA", name: "South Africa" },
+  { code: "+256", countryCode: "UG", name: "Uganda" },
+  { code: "+255", countryCode: "TZ", name: "Tanzania" },
+  { code: "+250", countryCode: "RW", name: "Rwanda" },
+  { code: "+260", countryCode: "ZM", name: "Zambia" },
+  { code: "+263", countryCode: "ZW", name: "Zimbabwe" },
+  { code: "+265", countryCode: "MW", name: "Malawi" },
+  { code: "+1", countryCode: "US", name: "USA/Canada" },
+  { code: "+44", countryCode: "GB", name: "UK" },
+  { code: "+49", countryCode: "DE", name: "Germany" },
+  { code: "+33", countryCode: "FR", name: "France" },
+  { code: "+61", countryCode: "AU", name: "Australia" },
+  { code: "+91", countryCode: "IN", name: "India" },
+  { code: "+86", countryCode: "CN", name: "China" },
+  { code: "+55", countryCode: "BR", name: "Brazil" },
+  { code: "+81", countryCode: "JP", name: "Japan" },
+  { code: "+971", countryCode: "AE", name: "UAE" },
 ];
 
 type Props = {
@@ -57,7 +57,7 @@ export function PhoneInput({ value, onChange, placeholder = "Phone number", requ
       >
         {COUNTRIES.map((c) => (
           <option key={c.code} value={c.code}>
-            {c.flag} {c.code}
+            {c.countryCode} {c.code}
           </option>
         ))}
       </select>

@@ -8,6 +8,7 @@ import { useAuth } from "@/contexts/auth-context";
 import { getEvent, updateEvent, type EventData } from "@/lib/api/events";
 import { GoBack } from "@/components/shared/go-back";
 import { VenueInput } from "@/components/shared/venue-input";
+import { AlertTriangle } from "lucide-react";
 
 export default function EditEventPage() {
   const { id } = useParams<{ id: string }>();
@@ -91,7 +92,7 @@ export default function EditEventPage() {
   if (loadError) return (
     <div className="flex min-h-screen flex-col items-center justify-center p-4">
       <div className="text-center space-y-4 max-w-sm">
-        <div className="text-4xl">⚠️</div>
+        <AlertTriangle className="mx-auto h-10 w-10 text-amber-500" aria-hidden="true" />
         <h2 className="text-xl font-semibold">Could not load event</h2>
         <p className="text-sm text-muted-foreground">The event may have been deleted or a network error occurred.</p>
         <button onClick={() => router.push("/dashboard")} className="rounded-lg border border-input px-4 py-2 text-sm font-medium hover:bg-accent">Go to Dashboard</button>
@@ -218,62 +219,62 @@ export default function EditEventPage() {
               <label className="text-sm font-medium">Timezone</label>
               <select value={form.timezone} onChange={(e) => setForm({ ...form, timezone: e.target.value })} className="flex h-10 w-full rounded-lg border border-input bg-background px-3 py-2 text-sm">
                 <optgroup label="Africa">
-                  <option value="WAT">🇳🇬 WAT (UTC+1) — Lagos, Nigeria</option>
-                  <option value="CAT">🇿🇦 CAT (UTC+2) — Johannesburg, Cape Town</option>
-                  <option value="EAT">🇰🇪 EAT (UTC+3) — Nairobi, Dar es Salaam</option>
-                  <option value="GMT">🇬🇭 GMT (UTC+0) — Accra, Abidjan</option>
-                  <option value="SAST">🇿🇦 SAST (UTC+2) — South Africa (standard)</option>
-                  <option value="MUT">🇲🇺 MUT (UTC+4) — Mauritius, Seychelles</option>
-                  <option value="WEST">🇲🇦 WEST (UTC+1) — Casablanca, Tunis</option>
+                  <option value="WAT">NG WAT (UTC+1) — Lagos, Nigeria</option>
+                  <option value="CAT">ZA CAT (UTC+2) — Johannesburg, Cape Town</option>
+                  <option value="EAT">KE EAT (UTC+3) — Nairobi, Dar es Salaam</option>
+                  <option value="GMT">GH GMT (UTC+0) — Accra, Abidjan</option>
+                  <option value="SAST">ZA SAST (UTC+2) — South Africa (standard)</option>
+                  <option value="MUT">MU MUT (UTC+4) — Mauritius, Seychelles</option>
+                  <option value="WEST">MA WEST (UTC+1) — Casablanca, Tunis</option>
                 </optgroup>
                 <optgroup label="Europe / UK">
-                  <option value="BST">🇬🇧 BST (UTC+1) — London (summer)</option>
-                  <option value="CET">🇫🇷 CET (UTC+1) — Paris, Berlin, Rome, Madrid</option>
-                  <option value="CEST">🇫🇷 CEST (UTC+2) — Central Europe (summer)</option>
-                  <option value="EET">🇬🇷 EET (UTC+2) — Athens, Helsinki, Bucharest</option>
-                  <option value="EEST">🇬🇷 EEST (UTC+3) — Eastern Europe (summer)</option>
-                  <option value="MSK">🇷🇺 MSK (UTC+3) — Moscow, St. Petersburg</option>
+                  <option value="BST">GB BST (UTC+1) — London (summer)</option>
+                  <option value="CET">FR CET (UTC+1) — Paris, Berlin, Rome, Madrid</option>
+                  <option value="CEST">FR CEST (UTC+2) — Central Europe (summer)</option>
+                  <option value="EET">GR EET (UTC+2) — Athens, Helsinki, Bucharest</option>
+                  <option value="EEST">GR EEST (UTC+3) — Eastern Europe (summer)</option>
+                  <option value="MSK">RU MSK (UTC+3) — Moscow, St. Petersburg</option>
                 </optgroup>
                 <optgroup label="Americas">
-                  <option value="EST">🇺🇸 EST (UTC-5) — New York, Miami, Toronto</option>
-                  <option value="EDT">🇺🇸 EDT (UTC-4) — Eastern US (summer)</option>
-                  <option value="CST">🇺🇸 CST (UTC-6) — Chicago, Mexico City</option>
-                  <option value="CDT">🇺🇸 CDT (UTC-5) — Central US (summer)</option>
-                  <option value="MST">🇺🇸 MST (UTC-7) — Denver, Phoenix</option>
-                  <option value="MDT">🇺🇸 MDT (UTC-6) — Mountain US (summer)</option>
-                  <option value="PST">🇺🇸 PST (UTC-8) — Los Angeles, Vancouver</option>
-                  <option value="PDT">🇺🇸 PDT (UTC-7) — Pacific US (summer)</option>
-                  <option value="AKST">🇺🇸 AKST (UTC-9) — Anchorage, Alaska</option>
-                  <option value="HAST">🇺🇸 HAST (UTC-10) — Honolulu, Hawaii</option>
-                  <option value="ART">🇦🇷 ART (UTC-3) — Buenos Aires, Montevideo</option>
-                  <option value="BRT">🇧🇷 BRT (UTC-3) — Brasília, São Paulo</option>
-                  <option value="CLT">🇨🇱 CLT (UTC-4) — Santiago, Asunción</option>
-                  <option value="PET">🇵🇪 PET (UTC-5) — Lima, Bogotá, Quito</option>
-                  <option value="AST">🇵🇷 AST (UTC-4) — San Juan, Port of Spain</option>
+                  <option value="EST">US EST (UTC-5) — New York, Miami, Toronto</option>
+                  <option value="EDT">US EDT (UTC-4) — Eastern US (summer)</option>
+                  <option value="CST">US CST (UTC-6) — Chicago, Mexico City</option>
+                  <option value="CDT">US CDT (UTC-5) — Central US (summer)</option>
+                  <option value="MST">US MST (UTC-7) — Denver, Phoenix</option>
+                  <option value="MDT">US MDT (UTC-6) — Mountain US (summer)</option>
+                  <option value="PST">US PST (UTC-8) — Los Angeles, Vancouver</option>
+                  <option value="PDT">US PDT (UTC-7) — Pacific US (summer)</option>
+                  <option value="AKST">US AKST (UTC-9) — Anchorage, Alaska</option>
+                  <option value="HAST">US HAST (UTC-10) — Honolulu, Hawaii</option>
+                  <option value="ART">AR ART (UTC-3) — Buenos Aires, Montevideo</option>
+                  <option value="BRT">BR BRT (UTC-3) — Brasília, São Paulo</option>
+                  <option value="CLT">CL CLT (UTC-4) — Santiago, Asunción</option>
+                  <option value="PET">PE PET (UTC-5) — Lima, Bogotá, Quito</option>
+                  <option value="AST">PR AST (UTC-4) — San Juan, Port of Spain</option>
                 </optgroup>
                 <optgroup label="Asia / Middle East">
-                  <option value="GST">🇦🇪 GST (UTC+4) — Dubai, Abu Dhabi, Muscat</option>
-                  <option value="AST_A">🇸🇦 AST (UTC+3) — Riyadh, Kuwait, Doha</option>
-                  <option value="IST">🇮🇳 IST (UTC+5:30) — New Delhi, Mumbai, Colombo</option>
-                  <option value="PKT">🇵🇰 PKT (UTC+5) — Karachi, Lahore, Islamabad</option>
-                  <option value="BST_A">🇧🇩 BST (UTC+6) — Dhaka</option>
-                  <option value="ICT">🇹🇭 ICT (UTC+7) — Bangkok, Hanoi, Phnom Penh</option>
-                  <option value="SGT">🇸🇬 SGT (UTC+8) — Singapore, Kuala Lumpur</option>
-                  <option value="CST_A">🇨🇳 CST (UTC+8) — Beijing, Shanghai, Hong Kong</option>
-                  <option value="JST">🇯🇵 JST (UTC+9) — Tokyo, Seoul, Osaka</option>
-                  <option value="WIB">🇮🇩 WIB (UTC+7) — Jakarta, Sumatra</option>
-                  <option value="WITA">🇮🇩 WITA (UTC+8) — Bali, Sulawesi</option>
-                  <option value="WIT">🇮🇩 WIT (UTC+9) — Papua, Maluku</option>
-                  <option value="PHST">🇵🇭 PHST (UTC+8) — Manila</option>
+                  <option value="GST">AE GST (UTC+4) — Dubai, Abu Dhabi, Muscat</option>
+                  <option value="AST_A">SA AST (UTC+3) — Riyadh, Kuwait, Doha</option>
+                  <option value="IST">IN IST (UTC+5:30) — New Delhi, Mumbai, Colombo</option>
+                  <option value="PKT">PK PKT (UTC+5) — Karachi, Lahore, Islamabad</option>
+                  <option value="BST_A">BD BST (UTC+6) — Dhaka</option>
+                  <option value="ICT">TH ICT (UTC+7) — Bangkok, Hanoi, Phnom Penh</option>
+                  <option value="SGT">SG SGT (UTC+8) — Singapore, Kuala Lumpur</option>
+                  <option value="CST_A">CN CST (UTC+8) — Beijing, Shanghai, Hong Kong</option>
+                  <option value="JST">JP JST (UTC+9) — Tokyo, Seoul, Osaka</option>
+                  <option value="WIB">ID WIB (UTC+7) — Jakarta, Sumatra</option>
+                  <option value="WITA">ID WITA (UTC+8) — Bali, Sulawesi</option>
+                  <option value="WIT">ID WIT (UTC+9) — Papua, Maluku</option>
+                  <option value="PHST">PH PHST (UTC+8) — Manila</option>
                 </optgroup>
                 <optgroup label="Oceania">
-                  <option value="AEST">🇦🇺 AEST (UTC+10) — Sydney, Melbourne, Brisbane</option>
-                  <option value="AEDT">🇦🇺 AEDT (UTC+11) — Eastern Australia (summer)</option>
-                  <option value="ACST">🇦🇺 ACST (UTC+9:30) — Adelaide, Darwin</option>
-                  <option value="AWST">🇦🇺 AWST (UTC+8) — Perth</option>
-                  <option value="NZST">🇳🇿 NZST (UTC+12) — Auckland, Wellington</option>
-                  <option value="NZDT">🇳🇿 NZDT (UTC+13) — New Zealand (summer)</option>
-                  <option value="FJT">🇫🇯 FJT (UTC+12) — Suva, Fiji</option>
+                  <option value="AEST">AU AEST (UTC+10) — Sydney, Melbourne, Brisbane</option>
+                  <option value="AEDT">AU AEDT (UTC+11) — Eastern Australia (summer)</option>
+                  <option value="ACST">AU ACST (UTC+9:30) — Adelaide, Darwin</option>
+                  <option value="AWST">AU AWST (UTC+8) — Perth</option>
+                  <option value="NZST">NZ NZST (UTC+12) — Auckland, Wellington</option>
+                  <option value="NZDT">NZ NZDT (UTC+13) — New Zealand (summer)</option>
+                  <option value="FJT">FJ FJT (UTC+12) — Suva, Fiji</option>
                 </optgroup>
               </select>
             </div>

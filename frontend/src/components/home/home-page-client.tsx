@@ -1,11 +1,11 @@
 "use client";
 
 import Link from "next/link";
-import { useState } from "react";
 import { EventsCarousel } from "@/components/shared/events-carousel";
 import { GetStartedGuide } from "@/components/shared/get-started-guide";
 import { Footer } from "@/components/shared/footer";
 import { getSpecialDayName } from "@/lib/special-days";
+import { Check, Sparkles } from "lucide-react";
 
 const features = [
   {
@@ -14,7 +14,7 @@ const features = [
         <path strokeLinecap="round" strokeLinejoin="round" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
       </svg>
     ),
-    title: "Post Invite",
+    title: "Create Invite",
     desc: "Private invitations for weddings, birthdays, corporate dinners & VIP gatherings. Deliver via WhatsApp, SMS, or Email with personalised QR codes.",
     tag: "Private Events",
     color: "#E91E8C",
@@ -164,9 +164,16 @@ const QR_PATTERN = [
   1,1,1,0,0,1,0,0,
 ];
 
-export function HomePageClient() {
-  const [mobileExpanded, setMobileExpanded] = useState(false);
+const HOME_HERO_COPY = Object.freeze({
+  eyebrow: "Premium Event Infrastructure · Africa",
+  titleStart: "From invitation to entry,",
+  titleMiddle: "stay in complete",
+  titleAccent: "control.",
+  subtitle:
+    "Send branded invitations by WhatsApp, SMS, or Email, give every guest a unique QR pass, and run check-in from one live dashboard.",
+});
 
+export function HomePageClient() {
   return (
     <>
     <style>{`
@@ -179,6 +186,9 @@ export function HomePageClient() {
       @keyframes pulse-breathing {
         0%, 100% { box-shadow: 0 0 0 0 rgba(233,30,140,0.4); }
         50% { box-shadow: 0 0 0 8px rgba(233,30,140,0.1); }
+      }
+      @media (max-width: 639px) {
+        .hero-animated-bg { background-position: 50% -220px !important; }
       }
     `}</style>
 
@@ -197,24 +207,11 @@ export function HomePageClient() {
           flexDirection: "column",
         }}
       >
-        <div className="event-scene-layer" aria-hidden="true" />
-
-        {/* Pink ambient orb */}
-        <div style={{ position: "absolute", top: "10%", right: "5%", width: 640, height: 640, background: "radial-gradient(circle, rgba(233,30,140,0.18) 0%, transparent 65%)", filter: "blur(100px)", pointerEvents: "none" }} />
-        <div style={{ position: "absolute", bottom: "5%", left: "3%", width: 480, height: 480, background: "radial-gradient(circle, rgba(79,112,220,0.12) 0%, transparent 65%)", filter: "blur(90px)", pointerEvents: "none" }} />
-        <div
-          className="absolute inset-0"
-          style={{
-            background:
-              "radial-gradient(circle at 78% 34%, rgba(233,30,140,0.28) 0%, transparent 26%), linear-gradient(180deg, rgba(5,10,20,0.3) 0%, rgba(5,10,20,0.95) 100%)",
-            pointerEvents: "none",
-          }}
-        />
+        <div className="absolute inset-0" style={{ background: "rgba(5,10,20,0.4)", pointerEvents: "none" }} />
 
         {/* Mobile CTA Section — shown only on small screens */}
-        <div className="sm:hidden relative mx-4 mb-10 flex flex-col items-center justify-center" style={{ zIndex: 10, minHeight: "auto" }}>
-          {/* Main CTA Buttons */}
-          <div className="flex flex-col gap-6 w-full max-w-xs pb-6">
+        <div className="sm:hidden relative mx-4 flex flex-1 flex-col items-center justify-center pt-56 pb-8" style={{ zIndex: 10 }}>
+          <div className="flex flex-col gap-4 w-full max-w-xs">
             <Link
               href="/create-event"
               className="btn-primary rounded-xl px-10 py-5 text-base font-black text-center transition-all duration-300 hover:scale-105"
@@ -225,7 +222,7 @@ export function HomePageClient() {
               }}
             >
               <svg className="h-5 w-5 inline mr-2" fill="none" stroke="currentColor" strokeWidth={2.5} viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" d="M13 10V3L4 14h7v7l9-11h-7z" />
+                <path strokeLinecap="round" strokeLinejoin="round" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
               </svg>
               CREATE EVENT
             </Link>
@@ -245,27 +242,21 @@ export function HomePageClient() {
             </Link>
           </div>
 
-          {/* READ MORE / READ LESS Button */}
-          <button
-            onClick={() => setMobileExpanded(!mobileExpanded)}
-            className="mt-8 inline-flex items-center gap-2 text-xs font-bold uppercase tracking-widest px-4 py-2 rounded-full transition-all duration-300"
+          <Link
+            href="/login"
+            className="mt-4 w-full max-w-xs rounded-xl px-4 py-3 text-sm font-bold text-center transition-all duration-150"
             style={{
-              border: "1px solid rgba(233,30,140,0.4)",
-              background: "rgba(233,30,140,0.08)",
-              color: "#E91E8C",
-              backdropFilter: "blur(12px)",
-              animation: mobileExpanded ? "none" : "pulse-breathing 2.5s ease-in-out infinite"
+              background: "#0D1B2A",
+              color: "#ffffff",
+              border: "1px solid rgba(255,255,255,0.15)",
             }}
           >
-            {mobileExpanded ? "READ LESS" : "READ MORE"}
-            <svg className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth={2.5} viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" d={mobileExpanded ? "M5 10l7-7m0 0l7 7m-7-7v16" : "M19 14l-7 7m0 0l-7-7m7 7V3"} />
-            </svg>
-          </button>
+            LOG IN
+          </Link>
         </div>
 
-        {/* Desktop hero - shown on desktop always, shown on mobile only when expanded */}
-        <div className={`relative w-full px-4 sm:px-6 lg:px-8 pt-10 sm:pt-14 lg:pt-20 pb-12 flex-col ${!mobileExpanded ? 'hidden sm:flex' : 'flex'} sm:flex-1`} style={{ zIndex: 10 }}>
+        {/* Desktop hero - only on sm+ */}
+        <div className="hidden sm:flex relative w-full px-4 sm:px-6 lg:px-8 pt-10 sm:pt-14 lg:pt-20 pb-12 flex-col flex-1" style={{ zIndex: 10 }}>
           <div className="grid gap-12 lg:grid-cols-2 lg:gap-8 lg:items-center lg:min-h-[80vh]">
             {/* LEFT: Text column */}
             <div className="flex flex-col items-start justify-center">
@@ -279,7 +270,9 @@ export function HomePageClient() {
                     backdropFilter: "blur(12px)",
                   }}
                 >
-                  ✨ Celebrating {getSpecialDayName()}! ✨
+                  <Sparkles className="h-3.5 w-3.5" />
+                  Celebrating {getSpecialDayName()}!
+                  <Sparkles className="h-3.5 w-3.5" />
                 </div>
               )}
 
@@ -301,26 +294,22 @@ export function HomePageClient() {
                     animation: "pulse 2s ease-in-out infinite",
                   }}
                 />
-                Premium Event Infrastructure &middot; Africa
+                {HOME_HERO_COPY.eyebrow}
               </div>
 
               {/* Main heading */}
               <h1
                 className="motion-rise motion-delay-1 text-left text-4xl sm:text-6xl lg:text-6xl xl:text-[68px] font-extrabold leading-[1.05] tracking-tight"
-                style={{ color: "#ffffff" }}
               >
-                Create premium invites,{" "}
+                <span style={{ color: "#E91E8C" }}>{HOME_HERO_COPY.titleStart}</span>{" "}
                 <br className="hidden sm:block" />
-                control entry,{" "}
+                <span style={{ color: "#ffffff" }}>{HOME_HERO_COPY.titleMiddle}</span>{" "}
                 <span
                   style={{
-                    background: "linear-gradient(135deg, #E91E8C 0%, #ff6dbd 55%, #C4166F 100%)",
-                    WebkitBackgroundClip: "text",
-                    WebkitTextFillColor: "transparent",
-                    backgroundClip: "text",
+                    color: "#E91E8C",
                   }}
                 >
-                  scan every guest.
+                  {HOME_HERO_COPY.titleAccent}
                 </span>
               </h1>
 
@@ -329,19 +318,18 @@ export function HomePageClient() {
                 className="motion-rise motion-delay-2 mt-7 text-left text-base sm:text-lg leading-relaxed max-w-xl"
                 style={{ color: "rgba(255,255,255,0.68)" }}
               >
-                Send branded invitations by WhatsApp, SMS, or Email, give every
-                guest a unique QR pass, and run check-in from one live dashboard.
+                {HOME_HERO_COPY.subtitle}
               </p>
 
               {/* CTA buttons */}
-              <div className="motion-rise motion-delay-3 mt-10 flex flex-wrap items-start gap-4">
+              <div className="motion-rise motion-delay-3 mt-10 flex flex-wrap items-center justify-center gap-4">
                 <Link
                   href="/create-event"
                   className="btn-primary rounded-xl px-10 py-4 text-base font-black"
                   style={{ letterSpacing: "0.04em" }}
                 >
-                  <svg className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth={2.5} viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M13 10V3L4 14h7v7l9-11h-7z" />
+                  <svg className="h-5 w-5 inline mr-2" fill="none" stroke="currentColor" strokeWidth={2.5} viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
                   </svg>
                   CREATE EVENT
                 </Link>
@@ -395,195 +383,191 @@ export function HomePageClient() {
         </div>
       </section>
 
-      {/* ════════════════════════════════════════
-          SOCIAL PROOF STRIP (Hidden on mobile unless expanded)
-      ════════════════════════════════════════ */}
-      <section className={`py-9 bg-white border-b border-gray-100 sm:block ${mobileExpanded ? 'block' : 'hidden'}`}>
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <p className="text-center text-[10.5px] font-extrabold uppercase tracking-[0.18em] mb-5" style={{ color: "#c8d3e0" }}>
-            Trusted by event professionals across Africa
-          </p>
-          <div className="flex flex-wrap items-center justify-center gap-3">
-            {[
-              "Lagos Business Summit",
-              "Accra Fashion Week",
-              "Nairobi Tech Conf.",
-              "Abuja Music Fest",
-              "Cape Town Pride",
-              "Kigali Innovation",
-            ].map((org) => (
-              <div
-                key={org}
-                className="px-5 py-2 rounded-full text-xs font-semibold"
-                style={{ background: "#f4f6fb", border: "1px solid #e4e9f2", color: "#6b7fa0" }}
-              >
-                {org}
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {mobileExpanded && <EventsCarousel />}
-
-      {/* ════════════════════════════════════════
-          FEATURES (Hidden on mobile unless expanded)
-      ════════════════════════════════════════ */}
-      <section className={`py-28 bg-white sm:block ${mobileExpanded ? 'block' : 'hidden'}`}>
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center mb-16">
-            <div className="badge-pink mb-5">
-              <svg className="w-3.5 h-3.5 mr-1.5" fill="currentColor" viewBox="0 0 20 20">
-                <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
-              </svg>
-              Everything you need
-            </div>
-            <h2
-              className="text-4xl sm:text-5xl font-extrabold"
-              style={{ color: "#0D1B2A", letterSpacing: "-0.03em" }}
-            >
-              One platform.{" "}
-              <span style={{ color: "#E91E8C" }}>Every event.</span>
-            </h2>
-            <p className="mt-5 text-lg max-w-2xl mx-auto" style={{ color: "#6b7280" }}>
-              From intimate weddings to large-scale concerts — accredit.vip
-              handles the full lifecycle of your event with precision.
+      {/* Desktop-only sections below hero */}
+      <div className="hidden sm:block">
+        {/* SOCIAL PROOF STRIP */}
+        <section className="py-9 bg-white border-b border-gray-100">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <p className="text-center text-[10.5px] font-extrabold uppercase tracking-[0.18em] mb-5" style={{ color: "#c8d3e0" }}>
+              Trusted by event professionals across Africa
             </p>
-          </div>
-
-          <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-            {features.map((f) => (
-              <Link key={f.title} href={f.href} className="feature-card group block no-underline">
+            <div className="flex flex-wrap items-center justify-center gap-3">
+              {[
+                "Lagos Business Summit",
+                "Accra Fashion Week",
+                "Nairobi Tech Conf.",
+                "Abuja Music Fest",
+                "Cape Town Pride",
+                "Kigali Innovation",
+              ].map((org) => (
                 <div
-                  className="rounded-2xl flex items-center justify-center mb-5 transition-all duration-300 group-hover:scale-110 feature-icon"
-                  style={{ width: 52, height: 52, background: `${f.color}14`, color: f.color }}
+                  key={org}
+                  className="px-5 py-2 rounded-full text-xs font-semibold"
+                  style={{ background: "#f4f6fb", border: "1px solid #e4e9f2", color: "#6b7fa0" }}
                 >
-                  {f.icon}
+                  {org}
                 </div>
-                <span
-                  className="text-[10.5px] font-bold uppercase tracking-widest px-2.5 py-1 rounded-full"
-                  style={{ background: `${f.color}12`, color: f.color }}
-                >
-                  {f.tag}
-                </span>
-                <h3 className="text-lg font-bold mt-4 mb-2" style={{ color: "#0D1B2A" }}>{f.title}</h3>
-                <p className="text-sm leading-relaxed" style={{ color: "#6b7280" }}>{f.desc}</p>
-                <div
-                  className="mt-5 flex items-center gap-1 text-xs font-semibold opacity-0 group-hover:opacity-100 transition-opacity duration-200"
-                  style={{ color: f.color }}
-                >
-                  Learn more
-                  <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" strokeWidth={2.5} viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
-                  </svg>
-                </div>
-              </Link>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* Remaining sections: hidden on mobile unless expanded, always shown on desktop */}
-      <div className={`${mobileExpanded ? 'block' : 'hidden'} sm:block`}>
-        {/* HOW IT WORKS */}
-          <section className="py-28" style={{ background: "linear-gradient(180deg,#f6f8fc 0%,#eef1f8 100%)" }}>
-            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-              <div className="text-center mb-16">
-                <div className="badge-navy mb-5">How it works</div>
-                <h2
-                  className="text-4xl sm:text-5xl font-extrabold"
-                  style={{ color: "#0D1B2A", letterSpacing: "-0.03em" }}
-                >
-                  Up &amp; running{" "}
-                  <span style={{ color: "#E91E8C" }}>in minutes</span>
-                </h2>
-                <p className="mt-4 text-lg max-w-xl mx-auto" style={{ color: "#6b7280" }}>
-                  Three simple steps to your first professionally accredited event.
-                </p>
-              </div>
-
-              <div className="grid gap-10 md:grid-cols-3 relative">
-                {howItWorks.map((step, i) => (
-                  <div key={step.step} className="text-center group">
-                    <div
-                      className="w-28 h-28 rounded-3xl mx-auto flex flex-col items-center justify-center mb-7 transition-transform duration-300 group-hover:-translate-y-2 how-it-works-icon"
-                      style={{
-                        background:
-                          i === 1
-                            ? "linear-gradient(135deg, #E91E8C 0%, #C4166F 100%)"
-                            : "#0D1B2A",
-                        boxShadow:
-                          i === 1
-                            ? "0 16px 44px rgba(233,30,140,0.42)"
-                            : "0 12px 36px rgba(13,27,42,0.28)",
-                      }}
-                    >
-                      <div className="text-white">{step.icon}</div>
-                      <span
-                        className="text-[11px] font-black tracking-widest mt-1"
-                        style={{ color: i === 1 ? "rgba(255,255,255,0.7)" : "rgba(255,255,255,0.45)" }}
-                      >
-                        {step.step}
-                      </span>
-                    </div>
-                    <h3 className="text-xl font-bold mb-3" style={{ color: "#0D1B2A" }}>{step.title}</h3>
-                    <p className="text-sm leading-relaxed max-w-xs mx-auto" style={{ color: "#6b7280" }}>{step.desc}</p>
-                  </div>
-                ))}
-              </div>
+              ))}
             </div>
-          </section>
+          </div>
+        </section>
 
-          {/* TESTIMONIALS */}
-          <section className="py-28" style={{ background: "linear-gradient(180deg,#f6f8fc 0%,#eef1f8 100%)" }}>
-            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-              <div className="text-center mb-16">
-                <div className="badge-pink mb-5">Loved by event professionals</div>
-                <h2
-                  className="text-4xl sm:text-5xl font-extrabold"
-                  style={{ color: "#0D1B2A", letterSpacing: "-0.03em" }}
-                >
-                  Trusted across Africa
-                </h2>
+        <EventsCarousel />
+
+        {/* FEATURES */}
+        <section className="py-28 bg-white">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div className="text-center mb-16">
+              <div className="badge-pink mb-5">
+                <svg className="w-3.5 h-3.5 mr-1.5" fill="currentColor" viewBox="0 0 20 20">
+                  <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
+                </svg>
+                Everything you need
               </div>
+              <h2
+                className="text-4xl sm:text-5xl font-extrabold"
+                style={{ color: "#0D1B2A", letterSpacing: "-0.03em" }}
+              >
+                One platform.{" "}
+                <span style={{ color: "#E91E8C" }}>Every event.</span>
+              </h2>
+              <p className="mt-5 text-lg max-w-2xl mx-auto" style={{ color: "#6b7280" }}>
+                From intimate weddings to large-scale concerts — accredit.vip
+                handles the full lifecycle of your event with precision.
+              </p>
+            </div>
 
-              <div className="grid gap-6 md:grid-cols-3">
-                {testimonials.map((t) => (
+            <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+              {features.map((f) => (
+                <Link key={f.title} href={f.href} className="feature-card group block no-underline">
                   <div
-                    key={t.name}
-                    className="bg-white rounded-3xl p-8 flex flex-col gap-5 hover:-translate-y-1 transition-transform duration-300"
-                    style={{ border: "1px solid rgba(0,0,0,0.07)", boxShadow: "0 4px 28px rgba(0,0,0,0.06)" }}
+                    className="rounded-2xl flex items-center justify-center mb-5 transition-all duration-300 group-hover:scale-110 feature-icon"
+                    style={{ width: 52, height: 52, background: `${f.color}14`, color: f.color }}
                   >
-                    <div className="flex gap-0.5">
-                      {[...Array(5)].map((_, i) => (
-                        <svg key={i} className="w-4 h-4" fill="#E91E8C" viewBox="0 0 20 20">
-                          <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
-                        </svg>
-                      ))}
-                    </div>
-                    <p className="text-sm leading-relaxed flex-1" style={{ color: "#374151" }}>
-                      &ldquo;{t.quote}&rdquo;
-                    </p>
-                    <div
-                      className="flex items-center gap-3 pt-4"
-                      style={{ borderTop: "1px solid rgba(0,0,0,0.055)" }}
+                    {f.icon}
+                  </div>
+                  <span
+                    className="text-[10.5px] font-bold uppercase tracking-widest px-2.5 py-1 rounded-full"
+                    style={{ background: `${f.color}12`, color: f.color }}
+                  >
+                    {f.tag}
+                  </span>
+                  <h3 className="text-lg font-bold mt-4 mb-2" style={{ color: "#0D1B2A" }}>{f.title}</h3>
+                  <p className="text-sm leading-relaxed" style={{ color: "#6b7280" }}>{f.desc}</p>
+                  <div
+                    className="mt-5 flex items-center gap-1 text-xs font-semibold opacity-0 group-hover:opacity-100 transition-opacity duration-200"
+                    style={{ color: f.color }}
+                  >
+                    Learn more
+                    <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" strokeWidth={2.5} viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
+                    </svg>
+                  </div>
+                </Link>
+              ))}
+            </div>
+          </div>
+        </section>
+
+        {/* HOW IT WORKS */}
+        <section className="py-28" style={{ background: "linear-gradient(180deg,#f6f8fc 0%,#eef1f8 100%)" }}>
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div className="text-center mb-16">
+              <div className="badge-navy mb-5">How it works</div>
+              <h2
+                className="text-4xl sm:text-5xl font-extrabold"
+                style={{ color: "#0D1B2A", letterSpacing: "-0.03em" }}
+              >
+                Up &amp; running{" "}
+                <span style={{ color: "#E91E8C" }}>in minutes</span>
+              </h2>
+              <p className="mt-4 text-lg max-w-xl mx-auto" style={{ color: "#6b7280" }}>
+                Three simple steps to your first professionally accredited event.
+              </p>
+            </div>
+
+            <div className="grid gap-10 md:grid-cols-3 relative">
+              {howItWorks.map((step, i) => (
+                <div key={step.step} className="text-center group">
+                  <div
+                    className="w-28 h-28 rounded-3xl mx-auto flex flex-col items-center justify-center mb-7 transition-transform duration-300 group-hover:-translate-y-2 how-it-works-icon"
+                    style={{
+                      background:
+                        i === 1
+                          ? "linear-gradient(135deg, #E91E8C 0%, #C4166F 100%)"
+                          : "#0D1B2A",
+                      boxShadow:
+                        i === 1
+                          ? "0 16px 44px rgba(233,30,140,0.42)"
+                          : "0 12px 36px rgba(13,27,42,0.28)",
+                    }}
+                  >
+                    <div className="text-white">{step.icon}</div>
+                    <span
+                      className="text-[11px] font-black tracking-widest mt-1"
+                      style={{ color: i === 1 ? "rgba(255,255,255,0.7)" : "rgba(255,255,255,0.45)" }}
                     >
-                      <div
-                        className="w-10 h-10 rounded-full flex items-center justify-center text-white text-sm font-bold flex-shrink-0"
-                        style={{ background: `linear-gradient(135deg, ${t.color}, ${t.color}88)` }}
-                      >
-                        {t.avatar}
-                      </div>
-                      <div>
-                        <p className="font-bold text-sm" style={{ color: "#0D1B2A" }}>{t.name}</p>
-                        <p className="text-xs mt-0.5" style={{ color: "#9ca3af" }}>{t.role}</p>
-                      </div>
+                      {step.step}
+                    </span>
+                  </div>
+                  <h3 className="text-xl font-bold mb-3" style={{ color: "#0D1B2A" }}>{step.title}</h3>
+                  <p className="text-sm leading-relaxed max-w-xs mx-auto" style={{ color: "#6b7280" }}>{step.desc}</p>
+                </div>
+              ))}
+            </div>
+          </div>
+        </section>
+
+        {/* TESTIMONIALS */}
+        <section className="py-28" style={{ background: "linear-gradient(180deg,#f6f8fc 0%,#eef1f8 100%)" }}>
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div className="text-center mb-16">
+              <div className="badge-pink mb-5">Loved by event professionals</div>
+              <h2
+                className="text-4xl sm:text-5xl font-extrabold"
+                style={{ color: "#0D1B2A", letterSpacing: "-0.03em" }}
+              >
+                Trusted across Africa
+              </h2>
+            </div>
+
+            <div className="grid gap-6 md:grid-cols-3">
+              {testimonials.map((t) => (
+                <div
+                  key={t.name}
+                  className="bg-white rounded-3xl p-8 flex flex-col gap-5 hover:-translate-y-1 transition-transform duration-300"
+                  style={{ border: "1px solid rgba(0,0,0,0.07)", boxShadow: "0 4px 28px rgba(0,0,0,0.06)" }}
+                >
+                  <div className="flex gap-0.5">
+                    {[...Array(5)].map((_, i) => (
+                      <svg key={i} className="w-4 h-4" fill="#E91E8C" viewBox="0 0 20 20">
+                        <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
+                      </svg>
+                    ))}
+                  </div>
+                  <p className="text-sm leading-relaxed flex-1" style={{ color: "#374151" }}>
+                    &ldquo;{t.quote}&rdquo;
+                  </p>
+                  <div
+                    className="flex items-center gap-3 pt-4"
+                    style={{ borderTop: "1px solid rgba(0,0,0,0.055)" }}
+                  >
+                    <div
+                      className="w-10 h-10 rounded-full flex items-center justify-center text-white text-sm font-bold flex-shrink-0"
+                      style={{ background: `linear-gradient(135deg, ${t.color}, ${t.color}88)` }}
+                    >
+                      {t.avatar}
+                    </div>
+                    <div>
+                      <p className="font-bold text-sm" style={{ color: "#0D1B2A" }}>{t.name}</p>
+                      <p className="text-xs mt-0.5" style={{ color: "#9ca3af" }}>{t.role}</p>
                     </div>
                   </div>
-                ))}
-              </div>
+                </div>
+              ))}
             </div>
-          </section>
+          </div>
+        </section>
 
         {/* PRICING */}
         <section className="bg-[#07182f] px-4 py-28 text-white sm:px-6 lg:px-8">
@@ -658,7 +642,7 @@ export function HomePageClient() {
                     {channel.features.map((feature) => (
                       <li key={feature} className="flex items-center gap-3 text-sm text-white">
                         <span className="flex h-5 w-5 items-center justify-center rounded-full bg-[#fff1f8] text-xs font-black text-[#E91E8C]">
-                          ✓
+                          <Check className="h-3.5 w-3.5" aria-hidden="true" />
                         </span>
                         {feature}
                       </li>

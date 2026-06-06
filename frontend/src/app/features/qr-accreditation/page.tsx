@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { FeatureLayout } from "@/components/shared/feature-layout";
+import { Check } from "lucide-react";
 
 const icon = (
   <svg className="w-6 h-6" fill="none" stroke="currentColor" strokeWidth={1.8} viewBox="0 0 24 24">
@@ -37,11 +38,11 @@ export default function QRAccreditationPage() {
 
         <h2 className="text-xl font-bold mt-10" style={{ color: "#0D1B2A" }}>Key Features</h2>
         <ul className="space-y-3" style={{ color: "#4b5563" }}>
-          <li className="flex gap-3"><span style={{ color: "#0891B2" }}>✓</span> <strong>Fraud-Proof</strong> — Each QR encodes a unique random token. Cloned codes are detected and rejected.</li>
-          <li className="flex gap-3"><span style={{ color: "#0891B2" }}>✓</span> <strong>Duplicate Detection</strong> — Once a code is scanned, it cannot be used again. Prevents re-entry fraud.</li>
-          <li className="flex gap-3"><span style={{ color: "#0891B2" }}>✓</span> <strong>Instant Validation</strong> — Scans are verified in real-time against the server. No offline sync needed.</li>
-          <li className="flex gap-3"><span style={{ color: "#0891B2" }}>✓</span> <strong>Printable & Digital</strong> — QR codes work both on phone screens and on printed paper.</li>
-          <li className="flex gap-3"><span style={{ color: "#0891B2" }}>✓</span> <strong>Live Check-in Logs</strong> — See exactly who has entered and at what time, updated in real-time.</li>
+          <li className="flex gap-3"><Check className="mt-0.5 h-4 w-4 shrink-0" style={{ color: "#0891B2" }} aria-hidden="true" /> <strong>Fraud-Proof</strong> — Each QR encodes a unique random token. Cloned codes are detected and rejected.</li>
+          <li className="flex gap-3"><Check className="mt-0.5 h-4 w-4 shrink-0" style={{ color: "#0891B2" }} aria-hidden="true" /> <strong>Duplicate Detection</strong> — Once a code is scanned, it cannot be used again. Prevents re-entry fraud.</li>
+          <li className="flex gap-3"><Check className="mt-0.5 h-4 w-4 shrink-0" style={{ color: "#0891B2" }} aria-hidden="true" /> <strong>Instant Validation</strong> — Scans are verified in real-time against the server. No offline sync needed.</li>
+          <li className="flex gap-3"><Check className="mt-0.5 h-4 w-4 shrink-0" style={{ color: "#0891B2" }} aria-hidden="true" /> <strong>Printable & Digital</strong> — QR codes work both on phone screens and on printed paper.</li>
+          <li className="flex gap-3"><Check className="mt-0.5 h-4 w-4 shrink-0" style={{ color: "#0891B2" }} aria-hidden="true" /> <strong>Live Check-in Logs</strong> — See exactly who has entered and at what time, updated in real-time.</li>
         </ul>
 
         <div className="mt-10 pt-8 border-t">

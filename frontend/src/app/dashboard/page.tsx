@@ -4,14 +4,43 @@ import { useEffect, useState, useCallback } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
+import type { ReactNode } from "react";
+import {
+  Briefcase,
+  CalendarDays,
+  CheckCircle2,
+  FileText,
+  Gem,
+  Lock,
+  Mic,
+  Moon,
+  Music,
+  PartyPopper,
+  ShieldCheck,
+  Trophy,
+} from "lucide-react";
 import { useAuth } from "@/contexts/auth-context";
 import { getEvents, type EventData, type EventFilters } from "@/lib/api/events";
 import { ErrorBoundary } from "@/components/shared/error-boundary";
 
-const CATEGORY_ICONS: Record<string, string> = {
-  concert: "🎵", conference: "🎤", festival: "🎪", nightlife: "🌙",
-  sports: "⚽", corporate: "💼", private: "🔒", wedding: "💍",
+const CATEGORY_ICONS: Record<string, ReactNode> = {
+  concert: <Music className="h-9 w-9" />,
+  conference: <Mic className="h-9 w-9" />,
+  festival: <PartyPopper className="h-9 w-9" />,
+  nightlife: <Moon className="h-9 w-9" />,
+  sports: <Trophy className="h-9 w-9" />,
+  corporate: <Briefcase className="h-9 w-9" />,
+  private: <Lock className="h-9 w-9" />,
+  wedding: <Gem className="h-9 w-9" />,
 };
+
+function maskEmail(email: string) {
+  const [local, domain] = email.split("@");
+  if (!local || !domain) return email;
+  const visibleStart = local.slice(0, Math.min(8, local.length));
+  const visibleEnd = local.length > 1 ? local.slice(-1) : "";
+  return `${visibleStart}******${visibleEnd}@${domain}`;
+}
 
 function CardSkeleton() {
   return (
@@ -27,7 +56,7 @@ function CardSkeleton() {
 }
 
 function DashboardContent() {
-  const { user, loading, logout } = useAuth();
+  const { user, loading } = useAuth();
   const [events, setEvents] = useState<EventData[]>([]);
   const [eventsLoading, setEventsLoading] = useState(true);
   const [search, setSearch] = useState("");
@@ -77,9 +106,9 @@ function DashboardContent() {
         style={{ background: "#0D1B2A" }}
       >
         {/* Logo */}
-        <div className="flex items-center h-16 px-6 flex-shrink-0" style={{ borderBottom: "1px solid rgba(255,255,255,0.06)" }}>
-          <Link href="/" onClick={() => setMobileNavOpen(false)}>
-            <Image src="/logo-white.png" alt="accredit.vip" width={120} height={32} className="h-6 w-auto object-contain" />
+        <div className="flex items-center h-20 px-5 flex-shrink-0" style={{ borderBottom: "1px solid rgba(255,255,255,0.06)" }}>
+          <Link href="/" onClick={() => setMobileNavOpen(false)} className="flex items-center">
+            <Image src="/logo-white.png" alt="accredit.vip" width={4071} height={761} className="h-16 w-auto max-w-[200px] object-contain drop-shadow-[0_0_12px_rgba(233,30,140,0.15)]" />
           </Link>
         </div>
 
@@ -155,7 +184,7 @@ function DashboardContent() {
             </div>
             <div className="min-w-0 flex-1">
               <p className="text-white text-xs font-semibold truncate">{user.full_name}</p>
-              <p className="text-white/35 text-xs truncate">{user.email}</p>
+              <p className="text-white/55 text-[11px] leading-tight" title={maskEmail(user.email)}>{maskEmail(user.email)}</p>
             </div>
           </div>
           <Link href="/change-password" onClick={() => setMobileNavOpen(false)} className="mt-2 flex items-center gap-2 px-3 py-2 rounded-xl text-xs font-medium text-white/50 hover:text-white hover:bg-white/08 transition-all">
@@ -193,7 +222,10 @@ function DashboardContent() {
             </button>
             <div>
               <p className="text-xs text-gray-400 font-medium">Welcome back,</p>
-              <p className="text-sm font-bold text-[#0D1B2A]">{firstName} 👋</p>
+              <p className="flex items-center gap-1.5 text-sm font-bold text-[#0D1B2A]">
+                {firstName}
+                <ShieldCheck className="h-4 w-4 text-[#E91E8C]" aria-hidden="true" />
+              </p>
             </div>
           </div>
 
@@ -213,21 +245,21 @@ function DashboardContent() {
               {
                 label: "Total Events",
                 value: totalEvents,
-                icon: "🗓️",
+                icon: <CalendarDays className="h-6 w-6" />,
                 color: "#E91E8C",
                 bg: "rgba(233,30,140,0.08)",
               },
               {
                 label: "Active Events",
                 value: activeEvents,
-                icon: "✅",
+                icon: <CheckCircle2 className="h-6 w-6" />,
                 color: "#10b981",
                 bg: "rgba(16,185,129,0.08)",
               },
               {
                 label: "Draft Events",
                 value: draftEvents,
-                icon: "📝",
+                icon: <FileText className="h-6 w-6" />,
                 color: "#f59e0b",
                 bg: "rgba(245,158,11,0.08)",
               },
@@ -238,8 +270,8 @@ function DashboardContent() {
                 style={{ background: "white", border: "1px solid #e8edf2", boxShadow: "0 2px 8px rgba(0,0,0,0.04)" }}
               >
                 <div
-                  className="w-12 h-12 rounded-xl flex items-center justify-center text-2xl flex-shrink-0"
-                  style={{ background: stat.bg }}
+                  className="w-12 h-12 rounded-xl flex items-center justify-center flex-shrink-0"
+                  style={{ background: stat.bg, color: stat.color }}
                 >
                   {stat.icon}
                 </div>
@@ -332,7 +364,7 @@ function DashboardContent() {
                 className="w-16 h-16 rounded-full mx-auto flex items-center justify-center text-3xl mb-5"
                 style={{ background: "rgba(233,30,140,0.08)" }}
               >
-                🗓️
+                <CalendarDays className="h-8 w-8 text-[#E91E8C]" />
               </div>
               <h3 className="text-lg font-bold text-[#0D1B2A] mb-2">
                 {search || category ? "No matching events" : "No events yet"}
@@ -365,10 +397,10 @@ function DashboardContent() {
                   >
                     {/* Color accent top */}
                     <div
-                      className="h-24 flex items-center justify-center text-4xl"
+                      className="h-24 flex items-center justify-center text-white/90"
                       style={{ background: "linear-gradient(135deg, #0D1B2A 0%, #1a2e45 100%)" }}
                     >
-                      {CATEGORY_ICONS[event.category || event.event_type || ""] || "🎉"}
+                      {CATEGORY_ICONS[event.category || event.event_type || ""] || <PartyPopper className="h-9 w-9" />}
                     </div>
 
                     <div className="p-4 flex flex-col flex-1">

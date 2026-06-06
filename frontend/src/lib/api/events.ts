@@ -54,6 +54,7 @@ export type EventFilters = {
   near_lat?: number;
   near_lng?: number;
   radius_km?: number;
+  sort_by?: string;
 };
 
 export type CreateEventInput = {
@@ -107,6 +108,7 @@ export async function getPublicEvents(filters?: EventFilters): Promise<EventData
   if (filters?.near_lat) params.set("near_lat", String(filters.near_lat));
   if (filters?.near_lng) params.set("near_lng", String(filters.near_lng));
   if (filters?.radius_km) params.set("radius_km", String(filters.radius_km));
+  if (filters?.sort_by) params.set("sort", filters.sort_by);
   const qs = params.toString();
   return apiClient(`/events/public${qs ? `?${qs}` : ""}`);
 }

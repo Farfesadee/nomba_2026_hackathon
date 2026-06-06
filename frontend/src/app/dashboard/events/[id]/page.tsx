@@ -11,6 +11,7 @@ import { initiatePayment, calculatePrice } from "@/lib/api/payments";
 import { EventDetailSkeleton } from "@/components/shared/loading-skeleton";
 import { ErrorBoundary } from "@/components/shared/error-boundary";
 import { ConfirmDialog } from "@/components/shared/confirm-dialog";
+import { AlertTriangle, Check, CircleX, Hourglass } from "lucide-react";
 
 type Guest = {
   id: number;
@@ -85,6 +86,11 @@ function EventDetailContent() {
   const [guestSearch, setGuestSearch] = useState("");
   const [guestRsvpFilter, setGuestRsvpFilter] = useState("");
   const [loadError, setLoadError] = useState(false);
+  const [currentPage, setCurrentPage] = useState(0);
+  const [totalGuests, setTotalGuests] = useState(0);
+  const [selectedGuestIds, setSelectedGuestIds] = useState<number[]>([]);
+  const [exporting, setExporting] = useState(false);
+  const [exportStatus, setExportStatus] = useState("all");
   const [publishChannel, setPublishChannel] = useState("email");
   const [publishing, setPublishing] = useState(false);
   const [confirmDialog, setConfirmDialog] = useState<{ title: string; message: string; variant?: "danger" | "warning" | "default"; onConfirm: () => void } | null>(null);
@@ -93,16 +99,19 @@ function EventDetailContent() {
   const [accreditationLog, setAccreditationLog] = useState<{ attempts: any[]; suspicious_count: number } | null>(null);
   const [showAccreditationLog, setShowAccreditationLog] = useState(false);
 
-  const loadGuests = useCallback(async (search?: string, rsvpStatus?: string) => {
+  const loadGuests = useCallback(async (search?: string, rsvpStatus?: string, page?: number) => {
     try {
       const params = new URLSearchParams();
       if (search) params.set("search", search);
       if (rsvpStatus) params.set("rsvp_status", rsvpStatus);
+      params.set("offset", String((page ?? currentPage) * 10));
+      params.set("limit", "10");
       const qs = params.toString();
-      const g = await apiClient<Guest[]>(`/events/${id}/guests${qs ? `?${qs}` : ""}`);
-      setGuests(g);
+      const res = await apiClient<{ guests: Guest[]; total: number; offset: number; limit: number }>(`/events/${id}/guests${qs ? `?${qs}` : ""}`);
+      setGuests(res.guests);
+      setTotalGuests(res.total);
     } catch {}
-  }, [id]);
+  }, [id, currentPage]);
 
   useEffect(() => {
     if (!loading && !user) {
@@ -146,13 +155,15 @@ function EventDetailContent() {
 
   const handleGuestSearch = (e: React.FormEvent) => {
     e.preventDefault();
-    loadGuests(guestSearch || undefined, guestRsvpFilter || undefined);
+    setCurrentPage(0);
+    loadGuests(guestSearch || undefined, guestRsvpFilter || undefined, 0);
   };
 
   const resetGuestFilter = () => {
     setGuestSearch("");
     setGuestRsvpFilter("");
-    loadGuests();
+    setCurrentPage(0);
+    loadGuests(undefined, undefined, 0);
   };
 
   const loadLogs = async () => {
@@ -235,7 +246,7 @@ function EventDetailContent() {
 
   const addGuest = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (guestLimit !== null && guests.length >= guestLimit) {
+    if (guestLimit !== null && totalGuests >= guestLimit) {
       setCsvResult(`Guest limit reached. This event allows up to ${guestLimit} guests.`);
       return;
     }
@@ -292,16 +303,41 @@ function EventDetailContent() {
   const sendInvites = async (force: boolean = false) => {
     setSending(true); setSendResult(null); setSendError(null);
     try {
-      const url = force ? `/events/${id}/send-invites?force=true` : `/events/${id}/send-invites`;
-      const res = await apiClient<any>(url, { method: "POST", body: { channel } });
-      setSendResult(res);
+      // For resend all, use the legacy endpoint (handles payment logic)
+      if (force) {
+        const res = await apiClient<any>(`/events/${id}/send-invites?force=true`, { method: "POST", body: { channel } });
+        setSendResult(res);
+        loadLogs();
+        loadGuests();
+        if (res.skipped_max_attempts > 0) {
+          setSendError(`${res.skipped_max_attempts} guest(s) skipped (max 3 invite attempts reached).`);
+        }
+        setSending(false);
+        return;
+      }
+      // Normal send: fetch up to 5 unsent guests and send via batch
+      const gParams = new URLSearchParams();
+      gParams.set("invite_status", "not_sent");
+      gParams.set("limit", "5");
+      gParams.set("offset", "0");
+      const gRes = await apiClient<{ guests: Guest[]; total: number }>(`/events/${id}/guests?${gParams.toString()}`);
+      const unsentGuests = gRes.guests;
+      if (unsentGuests.length === 0) {
+        setSendError("All guests have already been invited.");
+        setSending(false);
+        return;
+      }
+      const guestIds = unsentGuests.map((g) => g.id);
+      const batchRes = await apiClient<any>(`/events/${id}/send-invites-batch`, {
+        method: "POST",
+        body: { channel, guest_ids: guestIds },
+      });
+      setSendResult(batchRes);
       loadLogs();
       loadGuests();
-      if (res.already_sent) {
-        setSendResult(null);
-        setSendError("All guests have already been invited.");
-      } else if (res.skipped_max_attempts > 0) {
-        setSendError(`${res.skipped_max_attempts} guest(s) skipped (max 3 invite attempts reached). Create a new event to invite them again.`);
+      const remaining = gRes.total - guestIds.length;
+      if (remaining > 0) {
+        setSendError(`${remaining} more guest(s) remaining. Click Send again to continue.`);
       }
     } catch (err: any) {
       const detail = err.detail || err.message;
@@ -395,6 +431,71 @@ function EventDetailContent() {
     } catch {}
   };
 
+  const toggleSelect = (guestId: number) => {
+    setSelectedGuestIds((prev) =>
+      prev.includes(guestId) ? prev.filter((id) => id !== guestId) : prev.length < 5 ? [...prev, guestId] : prev
+    );
+  };
+
+  const toggleSelectAll = () => {
+    if (selectedGuestIds.length === guests.length) {
+      setSelectedGuestIds([]);
+    } else {
+      setSelectedGuestIds(guests.map((g) => g.id).slice(0, 5));
+    }
+  };
+
+  const sendToSelected = async () => {
+    if (selectedGuestIds.length === 0) return;
+    setSending(true); setSendError(null); setSendResult(null);
+    try {
+      const res = await apiClient<any>(`/events/${id}/send-invites-batch`, {
+        method: "POST",
+        body: { channel, guest_ids: selectedGuestIds },
+      });
+      setSendResult(res);
+      setSelectedGuestIds([]);
+      loadGuests(guestSearch || undefined, guestRsvpFilter || undefined, currentPage);
+      loadLogs();
+    } catch (err: any) {
+      const detail = err.detail || err.message;
+      if (detail?.payment_required) {
+        setSendError("Some guests require payment to re-send.");
+      } else {
+        setSendError(typeof detail === "string" ? detail : "Could not send invites.");
+      }
+    }
+    setSending(false);
+  };
+
+  const exportGuests = async () => {
+    setExporting(true);
+    try {
+      const token = localStorage.getItem("access_token");
+      const baseUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000/api/v1";
+      const res = await fetch(`${baseUrl}/events/${id}/export-guests?status=${exportStatus}`, {
+        headers: token ? { Authorization: `Bearer ${token}` } : {},
+      });
+      if (!res.ok) throw new Error("Export failed");
+      const blob = await res.blob();
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `guests-event-${id}-${exportStatus}.csv`;
+      a.click();
+      URL.revokeObjectURL(url);
+    } catch {}
+    setExporting(false);
+  };
+
+  const pageCount = Math.ceil(totalGuests / 10);
+  const goToPage = (page: number) => {
+    if (page < 0 || page >= pageCount) return;
+    setCurrentPage(page);
+    setSelectedGuestIds([]);
+    loadGuests(guestSearch || undefined, guestRsvpFilter || undefined, page);
+  };
+
   const handleDeleteEvent = async () => {
     setDeleting(true);
     try {
@@ -432,7 +533,7 @@ function EventDetailContent() {
   if (loadError) return (
     <div className="flex min-h-screen flex-col items-center justify-center p-4">
       <div className="text-center space-y-4 max-w-sm">
-        <div className="text-4xl">⚠️</div>
+        <AlertTriangle className="mx-auto h-10 w-10 text-amber-500" aria-hidden="true" />
         <h2 className="text-xl font-semibold">Could not load event</h2>
         <p className="text-sm text-muted-foreground">The event may have been deleted or a network error occurred.</p>
         <div className="flex gap-3 justify-center">
@@ -444,13 +545,13 @@ function EventDetailContent() {
   if (!event) return <EventDetailSkeleton />;
 
   const guestLimit = guestLimitFromRange(event.guest_count_range);
-  const remainingGuests = guestLimit === null ? null : Math.max(guestLimit - guests.length, 0);
+  const remainingGuests = guestLimit === null ? null : Math.max(guestLimit - totalGuests, 0);
   const phoneChannelSelected = channel === "whatsapp" || channel === "sms";
   const invalidPhoneGuests = phoneChannelSelected ? guests.filter((guest) => !isValidPhone(guest.phone)) : [];
   const guestsWithoutSelectedContact = guests.filter((guest) =>
     channel === "email" ? !guest.email : !guest.phone
   );
-  const canSendInvites = guests.length > 0 && invalidPhoneGuests.length === 0;
+  const canSendInvites = totalGuests > 0 && invalidPhoneGuests.length === 0;
 
   return (
     <div className="flex min-h-screen flex-col">
@@ -514,7 +615,12 @@ function EventDetailContent() {
                 onClick={() => setShowAccreditationLog(!showAccreditationLog)}
                 className="rounded-lg border border-amber-200 bg-amber-50 px-4 py-2 text-sm text-amber-800 hover:bg-amber-100"
               >
-                {accreditationLog?.suspicious_count ? `⚠ ${accreditationLog.suspicious_count} suspicious` : "View scan log"}
+                {accreditationLog?.suspicious_count ? (
+                  <span className="inline-flex items-center gap-1.5">
+                    <AlertTriangle className="h-3.5 w-3.5" aria-hidden="true" />
+                    {accreditationLog.suspicious_count} suspicious
+                  </span>
+                ) : "View scan log"}
               </button>
             )}
           </div>
@@ -568,7 +674,15 @@ function EventDetailContent() {
                     <div className="flex items-center justify-between">
                       <span className="font-medium">{a.guest_name || 'Unknown'}</span>
                       <span className={`font-semibold ${a.status === 'checked_in' ? 'text-green-700' : a.status === 'already_used' ? 'text-red-700' : a.status === 'invalid_token' ? 'text-red-700' : 'text-amber-700'}`}>
-                        {a.status === 'checked_in' ? '✓ Checked in' : a.status === 'already_used' ? '✗ Already used (possible impersonation)' : a.status === 'expired' ? '⌛ Expired' : a.status === 'invalid_token' ? '✗ Invalid token' : a.status}
+                        {a.status === 'checked_in' ? (
+                          <span className="inline-flex items-center gap-1"><Check className="h-3.5 w-3.5" aria-hidden="true" /> Checked in</span>
+                        ) : a.status === 'already_used' ? (
+                          <span className="inline-flex items-center gap-1"><CircleX className="h-3.5 w-3.5" aria-hidden="true" /> Already used (possible impersonation)</span>
+                        ) : a.status === 'expired' ? (
+                          <span className="inline-flex items-center gap-1"><Hourglass className="h-3.5 w-3.5" aria-hidden="true" /> Expired</span>
+                        ) : a.status === 'invalid_token' ? (
+                          <span className="inline-flex items-center gap-1"><CircleX className="h-3.5 w-3.5" aria-hidden="true" /> Invalid token</span>
+                        ) : a.status}
                       </span>
                     </div>
                     {a.device_info && <p className="text-[10px] text-muted-foreground mt-1">Device: {a.device_info}</p>}
@@ -580,7 +694,10 @@ function EventDetailContent() {
             )}
             {accreditationLog.suspicious_count > 0 && (
               <p className="mt-2 text-xs font-medium text-red-700">
-                ⚠ {accreditationLog.suspicious_count} suspicious attempt{accreditationLog.suspicious_count === 1 ? '' : 's'} detected (repeated scan or invalid tokens)
+                <span className="inline-flex items-center gap-1.5">
+                  <AlertTriangle className="h-3.5 w-3.5" aria-hidden="true" />
+                  {accreditationLog.suspicious_count} suspicious attempt{accreditationLog.suspicious_count === 1 ? '' : 's'} detected (repeated scan or invalid tokens)
+                </span>
               </p>
             )}
           </div>
@@ -591,14 +708,14 @@ function EventDetailContent() {
             <h2 className="text-lg font-semibold mb-4">Add Guest</h2>
             {guestLimit !== null && (
               <p className="mb-3 text-xs font-medium text-muted-foreground">
-                Guest threshold: {guests.length} of {guestLimit} used{remainingGuests !== null ? `, ${remainingGuests} remaining` : ""}.
+                Guest threshold: {totalGuests} of {guestLimit} used{remainingGuests !== null ? `, ${remainingGuests} remaining` : ""}.
               </p>
             )}
             <form onSubmit={addGuest} className="space-y-3">
               <input placeholder="Full Name" value={guestName} onChange={(e) => setGuestName(e.target.value)} className="flex h-10 w-full rounded-lg border border-input bg-background px-3 py-2 text-sm" required />
               <input placeholder="Phone (optional)" value={guestPhone} onChange={(e) => setGuestPhone(e.target.value)} className="flex h-10 w-full rounded-lg border border-input bg-background px-3 py-2 text-sm" />
               <input placeholder="Email (optional)" value={guestEmail} onChange={(e) => setGuestEmail(e.target.value)} className="flex h-10 w-full rounded-lg border border-input bg-background px-3 py-2 text-sm" />
-              <Button type="submit" disabled={guestLimit !== null && guests.length >= guestLimit}>Add Guest</Button>
+              <Button type="submit" disabled={guestLimit !== null && totalGuests >= guestLimit}>Add Guest</Button>
             </form>
 
             <div className="mt-6 border-t pt-6">
@@ -608,7 +725,7 @@ function EventDetailContent() {
               </p>
               <div className="flex gap-2">
                 <input ref={fileInputRef} type="file" accept=".csv" onChange={(e) => setCsvFile(e.target.files?.[0] || null)} className="flex h-10 w-full rounded-lg border border-input bg-background px-3 py-2 text-sm file:mr-3 file:rounded file:border-0 file:bg-primary file:px-3 file:py-1 file:text-xs file:text-primary-foreground" />
-                <Button onClick={uploadCsv} disabled={!csvFile || csvUploading || (guestLimit !== null && guests.length >= guestLimit)} variant="outline">
+                <Button onClick={uploadCsv} disabled={!csvFile || csvUploading || (guestLimit !== null && totalGuests >= guestLimit)} variant="outline">
                   {csvUploading ? "Uploading..." : "Upload"}
                 </Button>
               </div>
@@ -698,7 +815,7 @@ function EventDetailContent() {
               )}
             </div>
 
-            <h2 className="text-lg font-semibold mb-4">Guests ({guests.length})</h2>
+            <h2 className="text-lg font-semibold mb-4">Guests ({totalGuests})</h2>
             <form onSubmit={handleGuestSearch} className="flex gap-2 mb-4 flex-wrap">
               <input
                 type="text"
@@ -723,72 +840,136 @@ function EventDetailContent() {
                 <Button type="button" variant="ghost" size="sm" onClick={resetGuestFilter}>Clear</Button>
               )}
             </form>
+            <div className="flex items-center gap-2 mb-3 flex-wrap">
+              <select
+                value={exportStatus}
+                onChange={(e) => setExportStatus(e.target.value)}
+                className="flex h-9 rounded-lg border border-input bg-background px-3 py-2 text-sm"
+              >
+                <option value="all">All guests</option>
+                <option value="sent">Invite sent</option>
+                <option value="not_sent">Not sent</option>
+                <option value="delivered">Delivered</option>
+                <option value="failed">Failed</option>
+              </select>
+              <Button variant="outline" size="sm" onClick={exportGuests} disabled={exporting}>
+                {exporting ? "Exporting..." : "Export CSV"}
+              </Button>
+            </div>
             {guests.length === 0 ? (
               <p className="text-sm text-muted-foreground">No guests added yet.</p>
             ) : (
-              <div className="space-y-2 max-h-[600px] overflow-y-auto">
-                {guests.map((guest) => (
-                  <div key={guest.id} className="rounded-lg border p-3">
-                    {editingGuest === guest.id ? (
-                      <div className="space-y-2">
-                        <input value={editName} onChange={(e) => setEditName(e.target.value)} className="flex h-9 w-full rounded-lg border border-input bg-background px-3 py-2 text-sm" />
-                        <input value={editPhone} onChange={(e) => setEditPhone(e.target.value)} className="flex h-9 w-full rounded-lg border border-input bg-background px-3 py-2 text-sm" placeholder="Phone" />
-                        <input value={editEmail} onChange={(e) => setEditEmail(e.target.value)} className="flex h-9 w-full rounded-lg border border-input bg-background px-3 py-2 text-sm" placeholder="Email" />
-                        <div className="flex gap-2">
-                          <Button size="sm" onClick={() => saveEdit(guest.id)}>Save</Button>
-                          <Button size="sm" variant="outline" onClick={() => setEditingGuest(null)}>Cancel</Button>
+              <>
+                <div className="flex items-center gap-2 mb-2">
+                  <label className="flex items-center gap-2 text-xs text-muted-foreground cursor-pointer">
+                    <input type="checkbox" checked={selectedGuestIds.length === guests.length && guests.length > 0} onChange={toggleSelectAll} className="rounded" />
+                    Select all (max 5)
+                  </label>
+                  {selectedGuestIds.length > 0 && (
+                    <Button size="sm" onClick={sendToSelected} disabled={sending}>
+                      {sending ? "Sending..." : `Send to Selected (${selectedGuestIds.length})`}
+                    </Button>
+                  )}
+                </div>
+                <div className="space-y-2">
+                  {guests.map((guest) => (
+                    <div key={guest.id} className="rounded-lg border p-3">
+                      {editingGuest === guest.id ? (
+                        <div className="space-y-2">
+                          <input value={editName} onChange={(e) => setEditName(e.target.value)} className="flex h-9 w-full rounded-lg border border-input bg-background px-3 py-2 text-sm" />
+                          <input value={editPhone} onChange={(e) => setEditPhone(e.target.value)} className="flex h-9 w-full rounded-lg border border-input bg-background px-3 py-2 text-sm" placeholder="Phone" />
+                          <input value={editEmail} onChange={(e) => setEditEmail(e.target.value)} className="flex h-9 w-full rounded-lg border border-input bg-background px-3 py-2 text-sm" placeholder="Email" />
+                          <div className="flex gap-2">
+                            <Button size="sm" onClick={() => saveEdit(guest.id)}>Save</Button>
+                            <Button size="sm" variant="outline" onClick={() => setEditingGuest(null)}>Cancel</Button>
+                          </div>
                         </div>
-                      </div>
-                    ) : deleteConfirm === guest.id ? (
-                      <div className="flex items-center justify-between">
-                        <p className="text-sm">Delete <strong>{guest.name}</strong>?</p>
-                        <div className="flex gap-2">
-                          <Button size="sm" variant="destructive" onClick={() => handleDeleteGuest(guest.id)}>Yes</Button>
-                          <Button size="sm" variant="outline" onClick={() => setDeleteConfirm(null)}>No</Button>
+                      ) : deleteConfirm === guest.id ? (
+                        <div className="flex items-center justify-between">
+                          <p className="text-sm">Delete <strong>{guest.name}</strong>?</p>
+                          <div className="flex gap-2">
+                            <Button size="sm" variant="destructive" onClick={() => handleDeleteGuest(guest.id)}>Yes</Button>
+                            <Button size="sm" variant="outline" onClick={() => setDeleteConfirm(null)}>No</Button>
+                          </div>
                         </div>
-                      </div>
-                    ) : (
-                      <div className="flex items-center justify-between">
-                        <div>
-                          <p className="text-sm font-medium">{guest.name}</p>
-                          <p className="text-xs text-muted-foreground">
-                            {guest.phone || guest.email || "No contact"} &middot; {guest.rsvp_status}
-                          </p>
-                          {guest.invite_sent && (
-                            <span className="mt-1 inline-block text-xs font-medium text-green-700 bg-green-100 px-2 py-0.5 rounded">Invite Sent</span>
-                          )}
-                          {typeof guest.invite_attempts === 'number' && guest.invite_attempts > 0 && (
-                            <span className={`mt-1 inline-block text-xs font-medium px-2 py-0.5 rounded ${guest.invite_attempts >= 3 ? 'text-red-700 bg-red-100' : 'text-amber-700 bg-amber-100'}`}>
-                              {guest.invite_attempts}/3 attempts
-                            </span>
-                          )}
-                          {guest.invite_viewed_at && (
-                            <span className="mt-1 inline-block text-xs font-medium text-blue-700 bg-blue-100 px-2 py-0.5 rounded">Viewed</span>
-                          )}
-                          {phoneChannelSelected && !isValidPhone(guest.phone) && (
-                            <p className="mt-1 text-xs font-medium text-amber-700">Check phone number before WhatsApp/SMS send</p>
-                          )}
+                      ) : (
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center gap-3 min-w-0">
+                            <input
+                              type="checkbox"
+                              checked={selectedGuestIds.includes(guest.id)}
+                              onChange={() => toggleSelect(guest.id)}
+                              className="rounded flex-shrink-0"
+                            />
+                            <div className="min-w-0">
+                              <p className="text-sm font-medium truncate">{guest.name}</p>
+                              <p className="text-xs text-muted-foreground truncate">
+                                {guest.phone || guest.email || "No contact"} &middot; {guest.rsvp_status}
+                              </p>
+                              <div className="flex gap-1 flex-wrap mt-1">
+                                {guest.invite_sent && (
+                                  <span className="inline-block text-xs font-medium text-green-700 bg-green-100 px-2 py-0.5 rounded">Invite Sent</span>
+                                )}
+                                {typeof guest.invite_attempts === 'number' && guest.invite_attempts > 0 && (
+                                  <span className={`inline-block text-xs font-medium px-2 py-0.5 rounded ${guest.invite_attempts >= 3 ? 'text-red-700 bg-red-100' : 'text-amber-700 bg-amber-100'}`}>
+                                    {guest.invite_attempts}/3 attempts
+                                  </span>
+                                )}
+                                {guest.invite_viewed_at && (
+                                  <span className="inline-block text-xs font-medium text-blue-700 bg-blue-100 px-2 py-0.5 rounded">Viewed</span>
+                                )}
+                              </div>
+                              {phoneChannelSelected && !isValidPhone(guest.phone) && (
+                                <p className="mt-1 text-xs font-medium text-amber-700">Check phone number before WhatsApp/SMS send</p>
+                              )}
+                            </div>
+                          </div>
+                          <div className="flex items-center gap-1 flex-shrink-0">
+                            {qrMap[guest.id] ? (
+                              <span className="text-xs text-muted-foreground mr-2">QR Ready</span>
+                            ) : (
+                              <Button size="sm" variant="outline" onClick={() => generateQR(guest.id)} disabled={generatingQR === guest.id}>
+                                {generatingQR === guest.id ? "..." : "QR"}
+                              </Button>
+                            )}
+                            <Button size="sm" variant="outline" onClick={() => sendGuestQr(guest.id)}>Send QR</Button>
+                            {!guest.invite_sent && (
+                              <Button size="sm" variant="outline" onClick={() => sendGuestInvite(guest.id)}>Invite</Button>
+                            )}
+                            <Button size="sm" variant="ghost" onClick={() => startEdit(guest)}>Edit</Button>
+                            <Button size="sm" variant="ghost" className="text-destructive" onClick={() => setDeleteConfirm(guest.id)}>Del</Button>
+                          </div>
                         </div>
-                        <div className="flex items-center gap-1">
-                          {qrMap[guest.id] ? (
-                            <span className="text-xs text-muted-foreground mr-2">QR Ready</span>
-                          ) : (
-                            <Button size="sm" variant="outline" onClick={() => generateQR(guest.id)} disabled={generatingQR === guest.id}>
-                              {generatingQR === guest.id ? "..." : "QR"}
-                            </Button>
-                          )}
-                          <Button size="sm" variant="outline" onClick={() => sendGuestQr(guest.id)}>Send QR</Button>
-                          {!guest.invite_sent && (
-                            <Button size="sm" variant="outline" onClick={() => sendGuestInvite(guest.id)}>Invite</Button>
-                          )}
-                          <Button size="sm" variant="ghost" onClick={() => startEdit(guest)}>Edit</Button>
-                          <Button size="sm" variant="ghost" className="text-destructive" onClick={() => setDeleteConfirm(guest.id)}>Del</Button>
-                        </div>
-                      </div>
-                    )}
+                      )}
+                    </div>
+                  ))}
+                </div>
+                {pageCount > 1 && (
+                  <div className="flex items-center justify-center gap-1 mt-4">
+                    <button className="px-2 py-1.5 text-xs rounded border hover:bg-accent disabled:opacity-30" disabled={currentPage === 0} onClick={() => goToPage(0)} title="First page">
+                      &#171;
+                    </button>
+                    <button className="px-2 py-1.5 text-xs rounded border hover:bg-accent disabled:opacity-30" disabled={currentPage === 0} onClick={() => goToPage(currentPage - 1)} title="Previous page">
+                      &#8249;
+                    </button>
+                    {Array.from({ length: pageCount }, (_, i) => (
+                      <button
+                        key={i}
+                        onClick={() => goToPage(i)}
+                        className={`px-3 py-1.5 text-xs rounded border hover:bg-accent ${i === currentPage ? "bg-primary text-primary-foreground border-primary font-bold" : ""}`}
+                      >
+                        {i + 1}
+                      </button>
+                    ))}
+                    <button className="px-2 py-1.5 text-xs rounded border hover:bg-accent disabled:opacity-30" disabled={currentPage >= pageCount - 1} onClick={() => goToPage(currentPage + 1)} title="Next page">
+                      &#8250;
+                    </button>
+                    <button className="px-2 py-1.5 text-xs rounded border hover:bg-accent disabled:opacity-30" disabled={currentPage >= pageCount - 1} onClick={() => goToPage(pageCount - 1)} title="Last page">
+                      &#187;
+                    </button>
                   </div>
-                ))}
-              </div>
+                )}
+              </>
             )}
 
             {purchases.length > 0 && (

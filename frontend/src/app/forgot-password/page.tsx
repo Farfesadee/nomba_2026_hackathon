@@ -3,6 +3,7 @@
 import { useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
+import { Mail } from "lucide-react";
 
 const API_BASE = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000/api/v1";
 
@@ -43,7 +44,7 @@ export default function ForgotPasswordPage() {
               boxShadow: "0 8px 30px rgba(233,30,140,0.5)",
             }}
           >
-            📧
+            <Mail className="h-9 w-9 text-white" />
           </div>
           <h1 className="text-2xl font-extrabold text-white mb-3">Check Your Inbox</h1>
           <p className="text-white/65 text-sm leading-relaxed mb-2">

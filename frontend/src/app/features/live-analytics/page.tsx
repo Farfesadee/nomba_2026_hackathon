@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { FeatureLayout } from "@/components/shared/feature-layout";
+import { Check } from "lucide-react";
 
 const icon = (
   <svg className="w-6 h-6" fill="none" stroke="currentColor" strokeWidth={1.8} viewBox="0 0 24 24">
@@ -39,11 +40,11 @@ export default function LiveAnalyticsPage() {
 
         <h2 className="text-xl font-bold mt-10" style={{ color: "#0D1B2A" }}>Key Features</h2>
         <ul className="space-y-3" style={{ color: "#4b5563" }}>
-          <li className="flex gap-3"><span style={{ color: "#D97706" }}>✓</span> <strong>Real-Time Updates</strong> — Data refreshes automatically. No manual refresh needed.</li>
-          <li className="flex gap-3"><span style={{ color: "#D97706" }}>✓</span> <strong>Event-Level Views</strong> — See analytics per event, not just a global overview.</li>
-          <li className="flex gap-3"><span style={{ color: "#D97706" }}>✓</span> <strong>Export Ready</strong> — All data is structured and ready for export to spreadsheets.</li>
-          <li className="flex gap-3"><span style={{ color: "#D97706" }}>✓</span> <strong>Admin Dashboard</strong> — Super admins get system-wide stats: total users, events, and revenue.</li>
-          <li className="flex gap-3"><span style={{ color: "#D97706" }}>✓</span> <strong>Historical Data</strong> — Past event data remains accessible for comparison and reporting.</li>
+          <li className="flex gap-3"><Check className="mt-0.5 h-4 w-4 shrink-0" style={{ color: "#D97706" }} aria-hidden="true" /> <strong>Real-Time Updates</strong> — Data refreshes automatically. No manual refresh needed.</li>
+          <li className="flex gap-3"><Check className="mt-0.5 h-4 w-4 shrink-0" style={{ color: "#D97706" }} aria-hidden="true" /> <strong>Event-Level Views</strong> — See analytics per event, not just a global overview.</li>
+          <li className="flex gap-3"><Check className="mt-0.5 h-4 w-4 shrink-0" style={{ color: "#D97706" }} aria-hidden="true" /> <strong>Export Ready</strong> — All data is structured and ready for export to spreadsheets.</li>
+          <li className="flex gap-3"><Check className="mt-0.5 h-4 w-4 shrink-0" style={{ color: "#D97706" }} aria-hidden="true" /> <strong>Admin Dashboard</strong> — Super admins get system-wide stats: total users, events, and revenue.</li>
+          <li className="flex gap-3"><Check className="mt-0.5 h-4 w-4 shrink-0" style={{ color: "#D97706" }} aria-hidden="true" /> <strong>Historical Data</strong> — Past event data remains accessible for comparison and reporting.</li>
         </ul>
 
         <div className="mt-10 pt-8 border-t">

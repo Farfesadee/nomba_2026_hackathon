@@ -271,15 +271,15 @@ const timeSlots = Array.from({ length: 48 }, (_, index) => {
 });
 
 const timezoneOptions = [
-  { value: "Africa/Lagos|WAT", label: "🇳🇬 Lagos, Nigeria (WAT)" },
-  { value: "Africa/Accra|GMT", label: "🇬🇭 Accra, Ghana (GMT)" },
-  { value: "Africa/Nairobi|EAT", label: "🇰🇪 Nairobi, Kenya (EAT)" },
-  { value: "Africa/Johannesburg|SAST", label: "🇿🇦 Johannesburg, South Africa (SAST)" },
-  { value: "Europe/London|GMT/BST", label: "🇬🇧 London, United Kingdom (GMT/BST)" },
-  { value: "Europe/Paris|CET", label: "🇫🇷 Paris, France (CET)" },
-  { value: "America/New_York|ET", label: "🇺🇸 New York, United States (ET)" },
-  { value: "America/Los_Angeles|PT", label: "🇺🇸 Los Angeles, United States (PT)" },
-  { value: "Asia/Dubai|GST", label: "🇦🇪 Dubai, UAE (GST)" },
+  { value: "Africa/Lagos|WAT", label: "NG Lagos, Nigeria (WAT)" },
+  { value: "Africa/Accra|GMT", label: "GH Accra, Ghana (GMT)" },
+  { value: "Africa/Nairobi|EAT", label: "KE Nairobi, Kenya (EAT)" },
+  { value: "Africa/Johannesburg|SAST", label: "ZA Johannesburg, South Africa (SAST)" },
+  { value: "Europe/London|GMT/BST", label: "GB London, United Kingdom (GMT/BST)" },
+  { value: "Europe/Paris|CET", label: "FR Paris, France (CET)" },
+  { value: "America/New_York|ET", label: "US New York, United States (ET)" },
+  { value: "America/Los_Angeles|PT", label: "US Los Angeles, United States (PT)" },
+  { value: "Asia/Dubai|GST", label: "AE Dubai, UAE (GST)" },
 ];
 
 const STATIC_VENUES = [
@@ -399,6 +399,31 @@ function TimeDropdown({ value, onChange, disabled, id }: {
   );
 }
 
+function SelectDropdown({ children, value, onChange, className, disabled, required }: {
+  children: React.ReactNode;
+  value: string;
+  onChange: (e: React.ChangeEvent<HTMLSelectElement>) => void;
+  className?: string;
+  disabled?: boolean;
+  required?: boolean;
+}) {
+  return (
+    <div className="relative">
+      <select
+        value={value}
+        onChange={onChange}
+        disabled={disabled}
+        required={required}
+        className={`${className || ""} appearance-none`}
+        style={{ WebkitAppearance: "none", MozAppearance: "none" }}
+      >
+        {children}
+      </select>
+      <ChevronDown className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-[#94a3b8]" />
+    </div>
+  );
+}
+
 const MONTHS = [
   "January", "February", "March", "April", "May", "June",
   "July", "August", "September", "October", "November", "December",
@@ -514,6 +539,11 @@ export default function CreateEventPage() {
   const [monthPart, setMonthPart] = useState("");
   const [yearPart, setYearPart] = useState("");
 
+  // Controlled open state for collapsible details
+  const [inviteTemplateOpen, setInviteTemplateOpen] = useState(false);
+  const [qrDetailsOpen, setQrDetailsOpen] = useState(false);
+  const [eventTemplateOpen, setEventTemplateOpen] = useState(false);
+
   // AI generation errors
   const [aiImageError, setAiImageError] = useState("");
   const [aiGenerateError, setAiGenerateError] = useState("");
@@ -593,13 +623,24 @@ export default function CreateEventPage() {
   );
   const selectedChannelNames = form.delivery_channels.map((channel) => channelLabels[channel]);
 
+  const venueRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const handler = (e: MouseEvent) => {
+      if (venueRef.current && !venueRef.current.contains(e.target as Node)) {
+        setVenueSuggestionsOpen(false);
+      }
+    };
+    document.addEventListener("mousedown", handler);
+    return () => document.removeEventListener("mousedown", handler);
+  }, []);
+
   const filteredVenues = useMemo(() => {
     const allVenues = [...STATIC_VENUES, ...getSavedVenues()];
     const search = form.venue.trim().toLowerCase();
-    if (search.length < 2) return allVenues.slice(0, 4);
-    return allVenues
-      .filter((venue) => venue.toLowerCase().includes(search))
-      .slice(0, 5);
+    if (!search) return [];
+    const matched = allVenues.filter((venue) => venue.toLowerCase().includes(search));
+    return matched.slice(0, 5);
   }, [form.venue]);
 
   const selectedTimezone = timezoneOptions.find((zone) => zone.value === form.timezone) || timezoneOptions[0];
@@ -744,16 +785,16 @@ export default function CreateEventPage() {
     setAiImageGenerating(true);
     try {
       const autoPrompt = [
-        form.title ? `Premium flyer for "${form.title}".` : "Premium event flyer.",
+        form.title ? `Premium visual artwork for "${form.title}".` : "Premium event visual artwork.",
         form.category ? `Category: ${form.category}.` : "",
-        form.venue ? `Venue: ${form.venue}.` : "",
-        form.male_dress_code ? `Dress code: ${form.male_dress_code}.` : "",
-        form.event_date ? `Date: ${form.event_date}.` : "",
-        form.event_time ? `Time: ${form.event_time}.` : "",
+        form.venue ? `Venue mood inspired by ${form.venue}.` : "",
+        form.male_dress_code ? `Dress code mood: ${form.male_dress_code}.` : "",
+        form.event_date ? `Season/date mood: ${form.event_date}.` : "",
+        form.event_time ? `Lighting mood: ${form.event_time}.` : "",
         visibleLineup.length
           ? `Featuring: ${visibleLineup.slice(0, 3).map((p) => p.name).filter(Boolean).join(", ")}.`
           : "",
-        "Bold poster typography, vibrant colors, professional design. NO text, words, letters, numbers, or dates on the image.",
+        "Vibrant professional event artwork only. Do not include text, words, letters, numbers, dates, labels, logos, or headline copy.",
       ].filter(Boolean).join(" ");
       const prompt = form.image_prompt.trim() || autoPrompt;
       setAiImageError("");
@@ -829,9 +870,9 @@ export default function CreateEventPage() {
         const viaText = result.sent_via ? ` via ${result.sent_via}` : "";
         if (result.flyer_url) {
           setInviteFlyer(result.flyer_url);
-          setMessage(`✓ Test invitation flyer sent to ${result.sent_to}${viaText}. Here's the beautiful invitation your guests will see:`);
+          setMessage(`Test invitation flyer sent to ${result.sent_to}${viaText}. Here's the beautiful invitation your guests will see:`);
         } else {
-          setMessage(`✓ Test invite sent to ${result.sent_to}${viaText}. Check your messages to see the invitation flyer. Create an account to send real invites to your guest list.`);
+          setMessage(`Test invite sent to ${result.sent_to}${viaText}. Check your messages to see the invitation flyer. Create an account to send real invites to your guest list.`);
         }
       } else {
         setMessage(mode === "event"
@@ -1132,10 +1173,10 @@ export default function CreateEventPage() {
 
               {/* Event template selection — POST EVENT only */}
               {mode === "event" && (
-                <details className="rounded-xl border border-[#d9e2ec] p-4 group">
-                  <summary className="flex cursor-pointer items-center justify-between text-sm font-semibold text-[#23466f] [&::-webkit-details-marker]:hidden">
+                <details open={eventTemplateOpen} className="rounded-xl border border-[#d9e2ec] p-4 group">
+                  <summary onClick={(e) => { e.preventDefault(); setEventTemplateOpen(!eventTemplateOpen); }} className="flex cursor-pointer items-center justify-between text-sm font-semibold text-[#23466f] [&::-webkit-details-marker]:hidden">
                     <span className="px-2">Event flyer style</span>
-                    <svg className="w-4 h-4 text-[#94a3b8] transition-transform group-open:rotate-180" fill="none" stroke="currentColor" strokeWidth={2.5} viewBox="0 0 24 24">
+                    <svg className={`w-4 h-4 text-[#94a3b8] transition-transform ${eventTemplateOpen ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" strokeWidth={2.5} viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
                     </svg>
                   </summary>
@@ -1143,7 +1184,7 @@ export default function CreateEventPage() {
                     {inviteTemplates.filter(t => t.value !== null).map((template) => (
                       <div
                         key={String(template.value)}
-                        onClick={() => setForm({ ...form, event_template: form.event_template === template.value ? null : (template.value as EventTemplate) })}
+                        onClick={() => { setForm({ ...form, event_template: form.event_template === template.value ? null : (template.value as EventTemplate) }); setEventTemplateOpen(false); }}
                         className={`flex cursor-pointer flex-col gap-3 rounded-xl border-2 p-4 transition-all ${
                           form.event_template === template.value
                             ? "border-[#E91E8C] bg-pink-50 ring-2 ring-[#E91E8C]/20"
@@ -1206,7 +1247,7 @@ export default function CreateEventPage() {
                 {mode === "event" ? (
                   <label className="space-y-2">
                     <span className="text-sm font-semibold text-[#23466f]">Category</span>
-                    <select
+                    <SelectDropdown
                       value={form.category}
                       onChange={(e) => setForm({ ...form, category: e.target.value })}
                       className="h-11 w-full rounded-xl border border-[#d9e2ec] px-3 text-sm outline-none focus:border-[#E91E8C]"
@@ -1221,7 +1262,7 @@ export default function CreateEventPage() {
                       <option value="games_night">Games Night</option>
                       <option value="beach_party">Beach Party</option>
                       <option value="__other__">Others (custom)</option>
-                    </select>
+                    </SelectDropdown>
                     {form.category === "__other__" && (
                       <input
                         value={form.custom_category || ""}
@@ -1235,7 +1276,7 @@ export default function CreateEventPage() {
                 ) : (
                   <label className="space-y-2">
                     <span className="text-sm font-semibold text-[#23466f]">Event type</span>
-                    <select
+                    <SelectDropdown
                       value={form.event_type}
                       onChange={(e) => setForm({ ...form, event_type: e.target.value })}
                       className="h-11 w-full rounded-xl border border-[#d9e2ec] px-3 text-sm outline-none focus:border-[#E91E8C]"
@@ -1246,14 +1287,14 @@ export default function CreateEventPage() {
                       <option value="religious">Religious event</option>
                       <option value="vip">VIP gathering</option>
                       <option value="conference">Conference</option>
-                    </select>
+                    </SelectDropdown>
                   </label>
                 )}
 
                 {mode === "invite" ? (
                   <label className="space-y-2">
                     <span className="text-sm font-semibold text-[#23466f]">Number of guests</span>
-                    <select
+                    <SelectDropdown
                       value={form.guest_range}
                       onChange={(e) => setForm({ ...form, guest_range: e.target.value })}
                       className="h-11 w-full rounded-xl border border-[#d9e2ec] px-3 text-sm font-bold outline-none focus:border-[#E91E8C]"
@@ -1264,7 +1305,7 @@ export default function CreateEventPage() {
                           {range.label} guests
                         </option>
                       ))}
-                    </select>
+                    </SelectDropdown>
                   </label>
                 ) : (
                   <details className="rounded-xl border border-[#d9e2ec] group">
@@ -1287,7 +1328,7 @@ export default function CreateEventPage() {
                         const platform = socialPlatforms.find((item) => item.value === social.platform) || socialPlatforms[0];
                         return (
                           <div key={index} className="grid gap-2 sm:grid-cols-[0.9fr_1.1fr_auto]">
-                            <select
+                            <SelectDropdown
                               value={social.platform}
                               onChange={(e) => updateSocialHandle(index, { platform: e.target.value as SocialPlatform })}
                               className="h-11 w-full rounded-xl border border-[#d9e2ec] px-3 text-sm font-semibold outline-none focus:border-[#E91E8C]"
@@ -1297,7 +1338,7 @@ export default function CreateEventPage() {
                                   {item.label}
                                 </option>
                               ))}
-                            </select>
+                            </SelectDropdown>
                             <input
                               value={social.handle}
                               onChange={(e) => updateSocialHandle(index, { handle: e.target.value })}
@@ -1342,7 +1383,7 @@ export default function CreateEventPage() {
                 <label className="space-y-2">
                   <span className="text-sm font-semibold text-[#23466f]">Date</span>
                   <div className="flex gap-2">
-                    <select
+                    <SelectDropdown
                       value={dayPart}
                       onChange={(e) => {
                         const d = e.target.value;
@@ -1359,8 +1400,8 @@ export default function CreateEventPage() {
                       {Array.from({ length: 31 }, (_, i) => (
                         <option key={i + 1} value={String(i + 1)}>{i + 1}</option>
                       ))}
-                    </select>
-                    <select
+                    </SelectDropdown>
+                    <SelectDropdown
                       value={monthPart}
                       onChange={(e) => {
                         const m = e.target.value;
@@ -1377,8 +1418,8 @@ export default function CreateEventPage() {
                       {MONTHS.map((name, i) => (
                         <option key={i + 1} value={String(i + 1).padStart(2, "0")}>{name}</option>
                       ))}
-                    </select>
-                    <select
+                    </SelectDropdown>
+                    <SelectDropdown
                       value={yearPart}
                       onChange={(e) => {
                         const y = e.target.value;
@@ -1396,7 +1437,7 @@ export default function CreateEventPage() {
                         const year = 2024 + i;
                         return <option key={year} value={String(year)}>{year}</option>;
                       })}
-                    </select>
+                    </SelectDropdown>
                   </div>
                 </label>
                 <label className="space-y-2">
@@ -1410,7 +1451,7 @@ export default function CreateEventPage() {
                 </label>
                 <label className="space-y-2">
                   <span className="text-sm font-semibold text-[#23466f]">Time zone</span>
-                  <select
+                  <SelectDropdown
                     value={form.timezone}
                     onChange={(e) => setForm({ ...form, timezone: e.target.value })}
                     className="h-11 w-full rounded-xl border border-[#d9e2ec] px-3 text-sm font-semibold outline-none focus:border-[#E91E8C]"
@@ -1421,7 +1462,7 @@ export default function CreateEventPage() {
                         {zone.label}
                       </option>
                     ))}
-                  </select>
+                  </SelectDropdown>
                 </label>
               </div>
               </>)}
@@ -1448,7 +1489,7 @@ export default function CreateEventPage() {
                   </fieldset>
 
                   {/* Venue & Dress Code - moved up */}
-                  <label className="relative block space-y-2">
+                  <div ref={venueRef} className="relative block space-y-2">
                     <span className="text-sm font-semibold text-[#23466f]">Venue</span>
                     <input
                       value={form.venue}
@@ -1457,12 +1498,6 @@ export default function CreateEventPage() {
                         setVenueSuggestionsOpen(true);
                       }}
                       onFocus={() => setVenueSuggestionsOpen(true)}
-                      onKeyDown={(e) => {
-                        if (e.key === "Enter") {
-                          e.preventDefault();
-                          setVenueSuggestionsOpen(false);
-                        }
-                      }}
                       disabled={detailsToBeCommunicated}
                       className="h-11 w-full rounded-xl border border-[#d9e2ec] px-3 text-sm outline-none focus:border-[#E91E8C] disabled:bg-[#f8fafc] disabled:text-[#94a3b8]"
                       placeholder={detailsToBeCommunicated ? "To be communicated" : "Start typing a venue or address"}
@@ -1474,11 +1509,7 @@ export default function CreateEventPage() {
                           <button
                             key={venue}
                             type="button"
-                            onClick={() => {
-                              setForm({ ...form, venue });
-                              saveVenue(venue);
-                              setVenueSuggestionsOpen(false);
-                            }}
+                            onMouseDown={(e) => { e.preventDefault(); setForm({ ...form, venue }); saveVenue(venue); setVenueSuggestionsOpen(false); }}
                             className="block w-full rounded-lg px-3 py-2 text-left text-sm text-[#23466f] hover:bg-[#fff1f8]"
                           >
                             {venue}
@@ -1486,7 +1517,7 @@ export default function CreateEventPage() {
                         ))}
                       </div>
                     )}
-                  </label>
+                  </div>
 
                   {/* Dress code - Male & Female */}
                   <div className="grid gap-3 md:grid-cols-2">
@@ -1510,10 +1541,10 @@ export default function CreateEventPage() {
                     </label>
                   </div>
 
-                  <details className="rounded-xl border border-[#d9e2ec] p-4 group">
-                    <summary className="flex cursor-pointer items-center justify-between text-sm font-semibold text-[#23466f] [&::-webkit-details-marker]:hidden">
+                  <details open={inviteTemplateOpen} className="rounded-xl border border-[#d9e2ec] p-4 group">
+                    <summary onClick={(e) => { e.preventDefault(); setInviteTemplateOpen(!inviteTemplateOpen); }} className="flex cursor-pointer items-center justify-between text-sm font-semibold text-[#23466f] [&::-webkit-details-marker]:hidden">
                       <span className="px-2">Invitation template style</span>
-                      <svg className="w-4 h-4 text-[#94a3b8] transition-transform group-open:rotate-180" fill="none" stroke="currentColor" strokeWidth={2.5} viewBox="0 0 24 24">
+                      <svg className={`w-4 h-4 text-[#94a3b8] transition-transform ${inviteTemplateOpen ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" strokeWidth={2.5} viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
                       </svg>
                     </summary>
@@ -1521,7 +1552,7 @@ export default function CreateEventPage() {
                       {inviteTemplates.map((template) => (
                         <div
                           key={String(template.value)}
-                          onClick={() => setForm({ ...form, invite_template: form.invite_template === template.value ? null : (template.value as InviteTemplate | null) })}
+                          onClick={() => { setForm({ ...form, invite_template: form.invite_template === template.value ? null : (template.value as InviteTemplate | null) }); setInviteTemplateOpen(false); }}
                           className={`flex cursor-pointer flex-col gap-3 rounded-xl border-2 p-4 transition-all ${
                             form.invite_template === template.value
                               ? "border-[#E91E8C] bg-pink-50 ring-2 ring-[#E91E8C]/20"
@@ -1556,10 +1587,10 @@ export default function CreateEventPage() {
                   </details>
 
                   {/* QR code option - collapsible */}
-                    <details className="rounded-xl border border-[#d9e2ec] group">
-                    <summary className="flex cursor-pointer items-center justify-between p-4 text-sm font-semibold text-[#23466f] [&::-webkit-details-marker]:hidden">
+                    <details open={qrDetailsOpen} className="rounded-xl border border-[#d9e2ec] group">
+                    <summary onClick={(e) => { e.preventDefault(); setQrDetailsOpen(!qrDetailsOpen); }} className="flex cursor-pointer items-center justify-between p-4 text-sm font-semibold text-[#23466f] [&::-webkit-details-marker]:hidden">
                       <span>QR code option</span>
-                      <svg className="w-4 h-4 text-[#94a3b8] transition-transform group-open:rotate-180" fill="none" stroke="currentColor" strokeWidth={2.5} viewBox="0 0 24 24">
+                      <svg className={`w-4 h-4 text-[#94a3b8] transition-transform ${qrDetailsOpen ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" strokeWidth={2.5} viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
                       </svg>
                     </summary>
@@ -1571,7 +1602,7 @@ export default function CreateEventPage() {
                             <input
                               type="radio"
                               checked={form.qr_delivery === option.value}
-                              onChange={() => setForm({ ...form, qr_delivery: option.value })}
+                              onChange={() => { setForm({ ...form, qr_delivery: option.value }); setQrDetailsOpen(false); }}
                               className="h-4 w-4 accent-[#E91E8C]"
                             />
                             {option.label}
@@ -1590,7 +1621,7 @@ export default function CreateEventPage() {
                             {qrStyles.map((style) => (
                               <div
                                 key={style.value}
-                                onClick={() => setForm({ ...form, qr_style: form.qr_style === style.value ? "pulsing" : (style.value as QRStyle) })}
+                                onClick={() => { setForm({ ...form, qr_style: form.qr_style === style.value ? "pulsing" : (style.value as QRStyle) }); setQrDetailsOpen(false); }}
                                 className={`flex cursor-pointer flex-col gap-2 rounded-xl border-2 p-3 text-sm transition-all ${
                                   form.qr_style === style.value
                                     ? "border-[#E91E8C] bg-white ring-2 ring-[#E91E8C]/20"
@@ -2243,15 +2274,24 @@ className="block w-full cursor-pointer rounded-xl border border-[#d9e2ec] bg-whi
                       </div>
                     )}
 
-                    <button
-                      type="submit"
-                      form="create-event-form"
-                      disabled={submitting || (hydrated && mode ? usedTrials[mode] : false)}
-                      className="mt-6 flex h-12 w-full items-center justify-center rounded-xl bg-[#E91E8C] px-6 text-sm font-bold text-white transition-all hover:bg-[#C4166F] disabled:cursor-not-allowed disabled:opacity-50"
-                      style={{ animation: 'pulse-accent 2s infinite' }}
-                    >
-                      {submitting ? "Preparing preview..." : "Test this feature"}
-                    </button>
+                    {hydrated && mode && usedTrials[mode] ? (
+                      <Link
+                        href="/login"
+                        className="mt-6 flex h-12 w-full items-center justify-center rounded-xl bg-[#E91E8C] px-6 text-sm font-bold text-white transition-all hover:bg-[#C4166F]"
+                      >
+                        Login / Create Account
+                      </Link>
+                    ) : (
+                      <button
+                        type="submit"
+                        form="create-event-form"
+                        disabled={submitting}
+                        className="mt-6 flex h-12 w-full items-center justify-center rounded-xl bg-[#E91E8C] px-6 text-sm font-bold text-white transition-all hover:bg-[#C4166F] disabled:cursor-not-allowed disabled:opacity-50"
+                        style={{ animation: 'pulse-accent 2s infinite' }}
+                      >
+                        {submitting ? "Preparing preview..." : "Test this feature"}
+                      </button>
+                    )}
                   </div>
                 </aside>
 
@@ -2278,7 +2318,7 @@ className="block w-full cursor-pointer rounded-xl border border-[#d9e2ec] bg-whi
                       </div>
                     </div>
                     <div className="mt-4 flex flex-col gap-3 sm:flex-row">
-                      <Link href="/register" className="btn-primary justify-center rounded-xl px-6 py-3">
+                      <Link href="/login?redirect=/dashboard" className="btn-primary justify-center rounded-xl px-6 py-3">
                         Continue with account
                       </Link>
                       <Link href="/contact" className="justify-center rounded-xl border border-[#d9e2ec] px-6 py-3 text-center font-semibold text-[#07182f]">
@@ -2359,10 +2399,10 @@ className="block w-full cursor-pointer rounded-xl border border-[#d9e2ec] bg-whi
             <div className="p-6 border-t border-[#e8edf2] bg-[#f8f9fc]">
               <p className="text-sm text-gray-600 mb-4">Ready to send real invitations? Create an account to set up your guest list and start sending.</p>
               <Link
-                href="/register"
+                href="/login"
                 className="block w-full px-4 py-3 bg-[#E91E8C] text-white rounded-xl font-bold hover:bg-[#d0147a] transition-colors text-center"
               >
-                Create Account
+                Login / Create Account
               </Link>
             </div>
           </div>
@@ -2391,10 +2431,10 @@ className="block w-full cursor-pointer rounded-xl border border-[#d9e2ec] bg-whi
             <div className="p-6 border-t border-[#e8edf2] bg-[#f8f9fc]">
               <p className="text-sm text-gray-600 mb-4">Ready to publish this event? Create an account to save your settings and post to Discover Events.</p>
               <Link
-                href="/register"
+                href="/login"
                 className="block w-full px-4 py-3 bg-[#E91E8C] text-white rounded-xl font-bold hover:bg-[#d0147a] transition-colors text-center"
               >
-                Create Account
+                Login / Create Account
               </Link>
             </div>
           </div>

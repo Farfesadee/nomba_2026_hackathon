@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { Navbar } from "@/components/shared/navbar";
 import { Footer } from "@/components/shared/footer";
+import { Check } from "lucide-react";
 
 const channels = [
   {
@@ -86,7 +87,7 @@ export default function PricingPage() {
                   {channel.features.map((feature) => (
                     <li key={feature} className="flex items-center gap-3 text-sm" style={{ color: channel.highlight ? "rgba(255,255,255,0.86)" : "#23466f" }}>
                       <span className="flex h-5 w-5 items-center justify-center rounded-full bg-[#fff1f8] text-xs font-black text-[#E91E8C]">
-                        ✓
+                        <Check className="h-3.5 w-3.5" aria-hidden="true" />
                       </span>
                       {feature}
                     </li>

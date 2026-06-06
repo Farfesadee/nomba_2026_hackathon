@@ -25,18 +25,18 @@ export const timeOptions = Array.from({ length: 48 }, (_, index) => {
 });
 
 export const timezoneOptions = [
-  { value: "WAT", label: "🇳🇬 Lagos, Nigeria (WAT, UTC+1)" },
-  { value: "GMT", label: "🇬🇭 Accra, Ghana (GMT, UTC+0)" },
-  { value: "EAT", label: "🇰🇪 Nairobi, Kenya (EAT, UTC+3)" },
-  { value: "SAST", label: "🇿🇦 Johannesburg, South Africa (SAST, UTC+2)" },
-  { value: "GMT/BST", label: "🇬🇧 London, United Kingdom (GMT/BST)" },
-  { value: "CET", label: "🇫🇷 Paris, France (CET, UTC+1)" },
-  { value: "ET", label: "🇺🇸 New York, United States (ET)" },
-  { value: "PT", label: "🇺🇸 Los Angeles, United States (PT)" },
-  { value: "GST", label: "🇦🇪 Dubai, UAE (GST, UTC+4)" },
-  { value: "IST", label: "🇮🇳 Mumbai, India (IST, UTC+5:30)" },
-  { value: "SGT", label: "🇸🇬 Singapore (SGT, UTC+8)" },
-  { value: "AEST", label: "🇦🇺 Sydney, Australia (AEST, UTC+10)" },
+  { value: "WAT", label: "NG Lagos, Nigeria (WAT, UTC+1)" },
+  { value: "GMT", label: "GH Accra, Ghana (GMT, UTC+0)" },
+  { value: "EAT", label: "KE Nairobi, Kenya (EAT, UTC+3)" },
+  { value: "SAST", label: "ZA Johannesburg, South Africa (SAST, UTC+2)" },
+  { value: "GMT/BST", label: "GB London, United Kingdom (GMT/BST)" },
+  { value: "CET", label: "FR Paris, France (CET, UTC+1)" },
+  { value: "ET", label: "US New York, United States (ET)" },
+  { value: "PT", label: "US Los Angeles, United States (PT)" },
+  { value: "GST", label: "AE Dubai, UAE (GST, UTC+4)" },
+  { value: "IST", label: "IN Mumbai, India (IST, UTC+5:30)" },
+  { value: "SGT", label: "SG Singapore (SGT, UTC+8)" },
+  { value: "AEST", label: "AU Sydney, Australia (AEST, UTC+10)" },
 ];
 
 export const lineupRoleOptions = [

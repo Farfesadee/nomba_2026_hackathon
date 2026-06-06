@@ -33,8 +33,8 @@ export function Navbar({
     return () => window.removeEventListener("scroll", handleScroll);
   }, []);
 
-  // Always show CREATE EVENT - no auth buttons in navbar
   const resolvedAuthLinks = authLinks ?? [
+    { label: "LOG IN", href: "/login" },
     { label: "CREATE EVENT", href: "/create-event", primary: true },
   ] as Array<{ label: string; href: string; primary?: boolean; onClick?: () => void }>;
 
@@ -258,11 +258,13 @@ export function Navbar({
                     <Link
                       key={link.href}
                       href={link.href}
-                      className="block rounded-xl border px-4 py-3 text-center text-sm font-bold transition-colors"
+                      className="block rounded-xl border px-4 py-3 text-center text-sm font-bold transition-all duration-150"
                       style={{
                         color: isDark ? "white" : "#0D1B2A",
-                        borderColor: isDark ? "rgba(255,255,255,0.18)" : "rgba(13,27,42,0.16)",
+                        borderColor: isDark ? "rgba(255,255,255,0.24)" : "rgba(13,27,42,0.2)",
+                        background: isDark ? "rgba(255,255,255,0.08)" : "rgba(13,27,42,0.04)",
                       }}
+                      onClick={() => setMobileOpen(false)}
                     >
                       {link.label}
                     </Link>

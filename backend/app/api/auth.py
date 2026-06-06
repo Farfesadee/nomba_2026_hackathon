@@ -4,6 +4,8 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select, or_
 from pydantic import BaseModel, EmailStr
+from jose import jwt
+import httpx
 
 from app.core.database import get_db
 from app.core.security import hash_password, verify_password, create_access_token, get_current_user
@@ -110,17 +112,93 @@ async def login(req: LoginRequest, db: AsyncSession = Depends(get_db)):
     )
 
 
+GOOGLE_OPENID_CONFIG = "https://accounts.google.com/.well-known/openid-configuration"
+APPLE_PUBLIC_KEYS_URL = "https://appleid.apple.com/auth/keys"
+
+
+async def verify_google_token(id_token: str) -> dict:
+    try:
+        unverified = jwt.get_unverified_header(id_token)
+        async with httpx.AsyncClient() as client:
+            resp = await client.get(GOOGLE_OPENID_CONFIG)
+            resp.raise_for_status()
+            config = resp.json()
+            keys_resp = await client.get(config["jwks_uri"])
+            keys_resp.raise_for_status()
+            keys_data = keys_resp.json()
+        payload = jwt.decode(id_token, keys_data, audience=settings.GOOGLE_CLIENT_ID,
+                             options={"verify_at_hash": False, "verify_aud": True})
+        if payload.get("iss") not in ("accounts.google.com", "https://accounts.google.com"):
+            raise HTTPException(status_code=401, detail="Invalid Google token issuer")
+        return payload
+    except jwt.ExpiredSignatureError:
+        raise HTTPException(status_code=401, detail="Google token expired")
+    except jwt.JWTError as e:
+        raise HTTPException(status_code=401, detail=f"Invalid Google token: {e}")
+
+
+async def verify_facebook_token(access_token: str) -> dict:
+    async with httpx.AsyncClient() as client:
+        resp = await client.get(
+            "https://graph.facebook.com/me",
+            params={"access_token": access_token, "fields": "id,name,email"}
+        )
+        if resp.status_code != 200:
+            raise HTTPException(status_code=401, detail="Invalid Facebook token")
+        data = resp.json()
+        if "id" not in data:
+            raise HTTPException(status_code=401, detail="Invalid Facebook token")
+        return {"sub": data["id"], "email": data.get("email"), "name": data.get("name")}
+
+
+async def verify_apple_token(id_token: str) -> dict:
+    try:
+        unverified = jwt.get_unverified_header(id_token)
+        async with httpx.AsyncClient() as client:
+            resp = await client.get(APPLE_PUBLIC_KEYS_URL)
+            resp.raise_for_status()
+            keys_data = resp.json()
+        payload = jwt.decode(id_token, keys_data, audience=settings.APPLE_CLIENT_ID,
+                             options={"verify_at_hash": False, "verify_aud": True})
+        if payload.get("iss") not in ("https://appleid.apple.com",):
+            raise HTTPException(status_code=401, detail="Invalid Apple token issuer")
+        return payload
+    except jwt.ExpiredSignatureError:
+        raise HTTPException(status_code=401, detail="Apple token expired")
+    except jwt.JWTError as e:
+        raise HTTPException(status_code=401, detail=f"Invalid Apple token: {e}")
+
+
 @router.post("/social", response_model=TokenResponse)
 async def social_login(req: SocialLoginRequest, db: AsyncSession = Depends(get_db)):
     if req.provider not in ("google", "facebook", "apple"):
         raise HTTPException(status_code=400, detail="Unsupported provider")
+
+    if req.provider == "google":
+        payload = await verify_google_token(req.id_token)
+        provider_id = payload["sub"]
+        email = req.email or payload.get("email")
+        full_name = req.full_name or payload.get("name")
+    elif req.provider == "facebook":
+        payload = await verify_facebook_token(req.id_token)
+        provider_id = payload["sub"]
+        email = req.email or payload.get("email")
+        full_name = req.full_name or payload.get("name")
+    elif req.provider == "apple":
+        payload = await verify_apple_token(req.id_token)
+        provider_id = payload["sub"]
+        email = req.email or payload.get("email")
+        full_name = req.full_name or payload.get("name")
+
+    if not email:
+        email = f"{req.provider}_{provider_id[:16]}@social.accredit.vip"
 
     # Find existing user by oauth link or email
     result = await db.execute(
         select(User).where(
             or_(
                 User.oauth_provider == req.provider,
-                User.email == req.email,
+                User.email == email,
             )
         )
     )
@@ -130,20 +208,19 @@ async def social_login(req: SocialLoginRequest, db: AsyncSession = Depends(get_d
         if user.oauth_provider and user.oauth_provider != req.provider:
             raise HTTPException(status_code=409, detail=f"Account linked to {user.oauth_provider}")
         user.oauth_provider = req.provider
-        user.oauth_id = req.id_token[:100]
-        if req.full_name and not user.full_name:
-            user.full_name = req.full_name
-        if req.email and not user.email:
-            user.email = req.email
+        user.oauth_id = provider_id
+        if full_name and not user.full_name:
+            user.full_name = full_name
+        if email and not user.email:
+            user.email = email
         user.is_verified = True
     else:
-        email = req.email or f"{req.provider}_{req.id_token[:16]}@social.accredit.vip"
         user = User(
             email=email,
-            full_name=req.full_name or f"{req.provider.title()} User",
+            full_name=full_name or f"{req.provider.title()} User",
             password_hash=hash_password(secrets.token_urlsafe(16)),
             oauth_provider=req.provider,
-            oauth_id=req.id_token[:100],
+            oauth_id=provider_id,
             is_verified=True,
         )
         db.add(user)

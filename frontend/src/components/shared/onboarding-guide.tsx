@@ -3,12 +3,51 @@
 import { useState, useEffect } from "react";
 import { usePathname } from "next/navigation";
 import Link from "next/link";
+import {
+  BarChart3,
+  CalendarDays,
+  Camera,
+  CheckCircle2,
+  Lock,
+  MessageCircle,
+  Palette,
+  PartyPopper,
+  Phone,
+  Rocket,
+  ShieldCheck,
+  Ticket,
+  User,
+  UserPlus,
+  Users,
+  Wrench,
+  Send,
+} from "lucide-react";
 
 const STORAGE_KEY = "accredit_onboarding_done";
 
+const stepIcons = {
+  party: PartyPopper,
+  shield: ShieldCheck,
+  user: User,
+  calendar: CalendarDays,
+  note: UserPlus,
+  users: Users,
+  send: Send,
+  check: CheckCircle2,
+  ticket: Ticket,
+  camera: Camera,
+  palette: Palette,
+  chart: BarChart3,
+  tools: Wrench,
+  chat: MessageCircle,
+  phone: Phone,
+  lock: Lock,
+  rocket: Rocket,
+};
+
 const steps = [
   {
-    icon: "🎉",
+    icon: "party",
     title: "Welcome to Accredit.vip",
     description:
       "The premium event infrastructure platform for Africa. Create private or public events, manage guests, send multi-channel invitations, sell tickets, generate QR codes, and track attendance — all from one dashboard.",
@@ -18,7 +57,7 @@ const steps = [
     ],
   },
   {
-    icon: "🔐",
+    icon: "shield",
     title: "1. Create Your Account",
     description:
       "Sign up with your name, email, phone, and choose how you'd like to verify your identity.",
@@ -32,7 +71,7 @@ const steps = [
     ],
   },
   {
-    icon: "👤",
+    icon: "user",
     title: "2. Your Profile & Dashboard",
     description:
       "Your dashboard is the command center for everything — events, guests, invites, tickets, and more.",
@@ -45,7 +84,7 @@ const steps = [
     ],
   },
   {
-    icon: "📅",
+    icon: "calendar",
     title: "3. Creating Events: Two Modes",
     description:
       "Accredit.vip supports two distinct event modes depending on your needs.",
@@ -58,7 +97,7 @@ const steps = [
     ],
   },
   {
-    icon: "📝",
+    icon: "note",
     title: "4. Event Details Form",
     description:
       "The creation form is split into clear sections so nothing gets missed.",
@@ -72,7 +111,7 @@ const steps = [
     ],
   },
   {
-    icon: "👥",
+    icon: "users",
     title: "5. Managing Guests",
     description:
       "Add guests individually or import in bulk. Each guest automatically gets a unique RSVP token and QR code.",
@@ -86,7 +125,7 @@ const steps = [
     ],
   },
   {
-    icon: "📨",
+    icon: "send",
     title: "6. Sending Invitations",
     description:
       "Send invitations via Email, WhatsApp, or SMS directly from the event dashboard.",
@@ -100,7 +139,7 @@ const steps = [
     ],
   },
   {
-    icon: "✅",
+    icon: "check",
     title: "7. RSVP Tracking",
     description:
       "Monitor guest responses in real-time as they accept, decline, or mark maybe.",
@@ -114,7 +153,7 @@ const steps = [
     ],
   },
   {
-    icon: "🎟️",
+    icon: "ticket",
     title: "8. Ticketing & Payments",
     description:
       "Set a ticket price and sell directly through the platform with Paystack payment processing.",
@@ -129,7 +168,7 @@ const steps = [
     ],
   },
   {
-    icon: "📸",
+    icon: "camera",
     title: "9. QR Codes & Door Verification",
     description:
       "Generate QR codes for each guest and scan at the event entrance for fast, secure check-in.",
@@ -143,7 +182,7 @@ const steps = [
     ],
   },
   {
-    icon: "🎨",
+    icon: "palette",
     title: "10. Event Branding & Promotion",
     description:
       "Customize your event with images, branding, and make it discoverable to the public.",
@@ -157,7 +196,7 @@ const steps = [
     ],
   },
   {
-    icon: "📊",
+    icon: "chart",
     title: "11. Dashboard Analytics & Stats",
     description:
       "See all your event metrics at a glance — guest counts, RSVPs, revenue, and more.",
@@ -170,7 +209,7 @@ const steps = [
     ],
   },
   {
-    icon: "🛠️",
+    icon: "tools",
     title: "12. Post-Event Management",
     description:
       "After the event, you still have access to all data and can manage follow-ups.",
@@ -183,7 +222,7 @@ const steps = [
     ],
   },
   {
-    icon: "💬",
+    icon: "chat",
     title: "13. AI Assistant",
     description:
       "Get instant help from the built-in AI assistant — no need to search for answers.",
@@ -196,7 +235,7 @@ const steps = [
     ],
   },
   {
-    icon: "📞",
+    icon: "phone",
     title: "14. Support & Contact",
     description:
       "Reach out to the Accredit.vip team if you need further assistance or have questions.",
@@ -208,7 +247,7 @@ const steps = [
     ],
   },
   {
-    icon: "🔒",
+    icon: "lock",
     title: "15. Security & Account",
     description:
       "Your account security matters. Here's how we keep things safe.",
@@ -222,7 +261,7 @@ const steps = [
     ],
   },
   {
-    icon: "🚀",
+    icon: "rocket",
     title: "16. You're Ready!",
     description:
       "You've learned all the key features. Here's a quick recap of what to do next.",
@@ -277,6 +316,7 @@ export function OnboardingGuide() {
   if (!show) return null;
 
   const s = steps[step];
+  const Icon = stepIcons[s.icon as keyof typeof stepIcons] || PartyPopper;
 
   return (
     <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/60 backdrop-blur-sm p-3 sm:p-4 overflow-y-auto">
@@ -289,7 +329,9 @@ export function OnboardingGuide() {
         </div>
         <div className="p-5 sm:p-8">
           <div className="text-center mb-2">
-            <span className="text-4xl sm:text-5xl">{s.icon}</span>
+            <span className="inline-flex h-14 w-14 items-center justify-center rounded-2xl bg-primary/10 text-primary">
+              <Icon className="h-8 w-8" />
+            </span>
           </div>
           <h2 className="text-lg sm:text-xl font-bold text-center mb-2">{s.title}</h2>
           <p className="text-sm text-muted-foreground text-center mb-4">{s.description}</p>

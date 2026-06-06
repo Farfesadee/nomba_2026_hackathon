@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { FeatureLayout } from "@/components/shared/feature-layout";
+import { Check } from "lucide-react";
 
 const icon = (
   <svg className="w-6 h-6" fill="none" stroke="currentColor" strokeWidth={1.8} viewBox="0 0 24 24">
@@ -36,11 +37,11 @@ export default function PostEventPage() {
 
         <h2 className="text-xl font-bold mt-10" style={{ color: "#0D1B2A" }}>Key Features</h2>
         <ul className="space-y-3" style={{ color: "#4b5563" }}>
-          <li className="flex gap-3"><span style={{ color: "#7C3AED" }}>✓</span> <strong>Public Discovery</strong> — Your event appears on the Discover page with search, category, and date filters.</li>
-          <li className="flex gap-3"><span style={{ color: "#7C3AED" }}>✓</span> <strong>Ticket Sales</strong> — Set a price, sell tickets, and collect payments through Paystack integration.</li>
-          <li className="flex gap-3"><span style={{ color: "#7C3AED" }}>✓</span> <strong>Digital QR Tickets</strong> — Every buyer receives a personalized ticket receipt with scannable QR code.</li>
-          <li className="flex gap-3"><span style={{ color: "#7C3AED" }}>✓</span> <strong>Buyer Management</strong> — See all ticket buyers, purchase amounts, and check-in status from your dashboard.</li>
-          <li className="flex gap-3"><span style={{ color: "#7C3AED" }}>✓</span> <strong>Cover & Fliers</strong> — Upload promotional images to attract more attendees.</li>
+          <li className="flex gap-3"><Check className="mt-0.5 h-4 w-4 shrink-0" style={{ color: "#7C3AED" }} aria-hidden="true" /> <strong>Public Discovery</strong> — Your event appears on the Discover page with search, category, and date filters.</li>
+          <li className="flex gap-3"><Check className="mt-0.5 h-4 w-4 shrink-0" style={{ color: "#7C3AED" }} aria-hidden="true" /> <strong>Ticket Sales</strong> — Set a price, sell tickets, and collect payments through Paystack integration.</li>
+          <li className="flex gap-3"><Check className="mt-0.5 h-4 w-4 shrink-0" style={{ color: "#7C3AED" }} aria-hidden="true" /> <strong>Digital QR Tickets</strong> — Every buyer receives a personalized ticket receipt with scannable QR code.</li>
+          <li className="flex gap-3"><Check className="mt-0.5 h-4 w-4 shrink-0" style={{ color: "#7C3AED" }} aria-hidden="true" /> <strong>Buyer Management</strong> — See all ticket buyers, purchase amounts, and check-in status from your dashboard.</li>
+          <li className="flex gap-3"><Check className="mt-0.5 h-4 w-4 shrink-0" style={{ color: "#7C3AED" }} aria-hidden="true" /> <strong>Cover & Fliers</strong> — Upload promotional images to attract more attendees.</li>
         </ul>
 
         <h2 className="text-xl font-bold mt-10" style={{ color: "#0D1B2A" }}>Perfect For</h2>

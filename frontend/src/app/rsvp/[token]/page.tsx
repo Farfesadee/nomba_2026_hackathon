@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { useParams } from "next/navigation";
 import Link from "next/link";
 import Image from "next/image";
+import { CheckCircle2, CircleHelp, HeartCrack, PartyPopper, XCircle, type LucideIcon } from "lucide-react";
 import { ErrorBoundary } from "@/components/shared/error-boundary";
 
 type RSVPInfo = {
@@ -128,12 +129,13 @@ function RSVPContent() {
 
   /* ── Already responded ── */
   if (guest.rsvp_status !== "pending") {
-    const statusMap: Record<string, { icon: string; color: string; label: string }> = {
-      accepted: { icon: "✅", color: "#10b981", label: "Accepted" },
-      declined: { icon: "❌", color: "#ef4444", label: "Declined" },
-      maybe: { icon: "🤔", color: "#f59e0b", label: "Maybe" },
+    const statusMap: Record<string, { icon: LucideIcon; color: string; label: string }> = {
+      accepted: { icon: CheckCircle2, color: "#10b981", label: "Accepted" },
+      declined: { icon: XCircle, color: "#ef4444", label: "Declined" },
+      maybe: { icon: CircleHelp, color: "#f59e0b", label: "Maybe" },
     };
-    const s = statusMap[guest.rsvp_status] || { icon: "✅", color: "#E91E8C", label: guest.rsvp_status };
+    const s = statusMap[guest.rsvp_status] || { icon: CheckCircle2, color: "#E91E8C", label: guest.rsvp_status };
+    const StatusIcon = s.icon;
 
     return (
       <div className="min-h-screen bg-hero-gradient flex items-center justify-center px-4 relative overflow-hidden">
@@ -153,7 +155,7 @@ function RSVPContent() {
             className="p-10 rounded-3xl"
             style={{ background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.12)", backdropFilter: "blur(20px)" }}
           >
-            <div className="text-6xl mb-4">{s.icon}</div>
+            <StatusIcon className="mx-auto mb-4 h-14 w-14" style={{ color: s.color }} />
             <h1 className="text-2xl font-extrabold text-white mb-2">RSVP Already Submitted</h1>
             <p className="text-white/55 text-sm mb-1">
               You responded: <span className="font-bold" style={{ color: s.color }}>{s.label}</span>
@@ -168,27 +170,28 @@ function RSVPContent() {
 
   /* ── Done ── */
   if (done) {
-    const messages: Record<string, { emoji: string; title: string; desc: string; color: string }> = {
+    const messages: Record<string, { icon: LucideIcon; title: string; desc: string; color: string }> = {
       accepted: {
-        emoji: "🎉",
+        icon: PartyPopper,
         title: "See you there!",
         desc: `You've confirmed attendance at ${event.title}. We can't wait to see you!`,
         color: "#10b981",
       },
       declined: {
-        emoji: "💔",
+        icon: HeartCrack,
         title: "Sorry you can't make it",
         desc: `You've declined the invitation to ${event.title}. You'll be missed!`,
         color: "#ef4444",
       },
       maybe: {
-        emoji: "🤔",
+        icon: CircleHelp,
         title: "Thanks for letting us know",
         desc: `We've noted your maybe for ${event.title}. Let us know if your plans change!`,
         color: "#f59e0b",
       },
     };
     const m = messages[selected || "accepted"];
+    const MessageIcon = m.icon;
 
     return (
       <div className="min-h-screen bg-hero-gradient flex items-center justify-center px-4 relative overflow-hidden">
@@ -208,7 +211,7 @@ function RSVPContent() {
             className="p-10 rounded-3xl"
             style={{ background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.12)", backdropFilter: "blur(20px)" }}
           >
-            <div className="text-7xl mb-5">{m.emoji}</div>
+            <MessageIcon className="mx-auto mb-5 h-16 w-16" style={{ color: m.color }} />
             <h1 className="text-3xl font-extrabold text-white mb-3">{m.title}</h1>
             <p className="text-white/65 leading-relaxed mb-4">{m.desc}</p>
             <p className="text-white/30 text-xs">Hosted by <span className="text-white/50">{event.host_name}</span></p>
@@ -263,7 +266,7 @@ function RSVPContent() {
                 className="h-40 flex items-center justify-center text-6xl"
                 style={{ background: "linear-gradient(135deg, rgba(233,30,140,0.3) 0%, rgba(13,27,42,0.8) 100%)" }}
               >
-                🎉
+                <PartyPopper className="h-14 w-14 text-white/80" />
               </div>
             )}
 
@@ -363,7 +366,10 @@ function RSVPContent() {
                       <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
                     </svg>
                   ) : (
-                    <>✅ Yes, I&apos;ll be there!</>
+                    <>
+                      <CheckCircle2 className="h-4 w-4" />
+                      Yes, I&apos;ll be there!
+                    </>
                   )}
                 </button>
 
@@ -376,7 +382,8 @@ function RSVPContent() {
                     border: "1px solid rgba(255,255,255,0.15)",
                   }}
                 >
-                  🤔 Maybe
+                  <CircleHelp className="h-4 w-4" />
+                  Maybe
                 </button>
 
                 <button
@@ -385,7 +392,8 @@ function RSVPContent() {
                   className="w-full py-3.5 px-6 rounded-xl text-white/60 font-semibold text-sm transition-all hover:text-white/80 disabled:opacity-50 flex items-center justify-center gap-2"
                   style={{ background: "transparent" }}
                 >
-                  💔 Sorry, can&apos;t make it
+                  <HeartCrack className="h-4 w-4" />
+                  Sorry, can&apos;t make it
                 </button>
               </div>
             </div>

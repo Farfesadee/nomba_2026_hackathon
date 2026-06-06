@@ -3,6 +3,7 @@
 import { useState, useRef, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
+import Image from "next/image";
 import { useAuth } from "@/contexts/auth-context";
 import { createEvent } from "@/lib/api/events";
 import { apiClient } from "@/lib/api-client";
@@ -178,95 +179,99 @@ export default function CreateEventPage() {
 
   if (loading || !user) return null;
 
+    <style>{`
+      @keyframes dance {
+        0%, 100% { transform: translateY(0) scale(1); }
+        25% { transform: translateY(-8px) scale(1.02); }
+        50% { transform: translateY(0) scale(1); }
+        75% { transform: translateY(-4px) scale(1.01); }
+      }
+    `}</style>
+
   if (!mode) {
     return (
       <div className="flex min-h-screen flex-col bg-white">
         <header className="border-b border-[#e8edf2]">
-          <div className="container mx-auto px-4 h-16 flex items-center">
-            <Link href="/" className="text-xl font-black tracking-tight text-[#0D1B2A]">
-              Accredit<span style={{ color: "#E91E8C" }}>.vip</span>
+          <div className="container mx-auto px-4 h-16 flex items-center justify-between">
+            <Link href="/" className="flex items-center">
+              <Image src="/logo-dark-trim.png" alt="accredit.vip" width={4071} height={761} className="h-8 w-auto object-contain" />
             </Link>
+            <div className="flex items-center gap-4">
+              <Link href="/dashboard" className="rounded-lg border border-[rgba(255,255,255,0.18)] bg-[#0D1B2A] px-4 py-2 text-xs font-bold text-white shadow-sm transition-all hover:bg-[#13283d] hover:border-[#E91E8C]">
+                Dashboard
+              </Link>
+              <Link href="/" className="rounded-lg border border-[#d9e2ec] bg-white px-4 py-2 text-xs font-bold text-[#0D1B2A] shadow-sm transition-all hover:border-[#E91E8C] hover:text-[#E91E8C]">
+                Home
+              </Link>
+            </div>
           </div>
         </header>
-        <div className="flex-1 container mx-auto px-4 py-8 sm:py-16">
-          <div className="mb-6"><GoBack fallback="/dashboard" /></div>
+        <div className="flex-1 container mx-auto px-4 py-2 sm:py-8">
           <div className="max-w-2xl mx-auto">
-            <h1 className="text-3xl font-black text-[#0D1B2A]">Create an Event</h1>
-            <p className="mt-2 text-[#64748b]">Choose how you want to start</p>
-
-            {/* Flier upload shortcut */}
-            <div className="mt-8 rounded-2xl border-2 border-dashed border-[#e2e8f0] bg-[#f8f9fc] p-6 text-center">
-              {flierParsing ? (
-                <div className="py-4">
-                  <div className="w-8 h-8 rounded-full border-2 border-[#E91E8C] border-t-transparent animate-spin mx-auto mb-3" />
-                  <p className="text-sm font-semibold text-[#0D1B2A]">AI is reading your flier…</p>
-                  <p className="text-xs text-[#94a3b8] mt-1">Extracting title, date, lineup, tickets and more</p>
-                </div>
-              ) : flierPreview ? (
-                <div>
-                  <img src={flierPreview} alt="Uploaded flier" className="max-h-40 mx-auto rounded-xl object-cover mb-3 shadow-md" />
-                  {flierParsed ? (
-                    <p className="text-sm font-semibold text-emerald-600">
-                      Flier parsed — form pre-filled below. Review and adjust.
-                    </p>
-                  ) : (
-                    <p className="text-sm text-[#94a3b8]">{flierParseError || "Processing…"}</p>
-                  )}
-                </div>
-              ) : (
-                <>
-                  <div className="w-12 h-12 rounded-full bg-[#fff1f8] flex items-center justify-center mx-auto mb-3">
-                    <svg className="w-6 h-6" style={{ color: "#E91E8C" }} fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                    </svg>
+            <div className="rounded-2xl border border-[#e8edf2] bg-[#f8f9fc] p-4 sm:p-5 mt-2">
+              <p className="mb-3 text-xs font-semibold uppercase tracking-widest text-gray-600">
+                Choose one to get started
+              </p>
+              <div className="grid gap-3 sm:grid-cols-2">
+                <button
+                  type="button"
+                  onClick={() => { setMode("invite"); setFormPage(0); }}
+                  className={`rounded-xl border-2 p-6 text-left transition-all duration-200 cursor-pointer ${
+                    mode === "invite"
+                      ? "border-[#E91E8C] bg-white shadow-[0_4px_20px_rgba(233,30,140,0.14)] ring-2 ring-[#E91E8C]/15"
+                      : "border-[#e2e8f0] bg-white hover:border-[#E91E8C]/50 hover:shadow-md"
+                  }`}
+                  style={!mode ? { animation: "dance 0.6s cubic-bezier(0.34, 1.56, 0.64, 1) 1" } : {}}
+                >
+                  <div className="mb-4 flex items-center justify-between">
+                    <span className="text-base font-black uppercase tracking-[0.12em] text-[#E91E8C]">CREATE INVITE</span>
+                    <span className="flex h-5 w-5 items-center justify-center rounded-full border-2 transition-all"
+                      style={{ borderColor: mode === "invite" ? "#E91E8C" : "#d1d5db", background: mode === "invite" ? "#E91E8C" : "white" }}
+                    >
+                      {mode === "invite" && (
+                        <svg className="h-2.5 w-2.5 text-white" fill="currentColor" viewBox="0 0 20 20">
+                          <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                        </svg>
+                      )}
+                    </span>
                   </div>
-                  <p className="text-sm font-bold text-[#0D1B2A]">Already have a flier?</p>
-                  <p className="text-xs text-[#94a3b8] mt-1 mb-4">
-                    Upload it and our AI will extract the event details and fill the form for you automatically
-                  </p>
-                  <label className="inline-flex cursor-pointer items-center gap-2 rounded-xl px-5 py-2.5 text-sm font-bold text-white transition hover:opacity-90"
-                    style={{ background: "linear-gradient(135deg, #E91E8C, #C4166F)" }}>
-                    <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
-                    </svg>
-                    Upload Flier to Auto-fill
-                    <input ref={flierInputRef} type="file" accept="image/*" className="sr-only" onChange={handleFlierUpload} />
-                  </label>
-                </>
-              )}
-            </div>
-
-            <p className="text-center text-xs text-[#94a3b8] mt-4 mb-8">— or start from scratch —</p>
-
-            <div className="grid gap-4 md:grid-cols-2">
-              <button
-                onClick={() => { setFormPage(0); setMode("invite"); }}
-                className="rounded-2xl border-2 border-[#e2e8f0] bg-white p-6 text-left transition-all hover:border-[#E91E8C] hover:shadow-md"
-              >
-                <div className="w-10 h-10 rounded-xl bg-[#f8f9fc] flex items-center justify-center mb-3">
-                  <svg className="w-5 h-5 text-[#E91E8C]" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
-                  </svg>
-                </div>
-                <h3 className="font-black text-[#0D1B2A] text-lg">CREATE INVITE</h3>
-                <p className="mt-1.5 text-sm text-[#64748b]">
-                  Private invitations for weddings, birthdays, corporate dinners, and VIP gatherings.
-                </p>
-              </button>
-              <button
-                onClick={() => { setFormPage(0); setMode("event"); }}
-                className="rounded-2xl border-2 border-[#e2e8f0] bg-white p-6 text-left transition-all hover:border-[#E91E8C] hover:shadow-md"
-              >
-                <div className="w-10 h-10 rounded-xl bg-[#f8f9fc] flex items-center justify-center mb-3">
-                  <svg className="w-5 h-5 text-[#E91E8C]" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M15 5v2m0 4v2m0 4v2M5 5a2 2 0 00-2 2v3a2 2 0 110 4v3a2 2 0 002 2h14a2 2 0 002-2v-3a2 2 0 110-4V7a2 2 0 00-2-2H5z" />
-                  </svg>
-                </div>
-                <h3 className="font-black text-[#0D1B2A] text-lg">POST EVENT</h3>
-                <p className="mt-1.5 text-sm text-[#64748b]">
-                  Public event listing for concerts, conferences, festivals, and ticketed events.
-                </p>
-              </button>
+                  <strong className="block text-xl font-black text-[#07182f]">Private invitation</strong>
+                  <span className="mt-2 block text-sm text-gray-500">Guest upload, RSVP, reminders, WhatsApp/SMS/Email, QR access.</span>
+                  <span className="mt-4 inline-flex items-center gap-1 text-xs font-bold" style={{ color: mode === "invite" ? "#E91E8C" : "#9ca3af" }}>
+                    {mode === "invite" ? "Selected" : "Select"}
+                    <svg className="h-3 w-3" fill="none" stroke="currentColor" strokeWidth={2.5} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" /></svg>
+                  </span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => { setMode("event"); setFormPage(0); }}
+                  className={`rounded-xl border-2 p-6 text-left transition-all duration-200 cursor-pointer ${
+                    mode === "event"
+                      ? "border-[#E91E8C] bg-white shadow-[0_4px_20px_rgba(233,30,140,0.14)] ring-2 ring-[#E91E8C]/15"
+                      : "border-[#e2e8f0] bg-white hover:border-[#E91E8C]/50 hover:shadow-md"
+                  }`}
+                  style={!mode ? { animation: "dance 0.6s cubic-bezier(0.34, 1.56, 0.64, 1) 1 0.1s both" } : {}}
+                >
+                  <div className="mb-4 flex items-center justify-between">
+                    <span className="text-base font-black uppercase tracking-[0.12em] text-[#E91E8C]">POST EVENT</span>
+                    <span className="flex h-5 w-5 items-center justify-center rounded-full border-2 transition-all"
+                      style={{ borderColor: mode === "event" ? "#E91E8C" : "#d1d5db", background: mode === "event" ? "#E91E8C" : "white" }}
+                    >
+                      {mode === "event" && (
+                        <svg className="h-2.5 w-2.5 text-white" fill="currentColor" viewBox="0 0 20 20">
+                          <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                        </svg>
+                      )}
+                    </span>
+                  </div>
+                  <strong className="block text-xl font-black text-[#07182f]">POST EVENT</strong>
+                  <span className="mt-2 block text-sm text-gray-500">Public listing on Discover Events, ticket sales, flyer/banner, lineup, gate fee.</span>
+                  <span className="mt-4 inline-flex items-center gap-1 text-xs font-bold" style={{ color: mode === "event" ? "#E91E8C" : "#9ca3af" }}>
+                    {mode === "event" ? "Selected" : "Select"}
+                    <svg className="h-3 w-3" fill="none" stroke="currentColor" strokeWidth={2.5} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" /></svg>
+                  </span>
+                </button>
+              </div>
             </div>
           </div>
         </div>
@@ -277,10 +282,18 @@ export default function CreateEventPage() {
   return (
     <div className="flex min-h-screen flex-col bg-white">
       <header className="border-b border-[#e8edf2]">
-        <div className="container mx-auto px-4 h-16 flex items-center">
-          <Link href="/" className="text-xl font-black tracking-tight text-[#0D1B2A]">
+        <div className="container mx-auto px-4 h-16 flex items-center justify-between">
+          <Link href="/" className="text-xl font-black tracking-tight text-[#0D1B2A] hover:text-[#E91E8C] transition-colors">
             Accredit<span style={{ color: "#E91E8C" }}>.vip</span>
           </Link>
+          <div className="flex items-center gap-4">
+            <Link href="/dashboard" className="rounded-lg border border-[rgba(255,255,255,0.18)] bg-[#0D1B2A] px-4 py-2 text-xs font-bold text-white shadow-sm transition-all hover:bg-[#13283d] hover:border-[#E91E8C]">
+              Dashboard
+            </Link>
+            <Link href="/" className="rounded-lg border border-[#d9e2ec] bg-white px-4 py-2 text-xs font-bold text-[#0D1B2A] shadow-sm transition-all hover:border-[#E91E8C] hover:text-[#E91E8C]">
+              Home
+            </Link>
+          </div>
         </div>
       </header>
       <div className="container mx-auto px-4 py-4"><GoBack fallback="/dashboard" /></div>
@@ -288,8 +301,9 @@ export default function CreateEventPage() {
       <div className="flex-1 container mx-auto px-4 py-6 max-w-2xl">
         <div className="flex items-center justify-between mb-6">
           <div>
-            <button onClick={() => setMode(null)} className="text-xs font-semibold text-[#94a3b8] hover:text-[#E91E8C] transition-colors mb-1">
-              ← Change mode
+            <button onClick={() => setMode(null)} className="flex items-center gap-1.5 rounded-lg border border-[#e8edf2] bg-white px-3.5 py-1.5 text-xs font-bold text-gray-500 shadow-sm transition-all hover:border-[#E91E8C] hover:text-[#E91E8C]">
+              <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" strokeWidth={2.5} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" /></svg>
+              Change mode
             </button>
             <h1 className="text-2xl font-black text-[#0D1B2A]">
               {mode === "invite" ? "Create Invite" : "Post Event"}
@@ -544,13 +558,13 @@ export default function CreateEventPage() {
                 className="h-11 w-full rounded-xl border border-[#d9e2ec] px-3 text-sm outline-none focus:border-[#E91E8C] bg-white"
               >
                 {timezoneOptions.map((z) => <option key={z.value} value={z.value}>{z.label}</option>)}
-                <option value="WAT">🇳🇬 WAT — Lagos, Nigeria</option>
-                <option value="GMT">🇬🇭 GMT — Accra, Ghana</option>
-                <option value="EAT">🇰🇪 EAT — Nairobi, Kenya</option>
-                <option value="SAST">🇿🇦 SAST — Johannesburg</option>
-                <option value="GST">🇦🇪 GST — Dubai, UAE</option>
-                <option value="EST">🇺🇸 EST — New York</option>
-                <option value="PST">🇺🇸 PST — Los Angeles</option>
+                <option value="WAT">NG WAT — Lagos, Nigeria</option>
+                <option value="GMT">GH GMT — Accra, Ghana</option>
+                <option value="EAT">KE EAT — Nairobi, Kenya</option>
+                <option value="SAST">ZA SAST — Johannesburg</option>
+                <option value="GST">AE GST — Dubai, UAE</option>
+                <option value="EST">US EST — New York</option>
+                <option value="PST">US PST — Los Angeles</option>
               </select>
             </div>
           </div>

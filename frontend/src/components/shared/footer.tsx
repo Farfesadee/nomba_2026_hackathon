@@ -188,7 +188,7 @@ export function Footer() {
       >
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-5 flex flex-col sm:flex-row items-center justify-between gap-3">
           <p className="text-xs" style={{ color: "rgba(255,255,255,0.28)" }}>
-            &copy; {year} accredit.vip. All rights reserved. Built with ❤️ for Africa&apos;s events.
+            &copy; {year} accredit.vip. All rights reserved. Built for Africa&apos;s events.
           </p>
           <div className="flex items-center gap-1 text-xs" style={{ color: "rgba(255,255,255,0.28)" }}>
             <span

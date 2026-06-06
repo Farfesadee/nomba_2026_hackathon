@@ -6,6 +6,7 @@ import { getPublicEvents, type EventData, type EventFilters } from "@/lib/api/ev
 import { ErrorBoundary } from "@/components/shared/error-boundary";
 import { Navbar } from "@/components/shared/navbar";
 import { Footer } from "@/components/shared/footer";
+import { X } from "lucide-react";
 
 const UPLOAD_BASE = (process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000/api/v1").replace(/\/api\/v1\/?$/, "");
 
@@ -94,6 +95,7 @@ function AttendContent() {
   const [nearLng, setNearLng] = useState<number | undefined>(undefined);
   const [findingLocation, setFindingLocation] = useState(false);
   const [, setGeoError] = useState<string | null>(null);
+  const [sortBy, setSortBy] = useState("latest");
 
   const buildFilters = () => ({
     search: search || undefined,
@@ -101,6 +103,7 @@ function AttendContent() {
     location: location || undefined,
     month: month || undefined,
     price_type: priceType || undefined,
+    sort_by: sortBy || undefined,
     near_lat: nearLat,
     near_lng: nearLng,
     radius_km: nearLat ? 50 : undefined,
@@ -146,12 +149,12 @@ function AttendContent() {
   };
 
   const handleReset = () => {
-    setSearch(""); setCategory(""); setLocation("Lagos"); setMonth(0); setPriceType("");
+    setSearch(""); setCategory(""); setLocation("Lagos"); setMonth(0); setPriceType(""); setSortBy("latest");
     setNearLat(undefined); setNearLng(undefined);
     loadEvents({ location: "Lagos" });
   };
 
-  const filtersActive = search || category || location !== "Lagos" || month || priceType || nearLat !== undefined;
+  const filtersActive = search || category || location !== "Lagos" || month || priceType || sortBy !== "latest" || nearLat !== undefined;
 
   return (
     <div className="flex min-h-screen flex-col bg-white">
@@ -242,8 +245,18 @@ function AttendContent() {
                 >{pt === "" ? "All" : pt === "free" ? "Free" : "Paid"}</button>
               ))}
             </div>
+            <select value={sortBy} onChange={(e) => { setSortBy(e.target.value); loadEvents({ ...buildFilters(), sort_by: e.target.value || undefined }); }}
+              className="h-9 px-3 rounded-lg border border-[#d9e2ec] text-xs outline-none focus:border-[#E91E8C] text-gray-500"
+            >
+              <option value="latest">Latest</option>
+              <option value="soonest">Soonest</option>
+              <option value="name">Name</option>
+            </select>
             {filtersActive && (
-              <button onClick={handleReset} className="text-xs font-medium text-gray-400 hover:text-gray-600 transition-colors">✕ Clear</button>
+              <button onClick={handleReset} className="inline-flex items-center gap-1 text-xs font-medium text-gray-400 hover:text-gray-600 transition-colors">
+                <X className="h-3.5 w-3.5" aria-hidden="true" />
+                Clear
+              </button>
             )}
           </div>
         </div>

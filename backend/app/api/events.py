@@ -166,8 +166,9 @@ async def list_public_events(
     near_lat: float = Query(None, description="User's latitude for proximity search"),
     near_lng: float = Query(None, description="User's longitude for proximity search"),
     radius_km: float = Query(50, description="Search radius in km (default 50)"),
+    sort: str = Query("latest", description="Sort order: latest, soonest, name"),
 ):
-    query = select(Event).where(Event.is_public == True)
+    query = select(Event).where(Event.is_public == True, Event.review_status != "flagged")
     if search:
         query = query.where(
             or_(Event.title.ilike(f"%{search}%"), Event.venue.ilike(f"%{search}%"))
@@ -192,7 +193,12 @@ async def list_public_events(
         query = query.where(Event.event_date >= date.today())
     if date_to:
         query = query.where(Event.event_date <= date.fromisoformat(date_to))
-    query = query.order_by(Event.event_date.asc())
+    if sort == "soonest":
+        query = query.order_by(Event.event_date.asc())
+    elif sort == "name":
+        query = query.order_by(Event.title.asc())
+    else:
+        query = query.order_by(Event.created_at.desc())
     result = await db.execute(query)
     events = result.scalars().all()
 

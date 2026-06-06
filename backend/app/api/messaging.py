@@ -626,6 +626,111 @@ async def delivery_logs(
     return result.scalars().all()
 
 
+class SendInvitesBatchRequest(BaseModel):
+    channel: str
+    guest_ids: list[int]
+
+
+@router.post("/{event_id}/send-invites-batch")
+async def send_invites_batch(
+    event_id: int,
+    req: SendInvitesBatchRequest,
+    user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+):
+    if len(req.guest_ids) > 5:
+        raise HTTPException(status_code=400, detail="Can only send invites to up to 5 guests at a time")
+
+    event_result = await db.execute(
+        select(Event).where(Event.id == event_id, Event.organizer_id == user.id)
+    )
+    event = event_result.scalar_one_or_none()
+    if not event:
+        raise HTTPException(status_code=404, detail="Event not found")
+
+    guests_result = await db.execute(
+        select(Guest).where(Guest.id.in_(req.guest_ids), Guest.event_id == event_id)
+    )
+    guests = guests_result.scalars().all()
+    if not guests:
+        raise HTTPException(status_code=400, detail="No valid guests found")
+
+    if req.channel in {"whatsapp", "sms"}:
+        invalid = [g for g in guests if not is_valid_phone(g.phone)]
+        if invalid:
+            raise HTTPException(
+                status_code=400,
+                detail={"message": "Fix incorrect phone numbers before sending.", "invalid_phone_guests": [{"id": g.id, "name": g.name, "phone": g.phone} for g in invalid]},
+            )
+
+    batch = InviteBatch(event_id=event_id, channel=req.channel)
+    db.add(batch)
+    await db.flush()
+
+    sent = 0
+    results = []
+    for guest in guests:
+        ok, status = await _send_to_guest(guest, event, req.channel, batch.id, db)
+        if status == "max_attempts":
+            results.append({"guest_id": guest.id, "name": guest.name, "status": "max_attempts"})
+            continue
+        if status != "skipped":
+            guest.invite_sent = True
+        if ok:
+            sent += 1
+            results.append({"guest_id": guest.id, "name": guest.name, "status": "delivered"})
+        else:
+            results.append({"guest_id": guest.id, "name": guest.name, "status": status})
+        await db.flush()
+
+    batch.total_sent = sent
+    batch.status = "completed"
+    await db.commit()
+
+    return {"batch_id": batch.id, "channel": req.channel, "sent": sent, "total": len(guests), "results": results}
+
+
+@router.get("/{event_id}/export-guests")
+async def export_guests(
+    event_id: int,
+    user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+    status: str = Query("all", description="Filter: all, sent, not_sent, delivered, failed"),
+):
+    event_result = await db.execute(
+        select(Event).where(Event.id == event_id, Event.organizer_id == user.id)
+    )
+    if not event_result.scalar_one_or_none():
+        raise HTTPException(status_code=404, detail="Event not found")
+
+    query = select(Guest).where(Guest.event_id == event_id)
+    if status == "sent":
+        query = query.where(Guest.invite_sent == True)
+    elif status == "not_sent":
+        query = query.where(Guest.invite_sent == False)
+    elif status == "delivered":
+        query = query.where(Guest.invite_sent == True)
+    elif status == "failed":
+        query = query.where(Guest.invite_sent == True)
+
+    result = await db.execute(query)
+    guests = result.scalars().all()
+
+    import csv, io
+    output = io.StringIO()
+    writer = csv.writer(output)
+    writer.writerow(["Name", "Phone", "Email", "RSVP Status", "Invite Sent", "Invite Attempts", "Invite Viewed At"])
+    for g in guests:
+        writer.writerow([g.name, g.phone or "", g.email or "", g.rsvp_status, "Yes" if g.invite_sent else "No", g.invite_attempts or 0, g.invite_viewed_at.isoformat() if g.invite_viewed_at else ""])
+
+    from fastapi.responses import StreamingResponse
+    return StreamingResponse(
+        iter([output.getvalue()]),
+        media_type="text/csv",
+        headers={"Content-Disposition": f"attachment; filename=guests-event-{event_id}-{status}.csv"},
+    )
+
+
 class TestSendRequest(BaseModel):
     channel: str
     email: str | None = None

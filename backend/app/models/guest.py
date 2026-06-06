@@ -18,3 +18,18 @@ class Guest(Base):
     invite_attempts = Column(Integer, default=0)
     invite_viewed_at = Column(DateTime(timezone=True), nullable=True)
     created_at = Column(DateTime(timezone=True), server_default=func.now())
+
+    def to_dict(self):
+        return {
+            "id": self.id,
+            "event_id": self.event_id,
+            "name": self.name,
+            "phone": self.phone,
+            "email": self.email,
+            "rsvp_status": self.rsvp_status,
+            "rsvp_token": self.rsvp_token,
+            "invite_sent": self.invite_sent,
+            "invite_attempts": self.invite_attempts,
+            "invite_viewed_at": self.invite_viewed_at.isoformat() if self.invite_viewed_at else None,
+            "created_at": self.created_at.isoformat() if self.created_at else None,
+        }

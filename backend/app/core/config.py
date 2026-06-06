@@ -36,6 +36,13 @@ class Settings(BaseSettings):
     AFRICASTALKING_API_KEY: str = ""
     AFRICASTALKING_USERNAME: str = ""
 
+    GOOGLE_CLIENT_ID: str = ""
+    GOOGLE_CLIENT_SECRET: str = ""
+    FACEBOOK_CLIENT_ID: str = ""
+    FACEBOOK_CLIENT_SECRET: str = ""
+    APPLE_CLIENT_ID: str = ""
+    APPLE_CLIENT_SECRET: str = ""
+
     PLATFORM_FEE_PERCENT: float = 5.0
     VAT_PERCENT: float = 2.5
 

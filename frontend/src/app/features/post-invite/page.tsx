@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { FeatureLayout } from "@/components/shared/feature-layout";
+import { Check } from "lucide-react";
 
 const icon = (
   <svg className="w-6 h-6" fill="none" stroke="currentColor" strokeWidth={1.8} viewBox="0 0 24 24">
@@ -36,11 +37,11 @@ export default function PostInvitePage() {
 
         <h2 className="text-xl font-bold mt-10" style={{ color: "#0D1B2A" }}>Key Features</h2>
         <ul className="space-y-3" style={{ color: "#4b5563" }}>
-          <li className="flex gap-3"><span style={{ color: "#E91E8C" }}>✓</span> <strong>Guest List Control</strong> — Your event stays private. Only invited guests can access the RSVP page.</li>
-          <li className="flex gap-3"><span style={{ color: "#E91E8C" }}>✓</span> <strong>Multi-Channel Delivery</strong> — Reach guests where they are: WhatsApp, SMS, or Email.</li>
-          <li className="flex gap-3"><span style={{ color: "#E91E8C" }}>✓</span> <strong>RSVP Tracking</strong> — See who accepted, declined, or is pending in real-time.</li>
-          <li className="flex gap-3"><span style={{ color: "#E91E8C" }}>✓</span> <strong>QR Door Check-in</strong> — Scan guest QR codes at the gate for instant validation.</li>
-          <li className="flex gap-3"><span style={{ color: "#E91E8C" }}>✓</span> <strong>Cover Images & Fliers</strong> — Upload branding assets for the RSVP page.</li>
+          <li className="flex gap-3"><Check className="mt-0.5 h-4 w-4 shrink-0" style={{ color: "#E91E8C" }} aria-hidden="true" /> <strong>Guest List Control</strong> — Your event stays private. Only invited guests can access the RSVP page.</li>
+          <li className="flex gap-3"><Check className="mt-0.5 h-4 w-4 shrink-0" style={{ color: "#E91E8C" }} aria-hidden="true" /> <strong>Multi-Channel Delivery</strong> — Reach guests where they are: WhatsApp, SMS, or Email.</li>
+          <li className="flex gap-3"><Check className="mt-0.5 h-4 w-4 shrink-0" style={{ color: "#E91E8C" }} aria-hidden="true" /> <strong>RSVP Tracking</strong> — See who accepted, declined, or is pending in real-time.</li>
+          <li className="flex gap-3"><Check className="mt-0.5 h-4 w-4 shrink-0" style={{ color: "#E91E8C" }} aria-hidden="true" /> <strong>QR Door Check-in</strong> — Scan guest QR codes at the gate for instant validation.</li>
+          <li className="flex gap-3"><Check className="mt-0.5 h-4 w-4 shrink-0" style={{ color: "#E91E8C" }} aria-hidden="true" /> <strong>Cover Images & Fliers</strong> — Upload branding assets for the RSVP page.</li>
         </ul>
 
         <h2 className="text-xl font-bold mt-10" style={{ color: "#0D1B2A" }}>Perfect For</h2>

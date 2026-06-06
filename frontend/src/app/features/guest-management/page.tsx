@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { FeatureLayout } from "@/components/shared/feature-layout";
+import { Check } from "lucide-react";
 
 const icon = (
   <svg className="w-6 h-6" fill="none" stroke="currentColor" strokeWidth={1.8} viewBox="0 0 24 24">
@@ -36,12 +37,12 @@ export default function GuestManagementPage() {
 
         <h2 className="text-xl font-bold mt-10" style={{ color: "#0D1B2A" }}>Key Features</h2>
         <ul className="space-y-3" style={{ color: "#4b5563" }}>
-          <li className="flex gap-3"><span style={{ color: "#059669" }}>✓</span> <strong>CSV Import</strong> — Upload a spreadsheet with your guest list. Columns: name, phone, email.</li>
-          <li className="flex gap-3"><span style={{ color: "#059669" }}>✓</span> <strong>RSVP Status Tracking</strong> — See at a glance: Accepted, Declined, Maybe, and Pending counts.</li>
-          <li className="flex gap-3"><span style={{ color: "#059669" }}>✓</span> <strong>Search & Filter</strong> — Find any guest by name, email, or phone. Filter by RSVP status.</li>
-          <li className="flex gap-3"><span style={{ color: "#059669" }}>✓</span> <strong>Inline Editing</strong> — Update guest details or remove them directly from the list.</li>
-          <li className="flex gap-3"><span style={{ color: "#059669" }}>✓</span> <strong>Duplicate Prevention</strong> — The system checks for duplicate entries on import and manual add.</li>
-          <li className="flex gap-3"><span style={{ color: "#059669" }}>✓</span> <strong>Unique QR Per Guest</strong> — Every guest gets their own scannable code, no sharing possible.</li>
+          <li className="flex gap-3"><Check className="mt-0.5 h-4 w-4 shrink-0" style={{ color: "#059669" }} aria-hidden="true" /> <strong>CSV Import</strong> — Upload a spreadsheet with your guest list. Columns: name, phone, email.</li>
+          <li className="flex gap-3"><Check className="mt-0.5 h-4 w-4 shrink-0" style={{ color: "#059669" }} aria-hidden="true" /> <strong>RSVP Status Tracking</strong> — See at a glance: Accepted, Declined, Maybe, and Pending counts.</li>
+          <li className="flex gap-3"><Check className="mt-0.5 h-4 w-4 shrink-0" style={{ color: "#059669" }} aria-hidden="true" /> <strong>Search & Filter</strong> — Find any guest by name, email, or phone. Filter by RSVP status.</li>
+          <li className="flex gap-3"><Check className="mt-0.5 h-4 w-4 shrink-0" style={{ color: "#059669" }} aria-hidden="true" /> <strong>Inline Editing</strong> — Update guest details or remove them directly from the list.</li>
+          <li className="flex gap-3"><Check className="mt-0.5 h-4 w-4 shrink-0" style={{ color: "#059669" }} aria-hidden="true" /> <strong>Duplicate Prevention</strong> — The system checks for duplicate entries on import and manual add.</li>
+          <li className="flex gap-3"><Check className="mt-0.5 h-4 w-4 shrink-0" style={{ color: "#059669" }} aria-hidden="true" /> <strong>Unique QR Per Guest</strong> — Every guest gets their own scannable code, no sharing possible.</li>
         </ul>
 
         <div className="mt-10 pt-8 border-t">

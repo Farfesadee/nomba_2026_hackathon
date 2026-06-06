@@ -8,7 +8,7 @@ export function GoBack({ fallback = "/" }: { fallback?: string }) {
   return (
     <button
       onClick={() => (window.history.length > 1 ? router.back() : router.push(fallback))}
-      className="inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors"
+      className="inline-flex h-11 items-center gap-2 rounded-xl border border-[#d9e2ec] bg-[#0D1B2A] px-4 text-sm font-bold text-white shadow-sm transition-all hover:border-[#E91E8C] hover:bg-[#13283d] hover:shadow-md focus:outline-none focus:ring-2 focus:ring-[#E91E8C]/30"
     >
       <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
         <path d="M19 12H5" />

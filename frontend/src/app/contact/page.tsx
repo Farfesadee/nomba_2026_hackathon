@@ -6,6 +6,7 @@ import { Navbar } from "@/components/shared/navbar";
 import { Footer } from "@/components/shared/footer";
 import { ErrorBoundary } from "@/components/shared/error-boundary";
 import { AIAssistant } from "@/components/shared/ai-assistant";
+import { MailCheck } from "lucide-react";
 
 const API_BASE = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000/api/v1";
 
@@ -75,10 +76,10 @@ function ContactContent() {
         <div className="flex-1 flex items-center justify-center px-4 py-20">
           <div className="text-center max-w-md">
             <div
-              className="w-20 h-20 rounded-full mx-auto flex items-center justify-center text-4xl mb-6"
+              className="w-20 h-20 rounded-full mx-auto flex items-center justify-center text-white mb-6"
               style={{ background: "linear-gradient(135deg, #E91E8C, #C4166F)", boxShadow: "0 8px 30px rgba(233,30,140,0.4)" }}
             >
-              📨
+              <MailCheck className="h-9 w-9" aria-hidden="true" />
             </div>
             <h1 className="text-3xl font-extrabold text-[#0D1B2A] mb-3">Message Sent!</h1>
             <p className="text-gray-500 mb-8 leading-relaxed">

@@ -9,6 +9,7 @@ import { Skeleton } from "@/components/shared/loading-skeleton";
 import { ErrorBoundary } from "@/components/shared/error-boundary";
 import { GoBack } from "@/components/shared/go-back";
 import { formatTimeForDisplay } from "@/lib/event-form-options";
+import { Hourglass } from "lucide-react";
 
 type PurchaseInfo = {
   purchase_id: number;
@@ -134,7 +135,7 @@ function PublicEventContent() {
         <div className="mb-4"><GoBack fallback="/attend" /></div>
         {purchaseStatus && purchaseStatus.status !== "completed" ? (
           <div className="rounded-lg border p-8 text-center">
-            <div className="text-5xl mb-4">⏳</div>
+            <Hourglass className="mx-auto mb-4 h-12 w-12 text-[#E91E8C]" aria-hidden="true" />
             <h2 className="text-2xl font-bold mb-2">Payment Pending</h2>
             <p className="text-muted-foreground">We&apos;re waiting for payment confirmation.</p>
             <p className="text-sm text-muted-foreground mt-2">Reference: {purchaseStatus.reference}</p>

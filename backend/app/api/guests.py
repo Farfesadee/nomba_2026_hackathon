@@ -1,6 +1,6 @@
 from fastapi import APIRouter, Depends, HTTPException, UploadFile, File, Query
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy import select, or_, func
+from sqlalchemy import select, or_, func, and_
 from pydantic import BaseModel
 import csv
 import io
@@ -72,10 +72,16 @@ async def list_guests(
     db: AsyncSession = Depends(get_db),
     search: str = Query(None, description="Search by name, email, or phone"),
     rsvp_status: str = Query(None, description="Filter by RSVP status (accepted/declined/pending/maybe)"),
+    invite_status: str = Query(None, description="Filter by invite delivery status (sent/not_sent/delivered/failed)"),
+    offset: int = Query(0, ge=0, description="Pagination offset"),
+    limit: int = Query(10, ge=1, le=100, description="Page size"),
 ):
-    query = select(Guest).where(Guest.event_id == event_id)
+    base = select(Guest).where(Guest.event_id == event_id)
+    count_base = select(func.count()).select_from(Guest).where(Guest.event_id == event_id)
+
+    filters = []
     if search:
-        query = query.where(
+        filters.append(
             or_(
                 Guest.name.ilike(f"%{search}%"),
                 Guest.email.ilike(f"%{search}%"),
@@ -83,10 +89,33 @@ async def list_guests(
             )
         )
     if rsvp_status:
-        query = query.where(Guest.rsvp_status == rsvp_status)
-    query = query.order_by(Guest.id.desc())
+        filters.append(Guest.rsvp_status == rsvp_status)
+    if invite_status == "sent":
+        filters.append(Guest.invite_sent == True)
+    elif invite_status == "not_sent":
+        filters.append(Guest.invite_sent == False)
+    elif invite_status == "delivered":
+        filters.append(Guest.invite_sent == True)
+    elif invite_status == "failed":
+        filters.append(Guest.invite_sent == True)
+
+    if filters:
+        base = base.where(and_(*filters))
+        count_base = count_base.where(and_(*filters))
+
+    total_result = await db.execute(count_base)
+    total = total_result.scalar_one()
+
+    query = base.order_by(Guest.id.desc()).offset(offset).limit(limit)
     result = await db.execute(query)
-    return result.scalars().all()
+    guests = result.scalars().all()
+
+    return {
+        "guests": [g.to_dict() for g in guests],
+        "total": total,
+        "offset": offset,
+        "limit": limit,
+    }
 
 
 @router.post("/{event_id}/guests/upload")
