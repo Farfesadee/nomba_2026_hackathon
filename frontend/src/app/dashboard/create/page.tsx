@@ -751,6 +751,8 @@ export default function CreateEventPage() {
       <style>{`
         @keyframes dance { 0%,100%{transform:translateY(0)scale(1)} 25%{transform:translateY(-8px)scale(1.02)} 50%{transform:translateY(0)scale(1)} 75%{transform:translateY(-4px)scale(1.01)} }
         @keyframes pulse-accent { 0%,100%{box-shadow:0 0 0 0 rgba(233,30,140,0.7)} 50%{box-shadow:0 0 20px 10px rgba(233,30,140,0.3)} }
+        @keyframes gentleBounce { 0%, 100% { transform: translateY(0) scale(1); } 50% { transform: translateY(-6px) scale(1.01); } }
+        .bounce-button { animation: gentleBounce 0.8s ease-in-out infinite; will-change: transform; transform: translateZ(0); }
       `}</style>
 
       {/* Header */}
