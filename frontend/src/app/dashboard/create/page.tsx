@@ -417,61 +417,79 @@ export default function CreateEventPage() {
     updateLineup(index, { headshotSource: "ai", generatedHeadshot: true, attachHeadshot: true });
   };
 
-  const handleFlierUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleUnifiedUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
-    setFlierParseError("");
-    setFlierParsed(false);
-    const reader = new FileReader();
-    reader.onload = async () => {
-      const dataUrl = reader.result as string;
-      setFlierPreview(dataUrl);
-      setFlierParsing(true);
-      try {
-        const result = await apiClient<Record<string, unknown>>("/ai/parse-flier", {
-          method: "POST",
-          body: { image_data: dataUrl, mime_type: file.type },
-        });
-        const str = (v: unknown) => (typeof v === "string" ? v : "");
-        const num = (v: unknown) => (typeof v === "number" ? v : 0);
-        setForm((prev) => ({
-          ...prev,
-          title: str(result.title) || prev.title,
-          host_name: str(result.host_name) || prev.host_name,
-          venue: str(result.venue) || prev.venue,
-          male_dress_code: str(result.dress_code) || prev.male_dress_code,
-          description: str(result.description) || prev.description,
-          category: str(result.category) || prev.category,
-          gate_fee: num(result.ticket_price) > 0 ? String(result.ticket_price) : prev.gate_fee,
-          event_time: str(result.event_time) || prev.event_time,
-          after_party_enabled: !!(result.after_party_location) || prev.after_party_enabled,
-          after_party_location: str(result.after_party_location) || prev.after_party_location,
-          after_party_time: str(result.after_party_time) || prev.after_party_time,
-        }));
-        const rawDate = str(result.event_date);
-        if (rawDate) {
-          const parts = parseDateParts(rawDate);
-          const d = String(parseInt(parts.day || "0", 10));
-          if (d && d !== "0") { setDayPart(d); setMonthPart(parts.month); setYearPart(parts.year); }
-          setForm((prev) => ({ ...prev, event_date: rawDate }));
-        }
-        if (Array.isArray(result.lineup) && result.lineup.length > 0) {
-          setLineup(result.lineup.map((p: { role?: string; name?: string }) => ({
-            role: p.role || "", name: p.name || "",
-            attachHeadshot: false, headshotSource: "upload" as const, headshotFileName: "", generatedHeadshot: false,
-          })));
-        }
-        if (Array.isArray(result.pass_packages) && result.pass_packages.length > 0) {
-          setPassPackages(result.pass_packages.map((p: { name?: string; price?: string }) => ({ name: p.name || "", price: p.price || "" })));
-        }
-        setFlierParsed(true);
-        if (!mode) setMode("event");
-      } catch {
-        setFlierParseError("Could not read your flier. Fill in the details below manually.");
-        if (!mode) setMode("event");
-      } finally { setFlierParsing(false); }
-    };
-    reader.readAsDataURL(file);
+
+    const isImage = file.type.startsWith('image/');
+    const isFlier = file.type === 'application/pdf' || file.name.toLowerCase().endsWith('.pdf');
+
+    if (isImage && !isFlier) {
+      // Pure image file - resize and use as image
+      const blob = await resizeImage(file, 1200, 1200);
+      const reader = new FileReader();
+      reader.onload = () => {
+        const data = reader.result as string;
+        setUploadedImageData(data);
+        setUploadedImagePreviewUrl(data);
+        setForm({ ...form, media_source: "upload", uploaded_image_name: file.name });
+      };
+      reader.readAsDataURL(blob);
+    } else {
+      // Flier/document - extract and prefill
+      setFlierParseError("");
+      setFlierParsed(false);
+      const reader = new FileReader();
+      reader.onload = async () => {
+        const dataUrl = reader.result as string;
+        setFlierPreview(dataUrl);
+        setFlierParsing(true);
+        try {
+          const result = await apiClient<Record<string, unknown>>("/ai/parse-flier", {
+            method: "POST",
+            body: { image_data: dataUrl, mime_type: file.type },
+          });
+          const str = (v: unknown) => (typeof v === "string" ? v : "");
+          const num = (v: unknown) => (typeof v === "number" ? v : 0);
+          setForm((prev) => ({
+            ...prev,
+            title: str(result.title) || prev.title,
+            host_name: str(result.host_name) || prev.host_name,
+            venue: str(result.venue) || prev.venue,
+            male_dress_code: str(result.dress_code) || prev.male_dress_code,
+            description: str(result.description) || prev.description,
+            category: str(result.category) || prev.category,
+            gate_fee: num(result.ticket_price) > 0 ? String(result.ticket_price) : prev.gate_fee,
+            event_time: str(result.event_time) || prev.event_time,
+            after_party_enabled: !!(result.after_party_location) || prev.after_party_enabled,
+            after_party_location: str(result.after_party_location) || prev.after_party_location,
+            after_party_time: str(result.after_party_time) || prev.after_party_time,
+          }));
+          const rawDate = str(result.event_date);
+          if (rawDate) {
+            const parts = parseDateParts(rawDate);
+            const d = String(parseInt(parts.day || "0", 10));
+            if (d && d !== "0") { setDayPart(d); setMonthPart(parts.month); setYearPart(parts.year); }
+            setForm((prev) => ({ ...prev, event_date: rawDate }));
+          }
+          if (Array.isArray(result.lineup) && result.lineup.length > 0) {
+            setLineup(result.lineup.map((p: { role?: string; name?: string }) => ({
+              role: p.role || "", name: p.name || "",
+              attachHeadshot: false, headshotSource: "upload" as const, headshotFileName: "", generatedHeadshot: false,
+            })));
+          }
+          if (Array.isArray(result.pass_packages) && result.pass_packages.length > 0) {
+            setPassPackages(result.pass_packages.map((p: { name?: string; price?: string }) => ({ name: p.name || "", price: p.price || "" })));
+          }
+          setFlierParsed(true);
+          if (!mode) setMode("event");
+        } catch {
+          setFlierParseError("Could not read your flier. Fill in the details below manually.");
+          if (!mode) setMode("event");
+        } finally { setFlierParsing(false); }
+      };
+      reader.readAsDataURL(file);
+    }
   };
 
   const generateMessage = async () => {
@@ -842,10 +860,10 @@ export default function CreateEventPage() {
                               <svg className="w-5 h-5 text-[#E91E8C]" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg>
                             </div>
                             <div className="flex-1">
-                              <p className="text-sm font-bold text-[#0D1B2A]">Have a flier? Upload it to auto-fill this form</p>
-                              <p className="text-xs text-[#94a3b8] mt-0.5">AI extracts title, date, venue, lineup, tickets, dress code and more</p>
+                              <p className="text-sm font-bold text-[#0D1B2A]">Upload a flier or image to get started</p>
+                              <p className="text-xs text-[#94a3b8] mt-0.5">Upload a flier to auto-fill details or an image to use as your event visual</p>
                             </div>
-                            <label className="cursor-pointer rounded-xl border border-[#E91E8C] px-3 py-2 text-xs font-bold text-[#E91E8C] hover:bg-[#fff1f8] transition-colors">Upload<input type="file" accept="image/*" className="sr-only" onChange={handleFlierUpload} /></label>
+                            <label className="cursor-pointer rounded-xl border border-[#E91E8C] px-3 py-2 text-xs font-bold text-[#E91E8C] hover:bg-[#fff1f8] transition-colors bounce-button">Upload<input type="file" accept="image/*,.pdf" className="sr-only" onChange={handleUnifiedUpload} /></label>
                           </div>
                         )}
                         {flierParseError && <p className="mt-2 text-xs text-amber-600 font-medium">{flierParseError}</p>}
@@ -1257,9 +1275,9 @@ export default function CreateEventPage() {
 
                 {formPage === 2 && (
                   <div className="space-y-5">
-                    {/* Image upload / AI generation */}
+                    {/* Image finalization / AI generation */}
                     <div className="space-y-1.5">
-                      <span className="text-sm font-semibold text-[#23466f]">Image / Flyer</span>
+                      <span className="text-sm font-semibold text-[#23466f]">Event Image</span>
                       <div className="rounded-xl border border-[#e8edf2] bg-[#f8f9fc] p-4">
                         {form.media_source === "ai" && form.generated_image_url ? (
                           <div className="space-y-2">
