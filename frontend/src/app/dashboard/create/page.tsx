@@ -967,7 +967,7 @@ export default function CreateEventPage() {
                           </div>
                         ))}
                         <button type="button" onClick={() => setSocialHandles((cur) => [...cur, { platform: "instagram", handle: "" }])}
-                          className="text-xs font-bold text-[#E91E8C] hover:underline">+ Add social handle</button>
+                          className="text-xs font-bold text-[#E91E8C] hover:underline bounce-button">+ Add social handle</button>
                       </div>
                     </details>
                     )}
@@ -1213,7 +1213,7 @@ export default function CreateEventPage() {
                             </div>
                           ))}
                           <button type="button" onClick={() => setLineup((cur) => [...cur, { role: "", name: "", attachHeadshot: true, headshotSource: "upload", headshotFileName: "", generatedHeadshot: false }])}
-                            className="text-xs font-bold text-[#E91E8C] hover:underline">+ Add lineup member</button>
+                            className="text-xs font-bold text-[#E91E8C] hover:underline bounce-button">+ Add lineup member</button>
                         </div>
                       </details>
                     )}
@@ -1244,7 +1244,7 @@ export default function CreateEventPage() {
                             </div>
                           ))}
                           <button type="button" onClick={() => setPassPackages((cur) => [...cur, { name: "", price: "" }])}
-                            className="text-xs font-bold text-[#E91E8C] hover:underline">+ Add pass package</button>
+                            className="text-xs font-bold text-[#E91E8C] hover:underline bounce-button">+ Add pass package</button>
                         </div>
                       </details>
                     )}
@@ -1261,13 +1261,13 @@ export default function CreateEventPage() {
                           <div className="space-y-2">
                             <img src={form.generated_image_url} alt="AI generated" className="w-full max-h-48 rounded-xl object-cover" />
                             <button type="button" onClick={() => setForm({ ...form, media_source: "upload", generated_image_url: "", generated_image_ready: false, image_prompt: "" })}
-                              className="text-xs font-bold text-[#E91E8C] hover:underline">Remove & upload instead</button>
+                              className="text-xs font-bold text-[#E91E8C] hover:underline bounce-button">Remove & upload instead</button>
                           </div>
                         ) : uploadedImagePreviewUrl ? (
                           <div className="space-y-2">
                             <img src={uploadedImagePreviewUrl} alt="Uploaded" className="w-full max-h-48 rounded-xl object-cover" />
                             <button type="button" onClick={() => { setUploadedImagePreviewUrl(null); setUploadedImageData(null); }}
-                              className="text-xs font-bold text-[#E91E8C] hover:underline">Remove</button>
+                              className="text-xs font-bold text-[#E91E8C] hover:underline bounce-button">Remove</button>
                           </div>
                         ) : (
                           <div className="space-y-3">
@@ -1341,7 +1341,7 @@ export default function CreateEventPage() {
                 {/* Live Preview Button - only on final page */}
                 {formPage === 2 && (
                   <button type="button" onClick={() => document.querySelector('[data-live-preview]')?.scrollIntoView({ behavior: 'smooth' })}
-                    className="w-full mt-5 h-12 rounded-xl font-black text-sm border-2 border-[#E91E8C] text-[#E91E8C] transition-all hover:bg-[#fff1f8]">
+                    className="w-full mt-5 h-12 rounded-xl font-black text-sm border-2 border-[#E91E8C] text-[#E91E8C] transition-all hover:bg-[#fff1f8] bounce-button">
                     Preview Before {mode === "event" ? "Posting" : "Creating"}
                   </button>
                 )}
@@ -1349,7 +1349,7 @@ export default function CreateEventPage() {
                 {/* Submit button - only on final page */}
                 {formPage === 2 && (
                   <button type="submit" disabled={submitting}
-                    className="w-full mt-3 h-12 rounded-xl font-black text-sm text-white transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                    className="w-full mt-3 h-12 rounded-xl font-black text-sm text-white transition-all disabled:opacity-50 disabled:cursor-not-allowed bounce-button"
                     style={{ background: submitting ? "#94a3b8" : "linear-gradient(135deg, #E91E8C, #C4166F)", boxShadow: submitting ? "none" : "0 6px 20px rgba(233,30,140,0.35)" }}>
                     {submitting ? "Creating…" : mode === "event" ? "Post Event" : "Create Invite"}
                   </button>
@@ -1358,14 +1358,14 @@ export default function CreateEventPage() {
                 {/* Bottom navigation */}
                 <div className="mt-6 sticky bottom-4 z-30 flex items-center gap-3 rounded-xl border border-[#e8edf2] bg-white px-4 py-3 shadow-[0_4px_20px_rgba(0,0,0,0.1)]">
                   <button type="button" onClick={() => { if (formPage === 0) setMode(null); else setFormPage(formPage - 1); }}
-                    className="flex h-11 flex-1 items-center justify-center gap-2 rounded-xl text-sm font-bold text-white transition-all hover:opacity-90"
+                    className="flex h-11 flex-1 items-center justify-center gap-2 rounded-xl text-sm font-bold text-white transition-all hover:opacity-90 bounce-button"
                     style={{ background: "linear-gradient(135deg, #E91E8C, #C4166F)" }}>
                     <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={2.5} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" /></svg>
                     {formPage === 0 ? "Back to modes" : "Previous"}
                   </button>
                   {formPage < 2 && (
                     <button type="button" onClick={() => { const form = document.getElementById('create-event-form') as HTMLFormElement; if (form && !form.reportValidity()) return; setFormPage(formPage + 1); }}
-                      className="flex h-11 flex-1 items-center justify-center gap-2 rounded-xl text-sm font-bold text-white transition-all hover:opacity-90"
+                      className="flex h-11 flex-1 items-center justify-center gap-2 rounded-xl text-sm font-bold text-white transition-all hover:opacity-90 bounce-button"
                       style={{ background: "linear-gradient(135deg, #E91E8C, #C4166F)" }}>
                       Next
                       <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={2.5} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" /></svg>
