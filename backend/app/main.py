@@ -7,7 +7,7 @@ from fastapi.staticfiles import StaticFiles
 from app.core.config import settings
 from app.core.database import init_db
 from app.core.rate_limit import RateLimitMiddleware
-from app.api import auth, events, guests, qr_codes, verification, payments, admin, rsvp, messaging, tickets, uploads, contact, trials, subscriptions, posts, ai, notifications, tracking, webhooks, guest_management, invite_sending, admin_dashboard, checkin_scanner, waitlist_api, coupons_api, rsvp_questions_api, event_templates_api
+from app.api import auth, events, guests, qr_codes, verification, payments, admin, rsvp, messaging, tickets, uploads, contact, trials, subscriptions, posts, ai, notifications, tracking, webhooks, guest_management, invite_sending, admin_dashboard, checkin_scanner, waitlist_api, coupons_api, rsvp_questions_api, event_templates_api, wallet_api
 
 
 @asynccontextmanager
@@ -62,6 +62,7 @@ app.include_router(waitlist_api.router, prefix="/api/v1", tags=["Waitlist"])
 app.include_router(coupons_api.router, prefix="/api/v1", tags=["Coupons"])
 app.include_router(rsvp_questions_api.router, prefix="/api/v1", tags=["RSVP Questions"])
 app.include_router(event_templates_api.router, prefix="/api/v1", tags=["Event Templates"])
+app.include_router(wallet_api.router, prefix="/api/v1", tags=["Wallet"])
 
 
 @app.get("/api/v1/health")

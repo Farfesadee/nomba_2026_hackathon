@@ -19,10 +19,10 @@ export type InitiatePaymentResult = {
   authorization_url: string | null;
 };
 
-export async function initiatePayment(eventId: number, channel: string = "email", provider: string = "paystack"): Promise<InitiatePaymentResult> {
+export async function initiatePayment(eventId: number, channel: string = "email", provider: string = "paystack", paymentMethod: string = "paystack"): Promise<InitiatePaymentResult> {
   return apiClient<InitiatePaymentResult>("/payments/initiate", {
     method: "POST",
-    body: { event_id: eventId, channel, provider },
+    body: { event_id: eventId, channel, provider, payment_method: paymentMethod },
   });
 }
 

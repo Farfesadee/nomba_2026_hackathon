@@ -13,6 +13,7 @@ from app.models.user import User
 from app.models.event import Event
 from app.models.guest import Guest
 from app.models.payment import Payment
+from app.models.wallet import Wallet, WalletTransaction
 from app.services.notify import notify_subscribers
 
 RESEND_PRICE_PER_GUEST = 500  # NGN
@@ -24,12 +25,14 @@ class InitiatePaymentRequest(BaseModel):
     event_id: int
     channel: str = "email"
     provider: str = "paystack"
+    payment_method: str = "paystack"
 
 
 class ResendPaymentRequest(BaseModel):
     event_id: int
     guest_id: int
     provider: str = "paystack"
+    payment_method: str = "paystack"
 
 
 @router.post("/initiate")
@@ -47,6 +50,47 @@ async def initiate_payment(
 
     reference = f"ACC-{secrets.token_hex(8).upper()}"
     amount = calculate_price(event.guest_count_range, req.channel)
+
+    # Wallet payment
+    if req.payment_method == "wallet":
+        wallet_result = await db.execute(select(Wallet).where(Wallet.user_id == user.id))
+        wallet = wallet_result.scalar_one_or_none()
+        if not wallet or wallet.balance < amount:
+            raise HTTPException(status_code=400, detail="Insufficient wallet balance")
+        wallet.balance -= amount
+        tx = WalletTransaction(
+            wallet_id=wallet.id,
+            amount=-amount,
+            type="debit",
+            reference=reference,
+            description=f"Event publication: {event.title}",
+            status="completed",
+        )
+        db.add(tx)
+
+        payment = Payment(
+            event_id=event.id,
+            organizer_id=user.id,
+            amount=amount,
+            provider=req.provider,
+            reference=reference,
+            status="completed",
+            paid_at=datetime.now(timezone.utc),
+        )
+        db.add(payment)
+        event.status = "published"
+        event.is_public = True
+        await db.commit()
+        await notify_subscribers(db, event.id)
+
+        return {
+            "payment_id": payment.id,
+            "reference": reference,
+            "amount": amount,
+            "provider": req.provider,
+            "authorization_url": None,
+            "method": "wallet",
+        }
 
     payment = Payment(
         event_id=event.id,
@@ -88,6 +132,7 @@ async def initiate_payment(
         "amount": amount,
         "provider": req.provider,
         "authorization_url": paystack_url,
+        "method": "paystack",
     }
 
 

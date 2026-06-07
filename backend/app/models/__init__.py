@@ -22,6 +22,7 @@ from app.models.waitlist import WaitlistEntry
 from app.models.coupon import Coupon
 from app.models.rsvp_question import RSVPQuestion, RSVPAnswer
 from app.models.event_template import EventTemplate
+from app.models.wallet import Wallet, WalletTransaction
 
 all_models = [
     User, Event, Guest, InviteMessage, InviteBatch, QRCode, CheckIn,
@@ -29,5 +30,5 @@ all_models = [
     FlierAsset, AccreditationRequest, StaffAssignment, TicketPurchase,
     PasswordResetToken, TrialUsage, Subscription, CommunityPost,
     DataGroup, DataProfile, DataRequest, WaitlistEntry, Coupon,
-    RSVPQuestion, RSVPAnswer, EventTemplate,
+    RSVPQuestion, RSVPAnswer, EventTemplate, Wallet, WalletTransaction,
 ]

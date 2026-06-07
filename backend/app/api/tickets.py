@@ -1,6 +1,7 @@
 import secrets, hmac, hashlib, json, io
 from datetime import datetime, timezone
 from fastapi import APIRouter, Depends, HTTPException, Request, Response
+
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
 from pydantic import BaseModel
@@ -9,10 +10,11 @@ import qrcode
 
 from app.core.database import get_db
 from app.core.config import settings
-from app.core.security import get_current_user
+from app.core.security import get_current_user, extract_token
 from app.models.user import User
 from app.models.event import Event
 from app.models.ticket_purchase import TicketPurchase
+from app.models.wallet import Wallet, WalletTransaction
 
 router = APIRouter()
 
@@ -23,11 +25,29 @@ class PurchaseRequest(BaseModel):
     buyer_email: str
     buyer_phone: str | None = None
     quantity: int = 1
+    payment_method: str = "paystack"
+
+
+async def get_optional_user(request: Request, db: AsyncSession = Depends(get_db)) -> User | None:
+    try:
+        token = extract_token(request)
+        if not token:
+            return None
+        from jose import jwt, JWTError
+        payload = jwt.decode(token, settings.SECRET_KEY, algorithms=[settings.ALGORITHM])
+        user_id = payload.get("sub")
+        if not user_id:
+            return None
+        result = await db.execute(select(User).where(User.id == int(user_id)))
+        return result.scalar_one_or_none()
+    except Exception:
+        return None
 
 
 @router.post("/purchase")
 async def purchase_ticket(
     req: PurchaseRequest,
+    request: Request,
     db: AsyncSession = Depends(get_db),
 ):
     result = await db.execute(
@@ -44,7 +64,61 @@ async def purchase_ticket(
     platform_fee = round(base_amount * settings.PLATFORM_FEE_PERCENT / 100) if not is_free else 0
     vat = round(base_amount * settings.VAT_PERCENT / 100) if not is_free else 0
     total = base_amount + vat
+
     reference = f"TKT-{secrets.token_hex(8).upper()}"
+
+    # Wallet payment for logged-in users
+    if req.payment_method == "wallet":
+        user = await get_optional_user(request, db)
+        if not user:
+            raise HTTPException(status_code=401, detail="Login required to pay with wallet")
+        wallet_result = await db.execute(select(Wallet).where(Wallet.user_id == user.id))
+        wallet = wallet_result.scalar_one_or_none()
+        if not wallet or wallet.balance < total:
+            raise HTTPException(status_code=400, detail="Insufficient wallet balance")
+        wallet.balance -= total
+        tx = WalletTransaction(
+            wallet_id=wallet.id,
+            amount=-total,
+            type="debit",
+            reference=reference,
+            description=f"Ticket purchase: {event.title} x{req.quantity}",
+            status="completed",
+        )
+        db.add(tx)
+
+        purchase = TicketPurchase(
+            event_id=event.id,
+            buyer_name=req.buyer_name,
+            buyer_email=req.buyer_email,
+            buyer_phone=req.buyer_phone,
+            quantity=req.quantity,
+            amount=total,
+            platform_fee=platform_fee,
+            vat=vat,
+            reference=reference,
+            status="completed",
+            paid_at=datetime.now(timezone.utc),
+        )
+        db.add(purchase)
+        await db.commit()
+        await db.refresh(purchase)
+
+        if event.tickets_available is not None:
+            event.tickets_available -= req.quantity
+            await db.commit()
+
+        return {
+            "purchase_id": purchase.id,
+            "reference": reference,
+            "amount": total,
+            "base_amount": base_amount,
+            "platform_fee": platform_fee,
+            "vat": vat,
+            "quantity": req.quantity,
+            "authorization_url": None,
+            "method": "wallet",
+        }
 
     purchase = TicketPurchase(
         event_id=event.id,
@@ -107,6 +181,7 @@ async def purchase_ticket(
         "vat": vat,
         "quantity": req.quantity,
         "authorization_url": paystack_url,
+        "method": "paystack",
     }
 
 

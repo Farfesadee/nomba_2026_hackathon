@@ -93,6 +93,7 @@ function EventDetailContent() {
   const [exportStatus, setExportStatus] = useState("all");
   const [publishChannel, setPublishChannel] = useState("email");
   const [publishing, setPublishing] = useState(false);
+  const [walletBalance, setWalletBalance] = useState<number | null>(null);
   const [confirmDialog, setConfirmDialog] = useState<{ title: string; message: string; variant?: "danger" | "warning" | "default"; onConfirm: () => void } | null>(null);
   const [publishError, setPublishError] = useState("");
   const [checkinStats, setCheckinStats] = useState<{ checked_in: number; rsvp_accepted: number; total_guests: number; recent_checkins: any[] } | null>(null);
@@ -127,6 +128,7 @@ function EventDetailContent() {
       loadFliers();
       loadCheckinStats();
       loadAccreditationLog();
+      apiClient<any>("/wallet").then((d) => setWalletBalance(d.balance)).catch(() => {});
     }
   }, [user, loading, id, loadGuests]);
 
@@ -658,7 +660,23 @@ function EventDetailContent() {
                   ₦{calculatePrice(event.guest_count_range, publishChannel).toLocaleString()}
                 </span>
                 <Button onClick={handlePublish} disabled={publishing}>
-                  {publishing ? "Processing..." : "Pay to Publish"}
+                  {publishing ? "Processing..." : "Paystack"}
+                </Button>
+                <Button
+                  variant="outline"
+                  onClick={async () => {
+                    setPublishing(true);
+                    try {
+                      const res = await initiatePayment(Number(id), publishChannel, "paystack", "wallet");
+                      getEvent(Number(id)).then(setEvent);
+                    } catch (err: any) { setPublishError(err.message); }
+                    setPublishing(false);
+                  }}
+                  disabled={publishing || (walletBalance !== null && walletBalance < calculatePrice(event.guest_count_range, publishChannel))}
+                >
+                  {walletBalance !== null && walletBalance < calculatePrice(event.guest_count_range, publishChannel)
+                    ? `Wallet ₦${walletBalance.toLocaleString()}`
+                    : "Wallet"}
                 </Button>
               </div>
             </div>

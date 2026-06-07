@@ -24,6 +24,7 @@ type PurchaseInfo = {
   vat: number;
   quantity: number;
   authorization_url: string | null;
+  method?: string;
 };
 
 type PurchaseStatus = {
@@ -123,8 +124,7 @@ function PublicEventContent() {
     }
   }, [searchParams, router]);
 
-  const handlePurchase = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const handlePurchase = async (method: string = "paystack") => {
     setError("");
     setPurchasing(true);
     try {
@@ -136,10 +136,13 @@ function PublicEventContent() {
           buyer_email: buyerEmail,
           buyer_phone: buyerPhone || null,
           quantity,
+          payment_method: method,
         },
       });
       if (res.authorization_url) {
         window.location.href = res.authorization_url;
+      } else if (res.method === "wallet") {
+        setRegistered(true);
       } else {
         setRegistered(true);
       }
@@ -148,6 +151,11 @@ function PublicEventContent() {
     }
     setPurchasing(false);
   };
+
+  const [walletBalance, setWalletBalance] = useState<number | null>(null);
+  useEffect(() => {
+    apiClient<any>("/wallet").then((d) => setWalletBalance(d.balance)).catch(() => setWalletBalance(null));
+  }, []);
 
   if (loading) {
     return (
@@ -487,7 +495,7 @@ function PublicEventContent() {
                   </div>
                 </div>
               ) : (
-                <form onSubmit={handlePurchase} className="space-y-3">
+                <form onSubmit={(e) => { e.preventDefault(); handlePurchase("paystack"); }} className="space-y-3">
                   {error && (
                     <div className="rounded-xl bg-red-50 border border-red-200 px-4 py-3 text-sm text-red-700 font-medium">
                       {error}
@@ -561,22 +569,36 @@ function PublicEventContent() {
                       </form>
                     </div>
                   )}
-                  <button
-                    type="submit"
-                    disabled={purchasing}
-                    className="w-full rounded-xl font-black text-sm py-3.5 transition-all disabled:opacity-60 disabled:cursor-not-allowed"
-                    style={{
-                      background: purchasing ? "#94a3b8" : isFreeEvent ? "linear-gradient(135deg, #059669, #065f46)" : "linear-gradient(135deg, #E91E8C, #C4166F)",
-                      color: "white",
-                      boxShadow: purchasing ? "none" : isFreeEvent ? "0 6px 20px rgba(5,150,105,0.35)" : "0 6px 20px rgba(233,30,140,0.35)",
-                    }}
-                  >
-                    {purchasing
-                      ? "Processing..."
-                      : isFreeEvent
-                      ? "Save My Spot — Free"
-                      : `Pay ₦${Math.round(event.ticket_price! * quantity * (1 + VAT_PERCENT / 100)).toLocaleString()}`}
-                  </button>
+                  <div className="space-y-2">
+                    <button
+                      type="submit"
+                      disabled={purchasing}
+                      className="w-full rounded-xl font-black text-sm py-3.5 transition-all disabled:opacity-60 disabled:cursor-not-allowed"
+                      style={{
+                        background: purchasing ? "#94a3b8" : isFreeEvent ? "linear-gradient(135deg, #059669, #065f46)" : "linear-gradient(135deg, #E91E8C, #C4166F)",
+                        color: "white",
+                        boxShadow: purchasing ? "none" : isFreeEvent ? "0 6px 20px rgba(5,150,105,0.35)" : "0 6px 20px rgba(233,30,140,0.35)",
+                      }}
+                    >
+                      {purchasing
+                        ? "Processing..."
+                        : isFreeEvent
+                        ? "Save My Spot — Free"
+                        : `Pay with Card ₦${Math.round(event.ticket_price! * quantity * (1 + VAT_PERCENT / 100)).toLocaleString()}`}
+                    </button>
+                    {!isFreeEvent && walletBalance !== null && (
+                      <button
+                        type="button"
+                        disabled={purchasing || walletBalance < Math.round(event.ticket_price! * quantity * (1 + VAT_PERCENT / 100))}
+                        onClick={() => handlePurchase("wallet")}
+                        className="w-full rounded-xl font-semibold text-sm py-3 transition-all border-2 border-pink-200 text-pink-700 hover:bg-pink-50 disabled:opacity-40 disabled:cursor-not-allowed"
+                      >
+                        {walletBalance < Math.round(event.ticket_price! * quantity * (1 + VAT_PERCENT / 100))
+                          ? `Insufficient wallet (₦${walletBalance.toLocaleString()})`
+                          : `Pay with Wallet (₦${walletBalance.toLocaleString()})`}
+                      </button>
+                    )}
+                  </div>
                 </form>
               )}
             </div>
