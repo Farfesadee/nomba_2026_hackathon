@@ -780,7 +780,7 @@ export default function CreateEventPage() {
               ].map((item) => (
                 <button key={item.index} type="button"
                   onClick={() => { if (item.index <= formPage + 1) { const form = document.getElementById('create-event-form') as HTMLFormElement; if (item.index > formPage && form && !form.reportValidity()) return; setFormPage(item.index); } }}
-                  className={`flex items-center gap-2 px-3 py-1.5 rounded-lg transition-all ${formPage >= item.index ? "text-white" : "text-[#94a3b8]"}`}
+                  className={`flex items-center gap-2 px-3 py-1.5 rounded-lg transition-all ${formPage >= item.index ? "text-white bounce-button" : "text-[#94a3b8]"}`}
                   style={{ background: formPage >= item.index ? "linear-gradient(135deg, #E91E8C, #C4166F)" : "transparent" }}>
                   <span className="flex h-5 w-5 items-center justify-center rounded-full text-[10px] font-bold"
                     style={{ background: formPage >= item.index ? "rgba(255,255,255,0.2)" : "#e8edf2", color: formPage >= item.index ? "white" : "#94a3b8" }}>
@@ -1299,7 +1299,7 @@ export default function CreateEventPage() {
                               <input value={form.image_prompt} onChange={(e) => setForm({ ...form, image_prompt: e.target.value })}
                                 className="h-10 w-full rounded-xl border border-[#d9e2ec] px-3 text-sm outline-none focus:border-[#E91E8C]" placeholder="Describe the image you want..." />
                               <button type="button" onClick={generateImage} disabled={aiImageGenerating}
-                                className="w-full h-10 rounded-xl text-sm font-bold text-white transition-all disabled:opacity-50"
+                                className="w-full h-10 rounded-xl text-sm font-bold text-white transition-all disabled:opacity-50 bounce-button"
                                 style={{ background: "linear-gradient(135deg, #E91E8C, #C4166F)" }}>
                                 {aiImageGenerating ? (
                                   <span className="flex items-center justify-center gap-2"><span className="w-4 h-4 rounded-full border-2 border-white border-t-transparent animate-spin" /> Generating...</span>
@@ -1320,7 +1320,7 @@ export default function CreateEventPage() {
                         className="w-full rounded-xl border border-[#d9e2ec] px-3 py-3 text-sm outline-none focus:border-[#E91E8C] min-h-[100px] resize-none"
                         placeholder={mode === "event" ? "Describe what makes this event special..." : "Write a warm invitation message..."} />
                       <button type="button" onClick={generateMessage} disabled={aiGenerating}
-                        className="inline-flex items-center gap-2 rounded-xl px-4 py-2 text-xs font-bold text-white transition-all disabled:opacity-50"
+                        className="inline-flex items-center gap-2 rounded-xl px-4 py-2 text-xs font-bold text-white transition-all disabled:opacity-50 bounce-button"
                         style={{ background: aiGenerating ? "#94a3b8" : "linear-gradient(135deg, #E91E8C, #C4166F)" }}>
                         {aiGenerating ? (
                           <><span className="w-3.5 h-3.5 rounded-full border-2 border-white border-t-transparent animate-spin" /> Generating...</>

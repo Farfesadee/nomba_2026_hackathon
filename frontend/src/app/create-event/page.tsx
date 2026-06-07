@@ -906,6 +906,15 @@ export default function CreateEventPage() {
         0%, 100% { box-shadow: 0 0 0 0 rgba(233,30,140,0.4); }
         50% { box-shadow: 0 0 0 8px rgba(233,30,140,0.1); }
       }
+      @keyframes gentleBounce {
+        0%, 100% { transform: translateY(0) scale(1); }
+        50% { transform: translateY(-6px) scale(1.01); }
+      }
+      .bounce-button {
+        animation: gentleBounce 0.8s ease-in-out infinite;
+        will-change: transform;
+        transform: translateZ(0);
+      }
     `}</style>
     <div className="flex min-h-screen flex-col bg-white">
       <Navbar variant="light" />
@@ -2035,7 +2044,7 @@ className="block w-full cursor-pointer rounded-xl border border-[#d9e2ec] bg-whi
                         setFormPage(formPage - 1);
                       }
                     }}
-                    className="flex h-11 flex-1 items-center justify-center gap-2 rounded-xl text-sm font-bold text-white transition-all hover:opacity-90"
+                    className="flex h-11 flex-1 items-center justify-center gap-2 rounded-xl text-sm font-bold text-white transition-all hover:opacity-90 bounce-button"
                     style={{ background: "linear-gradient(135deg, #E91E8C, #C4166F)" }}
                   >
                     <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={2.5} viewBox="0 0 24 24">
@@ -2056,7 +2065,7 @@ className="block w-full cursor-pointer rounded-xl border border-[#d9e2ec] bg-whi
                         setFormPage(formPage + 1);
                       }
                     }}
-                    className="flex h-11 flex-1 items-center justify-center gap-2 rounded-xl text-sm font-bold text-white transition-all hover:opacity-90"
+                    className="flex h-11 flex-1 items-center justify-center gap-2 rounded-xl text-sm font-bold text-white transition-all hover:opacity-90 bounce-button"
                     style={{ background: "linear-gradient(135deg, #E91E8C, #C4166F)" }}
                   >
                     {formPage === totalFormPages - 1 ? "Next: Preview" : "Next"}
@@ -2073,7 +2082,7 @@ className="block w-full cursor-pointer rounded-xl border border-[#d9e2ec] bg-whi
                 <button
                   type="button"
                   onClick={() => setStep(1)}
-                  className="flex h-11 items-center justify-center gap-2 rounded-xl text-sm font-bold text-white transition-all hover:opacity-90 px-6"
+                  className="flex h-11 items-center justify-center gap-2 rounded-xl text-sm font-bold text-white transition-all hover:opacity-90 px-6 bounce-button"
                   style={{ background: "linear-gradient(135deg, #E91E8C, #C4166F)" }}
                 >
                   <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={2.5} viewBox="0 0 24 24">
