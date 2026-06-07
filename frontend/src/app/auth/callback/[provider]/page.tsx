@@ -3,7 +3,6 @@
 import { useEffect } from "react";
 import { useParams } from "next/navigation";
 import { apiClient } from "@/lib/api-client";
-import { setToken } from "@/lib/auth-storage";
 
 export default function OAuthCallbackPage() {
   const params = useParams();
@@ -33,8 +32,7 @@ export default function OAuthCallbackPage() {
       method: "POST",
       body: { provider, id_token: token, email, full_name: name },
     })
-      .then((res) => {
-        setToken(res.access_token);
+      .then(() => {
         window.location.href = "/dashboard";
       })
       .catch(() => {

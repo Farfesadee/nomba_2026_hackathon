@@ -1,6 +1,6 @@
 import secrets, random
 from datetime import datetime, timedelta, timezone
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, Response, status
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select, or_
 from pydantic import BaseModel, EmailStr
@@ -52,8 +52,22 @@ def generate_numeric_code(length: int = 6) -> str:
     return "".join(str(random.randint(0, 9)) for _ in range(length))
 
 
+def set_auth_cookie(response: Response, token: str):
+    max_age = settings.ACCESS_TOKEN_EXPIRE_MINUTES * 60
+    secure = not settings.DEBUG
+    response.set_cookie(
+        key="access_token",
+        value=token,
+        httponly=True,
+        secure=secure,
+        samesite="lax",
+        max_age=max_age,
+        path="/",
+    )
+
+
 @router.post("/register", response_model=TokenResponse)
-async def register(req: RegisterRequest, db: AsyncSession = Depends(get_db)):
+async def register(req: RegisterRequest, response: Response, db: AsyncSession = Depends(get_db)):
     result = await db.execute(select(User).where(User.email == req.email))
     if result.scalar_one_or_none():
         raise HTTPException(status_code=400, detail="Email already registered")
@@ -92,6 +106,7 @@ async def register(req: RegisterRequest, db: AsyncSession = Depends(get_db)):
         await send_email(user.email, f"Verify your Accredit.vip account (expires in {VERIFICATION_EXPIRY_MINUTES} min)", html)
 
     token = create_access_token({"sub": str(user.id)})
+    set_auth_cookie(response, token)
     return TokenResponse(
         access_token=token,
         user={"id": user.id, "email": user.email, "full_name": user.full_name, "role": user.role, "is_verified": user.is_verified, "verification_channel": user.verification_channel},
@@ -99,13 +114,14 @@ async def register(req: RegisterRequest, db: AsyncSession = Depends(get_db)):
 
 
 @router.post("/login", response_model=TokenResponse)
-async def login(req: LoginRequest, db: AsyncSession = Depends(get_db)):
+async def login(req: LoginRequest, response: Response, db: AsyncSession = Depends(get_db)):
     result = await db.execute(select(User).where(User.email == req.email))
     user = result.scalar_one_or_none()
     if not user or not verify_password(req.password, user.password_hash):
         raise HTTPException(status_code=401, detail="Invalid email or password")
 
     token = create_access_token({"sub": str(user.id)})
+    set_auth_cookie(response, token)
     return TokenResponse(
         access_token=token,
         user={"id": user.id, "email": user.email, "full_name": user.full_name, "role": user.role, "is_verified": user.is_verified, "verification_channel": user.verification_channel},
@@ -170,7 +186,7 @@ async def verify_apple_token(id_token: str) -> dict:
 
 
 @router.post("/social", response_model=TokenResponse)
-async def social_login(req: SocialLoginRequest, db: AsyncSession = Depends(get_db)):
+async def social_login(req: SocialLoginRequest, response: Response, db: AsyncSession = Depends(get_db)):
     if req.provider not in ("google", "facebook", "apple"):
         raise HTTPException(status_code=400, detail="Unsupported provider")
 
@@ -229,10 +245,17 @@ async def social_login(req: SocialLoginRequest, db: AsyncSession = Depends(get_d
     await db.refresh(user)
 
     token = create_access_token({"sub": str(user.id)})
+    set_auth_cookie(response, token)
     return TokenResponse(
         access_token=token,
         user={"id": user.id, "email": user.email, "full_name": user.full_name, "role": user.role, "is_verified": user.is_verified, "verification_channel": user.verification_channel},
     )
+
+
+@router.post("/logout")
+async def logout(response: Response):
+    response.delete_cookie("access_token", path="/")
+    return {"message": "Logged out"}
 
 
 @router.get("/me")

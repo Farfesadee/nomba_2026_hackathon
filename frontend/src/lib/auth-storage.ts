@@ -1,22 +1,4 @@
-export function setToken(token: string) {
-  localStorage.setItem("access_token", token);
-}
-
-export function getToken(): string | null {
-  if (typeof window === "undefined") return null;
-  return localStorage.getItem("access_token");
-}
-
-export function clearToken() {
-  localStorage.removeItem("access_token");
-  localStorage.removeItem("last_activity");
-}
-
-export function isAuthenticated(): boolean {
-  return !!getToken();
-}
-
-const IDLE_TIMEOUT_MS = 30 * 60 * 1000; // 30 minutes
+const IDLE_TIMEOUT_MS = 30 * 60 * 1000;
 
 export function checkIdleTimeout(): boolean {
   const lastActivity = localStorage.getItem("last_activity");

@@ -2,7 +2,7 @@
 
 import { createContext, useContext, useEffect, useState, useCallback, useRef } from "react";
 import { apiClient, setOnUnauthorized } from "@/lib/api-client";
-import { setToken, clearToken, getToken, checkIdleTimeout, touchActivity } from "@/lib/auth-storage";
+import { checkIdleTimeout, touchActivity } from "@/lib/auth-storage";
 
 export type User = {
   id: number;
@@ -38,11 +38,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const activityRef = useRef<(() => void) | null>(null);
 
   const logout = useCallback(() => {
-    clearToken();
+    apiClient("/auth/logout", { method: "POST" }).catch(() => {});
     setUser(null);
-    // Extra safety: clear all auth-related localStorage items
     if (typeof window !== "undefined") {
-      localStorage.removeItem("access_token");
       localStorage.removeItem("last_activity");
       localStorage.removeItem("user_data");
       sessionStorage.clear();
@@ -60,7 +58,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       const u = await apiClient<User>("/auth/me");
       setUser(u);
     } catch {
-      clearToken();
       setUser(null);
     }
   }, []);
@@ -68,24 +65,15 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     const initAuth = async () => {
       try {
-        const token = getToken();
-        if (token) {
-          if (checkIdleTimeout()) {
-            clearToken();
-            setUser(null);
-            setLoading(false);
-            return;
-          }
-          // Verify token is valid by fetching user
-          try {
-            const u = await apiClient<User>("/auth/me");
-            setUser(u);
-          } catch (err) {
-            // Token is invalid, clear it
-            clearToken();
-            setUser(null);
-          }
-        } else {
+        if (checkIdleTimeout()) {
+          setUser(null);
+          setLoading(false);
+          return;
+        }
+        try {
+          const u = await apiClient<User>("/auth/me");
+          setUser(u);
+        } catch {
           setUser(null);
         }
       } finally {
@@ -107,7 +95,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       method: "POST",
       body: { email, password },
     });
-    setToken(res.access_token);
     touchActivity();
     setUser(res.user);
   };
@@ -117,7 +104,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       method: "POST",
       body: { provider, id_token: idToken, email, full_name: fullName },
     });
-    setToken(res.access_token);
     touchActivity();
     setUser(res.user);
   };
@@ -134,7 +120,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       method: "POST",
       body: data,
     });
-    setToken(res.access_token);
     touchActivity();
     setUser(res.user);
   };
