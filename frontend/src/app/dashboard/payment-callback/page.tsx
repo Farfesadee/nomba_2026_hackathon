@@ -1,11 +1,11 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { Suspense, useEffect, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { apiClient } from "@/lib/api-client";
 
-export default function PaymentCallbackPage() {
+function PaymentCallbackContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const [status, setStatus] = useState<"loading" | "success" | "failed" | "pending">("loading");
@@ -121,5 +121,17 @@ export default function PaymentCallbackPage() {
         )}
       </div>
     </div>
+  );
+}
+
+export default function PaymentCallbackPage() {
+  return (
+    <Suspense fallback={
+      <div className="flex min-h-screen items-center justify-center bg-white">
+        <div className="mx-auto mb-4 h-12 w-12 animate-spin rounded-full border-4 border-[#e8edf2] border-t-[#E91E8C]" />
+      </div>
+    }>
+      <PaymentCallbackContent />
+    </Suspense>
   );
 }
