@@ -34,13 +34,17 @@ export function Navbar({
     return () => window.removeEventListener("scroll", handleScroll);
   }, []);
 
-  const resolvedAuthLinks = authLinks ?? (user ? [
-    { label: "WALLET", href: "/dashboard/wallet" },
-    { label: "DASHBOARD", href: "/dashboard", primary: true },
-  ] : [
-    { label: "LOG IN", href: "/login" },
+  const resolvedAuthLinks = authLinks ?? [
+    { label: "LOG IN", href: "/login", primary: !user },
     { label: "CREATE EVENT", href: "/create-event", primary: true },
-  ]) as Array<{ label: string; href: string; primary?: boolean; onClick?: () => void }>;
+  ].filter(link => {
+    // Always show LOGIN and CREATE EVENT
+    // Hide DASHBOARD and WALLET from navbar (they're only in dashboard sidebar)
+    if (link.label === "DASHBOARD" || link.label === "WALLET") return false;
+    // Hide LOGIN button if user is already logged in
+    if (link.label === "LOG IN" && user) return false;
+    return true;
+  }) as Array<{ label: string; href: string; primary?: boolean; onClick?: () => void }>;
 
   const isDark = variant === "solid" || variant === "transparent";
 
