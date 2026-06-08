@@ -224,7 +224,7 @@ export default function WalletPage() {
         {/* Logo */}
         <div className="flex items-center justify-between h-20 px-4 flex-shrink-0" style={{ borderBottom: "1px solid rgba(255,255,255,0.06)" }}>
           <Link href="/" onClick={() => setMobileNavOpen(false)} className="flex items-center flex-1 min-w-0">
-            <Image src="/logo-dark-trim.png" alt="accredit.vip" width={4071} height={761} className="h-8 w-auto object-contain" />
+            <Image src="/logo-trim.png" alt="accredit.vip" width={4071} height={761} className="h-8 w-auto object-contain" />
           </Link>
           <button
             onClick={() => setSidebarOpen(!sidebarOpen)}
@@ -236,9 +236,9 @@ export default function WalletPage() {
 
         {/* Nav */}
         <nav className="flex-1 px-3 py-6 space-y-1 overflow-y-auto">
-          <p className={`px-3 text-[10px] font-bold text-white/25 uppercase tracking-widest mb-3 ${!sidebarOpen && "hidden"}`}>
+          {sidebarOpen && <p className="px-3 text-[10px] font-bold text-white/25 uppercase tracking-widest mb-3">
             Main Menu
-          </p>
+          </p>}
           {[
             { href: "/dashboard", label: "Dashboard", icon: <LayoutGrid className="w-4 h-4" /> },
             { href: "/dashboard/events", label: "Events", icon: <Calendar className="w-4 h-4" /> },
@@ -262,17 +262,19 @@ export default function WalletPage() {
           ))}
 
           {/* Discover Section */}
-          <div className={`pt-4 mt-4 ${!sidebarOpen && "hidden"}`} style={{ borderTop: "1px solid rgba(255,255,255,0.06)" }}>
-            <p className="px-3 text-[10px] font-bold text-white/25 uppercase tracking-widest mb-3">Discover</p>
-            <Link
-              href="/attend"
-              onClick={() => setMobileNavOpen(false)}
-              className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium text-white/60 hover:text-white hover:bg-white/08 transition-all"
-            >
-              <Compass className="w-4 h-4" />
-              Browse Events
-            </Link>
-          </div>
+          {sidebarOpen && (
+            <div className="pt-4 mt-4" style={{ borderTop: "1px solid rgba(255,255,255,0.06)" }}>
+              <p className="px-3 text-[10px] font-bold text-white/25 uppercase tracking-widest mb-3">Discover</p>
+              <Link
+                href="/attend"
+                onClick={() => setMobileNavOpen(false)}
+                className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium text-white/60 hover:text-white hover:bg-white/08 transition-all"
+              >
+                <Compass className="w-4 h-4" />
+                Browse Events
+              </Link>
+            </div>
+          )}
         </nav>
 
         {/* User Section */}

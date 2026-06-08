@@ -1,23 +1,37 @@
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
 import { useAuth } from "@/contexts/auth-context";
 
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
   const { user, logout } = useAuth();
+  const closeTimer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
 
-  // Auto-logout when user leaves dashboard (tab close, or nav to non-dashboard page)
+  // Auto-logout when tab is closed (not on refresh)
   useEffect(() => {
     if (!user) return;
 
-    const handleBeforeUnload = () => {
-      navigator.sendBeacon("/api/v1/auth/logout");
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === "hidden") {
+        // Tab hidden (switch, minimize, or close) — wait 30s then logout
+        if (closeTimer.current) clearTimeout(closeTimer.current);
+        closeTimer.current = setTimeout(() => {
+          logout();
+        }, 30000);
+      } else {
+        // Tab visible again — cancel timer
+        if (closeTimer.current) {
+          clearTimeout(closeTimer.current);
+          closeTimer.current = undefined;
+        }
+      }
     };
-    window.addEventListener("beforeunload", handleBeforeUnload);
+
+    document.addEventListener("visibilitychange", handleVisibilityChange);
 
     return () => {
-      window.removeEventListener("beforeunload", handleBeforeUnload);
-      logout();
+      document.removeEventListener("visibilitychange", handleVisibilityChange);
+      if (closeTimer.current) clearTimeout(closeTimer.current);
     };
   }, [user, logout]);
 
