@@ -1309,7 +1309,7 @@ export default function CreateEventPage() {
                 </label>
                 <label className="space-y-2">
                   <span className="text-sm font-semibold text-[#23466f]">
-                    {mode === "event" ? "Host or promoter" : "Host name"}
+                    {mode === "event" ? "Host or promoter" : "Host name"} <span className="text-xs font-normal text-[#94a3b8]">(optional)</span>
                   </span>
                   <input
                     value={form.host_name}
@@ -1594,17 +1594,8 @@ export default function CreateEventPage() {
                     )}
                   </div>
 
-                  {/* Dress code - Male & Female */}
+                  {/* Dress code - Female & Male */}
                   <div className="grid gap-3 md:grid-cols-2">
-                    <label className="block space-y-2">
-                      <span className="text-sm font-semibold text-[#23466f]">Dress code - Male</span>
-                      <input
-                        value={form.male_dress_code}
-                        onChange={(e) => setForm({ ...form, male_dress_code: e.target.value })}
-                        className="h-11 w-full rounded-xl border border-[#d9e2ec] px-3 text-sm outline-none focus:border-[#E91E8C]"
-                        placeholder="Black suit, agbada, senator"
-                      />
-                    </label>
                     <label className="block space-y-2">
                       <span className="text-sm font-semibold text-[#23466f]">Dress code - Female</span>
                       <input
@@ -1612,6 +1603,15 @@ export default function CreateEventPage() {
                         onChange={(e) => setForm({ ...form, female_dress_code: e.target.value })}
                         className="h-11 w-full rounded-xl border border-[#d9e2ec] px-3 text-sm outline-none focus:border-[#E91E8C]"
                         placeholder="Evening gown, aso ebi, all white"
+                      />
+                    </label>
+                    <label className="block space-y-2">
+                      <span className="text-sm font-semibold text-[#23466f]">Dress code - Male</span>
+                      <input
+                        value={form.male_dress_code}
+                        onChange={(e) => setForm({ ...form, male_dress_code: e.target.value })}
+                        className="h-11 w-full rounded-xl border border-[#d9e2ec] px-3 text-sm outline-none focus:border-[#E91E8C]"
+                        placeholder="Black suit, agbada, senator"
                       />
                     </label>
                   </div>
@@ -2406,12 +2406,12 @@ className="block w-full cursor-pointer rounded-xl border border-[#d9e2ec] bg-whi
                               <dt className="font-bold uppercase tracking-widest text-[#475569]">Dress code</dt>
                             </div>
                             <div className="rounded-lg bg-[#f8fafc] p-2">
-                              <dt className="font-bold uppercase tracking-widest text-[#475569]">Male</dt>
-                              <dd className="mt-1 font-semibold">{form.male_dress_code || "Not specified"}</dd>
-                            </div>
-                            <div className="rounded-lg bg-[#f8fafc] p-2">
                               <dt className="font-bold uppercase tracking-widest text-[#475569]">Female</dt>
                               <dd className="mt-1 font-semibold">{form.female_dress_code || "Not specified"}</dd>
+                            </div>
+                            <div className="rounded-lg bg-[#f8fafc] p-2">
+                              <dt className="font-bold uppercase tracking-widest text-[#475569]">Male</dt>
+                              <dd className="mt-1 font-semibold">{form.male_dress_code || "Not specified"}</dd>
                             </div>
                             {visibleSocialHandles.length > 0 && (
                               <div className="rounded-lg bg-[#f8fafc] p-2">

@@ -114,7 +114,7 @@ export default function AdminPage() {
           <div className="h-20 flex items-center justify-between px-4 border-b border-[#e8edf2]">
             <Link href="/" className="flex-1">
               <Image
-                src="/logo-dark-trim.png"
+                src="/logo.png"
                 alt="accredit.vip"
                 width={4071}
                 height={761}
@@ -373,7 +373,7 @@ export default function AdminPage() {
       {/* Logo */}
       <Link href="/" className="mb-12 hover:opacity-80 transition-opacity">
         <Image
-          src="/logo-dark-trim.png"
+          src="/logo-white.png"
           alt="accredit.vip"
           width={4071}
           height={761}

@@ -68,7 +68,7 @@ function LoginForm() {
         {/* Logo */}
         <Link href="/" className="relative z-10">
           <Image
-            src="/logo-dark-trim.png"
+            src="/logo-white.png"
             alt="accredit.vip"
             width={4071}
             height={761}
@@ -208,7 +208,7 @@ function LoginForm() {
         <div className="lg:hidden bg-[#0D1B2A] px-6 py-4">
           <Link href="/">
             <Image
-              src="/logo-dark-trim.png"
+              src="/logo-white.png"
               alt="accredit.vip"
               width={4071}
               height={761}
