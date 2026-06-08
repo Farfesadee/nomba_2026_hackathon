@@ -580,6 +580,27 @@ export default function CreateEventPage() {
   useEffect(() => {
     const timer = window.setTimeout(() => {
       setFingerprint(getTrialFingerprint());
+
+      const lastMode = localStorage.getItem("accredit_last_mode") as Mode | null;
+      if (lastMode && ["invite", "event"].includes(lastMode)) {
+        setMode(lastMode);
+        const savedDraft = localStorage.getItem(DRAFT_KEYS[lastMode]);
+        if (savedDraft) {
+          try {
+            const draft = JSON.parse(savedDraft);
+            setForm(draft.form || DEFAULT_FORM);
+            setPassPackages(draft.passPackages || [{ name: "Regular", price: "" }]);
+            setSocialHandles(draft.socialHandles || [{ platform: "instagram", handle: "" }]);
+            setLineup(draft.lineup || [{ role: "", name: "", attachHeadshot: true, headshotSource: "upload", headshotFileName: "", generatedHeadshot: false }]);
+            setUploadedImageData(draft.uploadedImageData || null);
+          } catch {}
+        }
+        const lastStep = localStorage.getItem("accredit_create_step");
+        if (lastStep) setStep(parseInt(lastStep, 10));
+        const lastFormPage = localStorage.getItem("accredit_create_formPage");
+        if (lastFormPage) setFormPage(parseInt(lastFormPage, 10));
+      }
+
       setHydrated(true);
     }, 0);
     return () => window.clearTimeout(timer);
@@ -589,10 +610,12 @@ export default function CreateEventPage() {
     if (!hydrated || !mode) return;
     const timer = setTimeout(() => {
       localStorage.setItem(DRAFT_KEYS[mode], JSON.stringify({ form, passPackages, socialHandles, lineup, uploadedImageData }));
-      localStorage.setItem("accredit_last_mode", mode);
+      localStorage.setItem("accredit_last_mode", mode as string);
+      localStorage.setItem("accredit_create_step", String(step));
+      localStorage.setItem("accredit_create_formPage", String(formPage));
     }, 300);
     return () => clearTimeout(timer);
-  }, [form, passPackages, socialHandles, lineup, uploadedImageData, mode, hydrated]);
+  }, [form, passPackages, socialHandles, lineup, uploadedImageData, mode, step, formPage, hydrated]);
 
   useEffect(() => {
     return () => {
@@ -2231,20 +2254,20 @@ className="block w-full cursor-pointer rounded-xl border border-[#d9e2ec] bg-whi
                                       </div>
                                       <div className="col-span-2 rounded-lg bg-[#f8fafc] p-2">
                                         <dt className="font-bold uppercase tracking-widest text-[#475569]">Venue</dt>
-                                        <dd className="mt-1 font-semibold">{form.venue || "Event venue"}</dd>
+                                          <dd className="mt-1 font-semibold">{form.venue || "Event venue"}</dd>
+                                        </div>
+                                        <div className="col-span-2 rounded-lg bg-[#f8fafc] p-2">
+                                          <dt className="font-bold uppercase tracking-widest text-[#475569]">Dress code</dt>
+                                        </div>
+                                        <div className="rounded-lg bg-[#f8fafc] p-2">
+                                          <dt className="font-bold uppercase tracking-widest text-[#475569]">Female</dt>
+                                          <dd className="mt-1 font-semibold">{form.female_dress_code || "Not specified"}</dd>
+                                        </div>
+                                        <div className="rounded-lg bg-[#f8fafc] p-2">
+                                          <dt className="font-bold uppercase tracking-widest text-[#475569]">Male</dt>
+                                          <dd className="mt-1 font-semibold">{form.male_dress_code || "Not specified"}</dd>
+                                        </div>
                                       </div>
-                                      <div className="col-span-2 rounded-lg bg-[#f8fafc] p-2">
-                                        <dt className="font-bold uppercase tracking-widest text-[#475569]">Dress code</dt>
-                                      </div>
-                                      <div className="rounded-lg bg-[#f8fafc] p-2">
-                                        <dt className="font-bold uppercase tracking-widest text-[#475569]">Male</dt>
-                                        <dd className="mt-1 font-semibold">{form.male_dress_code || "Not specified"}</dd>
-                                      </div>
-                                      <div className="rounded-lg bg-[#f8fafc] p-2">
-                                        <dt className="font-bold uppercase tracking-widest text-[#475569]">Female</dt>
-                                        <dd className="mt-1 font-semibold">{form.female_dress_code || "Not specified"}</dd>
-                                      </div>
-                                    </div>
                                     {(() => {
                                       const desc = form.description || "";
                                       const paragraphs = desc.split(/\n{2,}/).filter((p) => p.trim());
@@ -2453,25 +2476,25 @@ className="block w-full cursor-pointer rounded-xl border border-[#d9e2ec] bg-whi
                               </div>
                               <div className="col-span-2 rounded-lg bg-[#f8fafc] p-2">
                                 <dt className="font-bold uppercase tracking-widest text-[#475569]">Venue</dt>
-                                <dd className="mt-1 font-semibold">{detailsToBeCommunicated ? "To be communicated" : form.venue || "Event venue"}</dd>
-                              </div>
-                              <div className="col-span-2 rounded-lg bg-[#f8fafc] p-2">
-                                <dt className="font-bold uppercase tracking-widest text-[#475569]">Dress code</dt>
-                              </div>
-                              <div className="rounded-lg bg-[#f8fafc] p-2">
-                                <dt className="font-bold uppercase tracking-widest text-[#475569]">Male</dt>
-                                <dd className="mt-1 font-semibold">{form.male_dress_code || "Not specified"}</dd>
-                              </div>
-                              <div className="rounded-lg bg-[#f8fafc] p-2">
-                                <dt className="font-bold uppercase tracking-widest text-[#475569]">Female</dt>
-                                <dd className="mt-1 font-semibold">{form.female_dress_code || "Not specified"}</dd>
-                              </div>
-                            </div>
-                            {(() => {
-                              const desc = form.description || "";
-                              const paragraphs = desc.split(/\n{2,}/).filter((p) => p.trim());
-                              if (paragraphs.length === 0) {
-                                return <p className="mt-3">Your AI-generated or edited message will appear here in the test preview.</p>;
+                                          <dd className="mt-1 font-semibold">{detailsToBeCommunicated ? "To be communicated" : form.venue || "Event venue"}</dd>
+                                        </div>
+                                        <div className="col-span-2 rounded-lg bg-[#f8fafc] p-2">
+                                          <dt className="font-bold uppercase tracking-widest text-[#475569]">Dress code</dt>
+                                        </div>
+                                        <div className="rounded-lg bg-[#f8fafc] p-2">
+                                          <dt className="font-bold uppercase tracking-widest text-[#475569]">Female</dt>
+                                          <dd className="mt-1 font-semibold">{form.female_dress_code || "Not specified"}</dd>
+                                        </div>
+                                        <div className="rounded-lg bg-[#f8fafc] p-2">
+                                          <dt className="font-bold uppercase tracking-widest text-[#475569]">Male</dt>
+                                          <dd className="mt-1 font-semibold">{form.male_dress_code || "Not specified"}</dd>
+                                        </div>
+                                      </div>
+                                    {(() => {
+                                      const desc = form.description || "";
+                                      const paragraphs = desc.split(/\n{2,}/).filter((p) => p.trim());
+                                      if (paragraphs.length === 0) {
+                                        return <p className="mt-3">Your AI-generated or edited message will appear here in the test preview.</p>;
                               }
                               return paragraphs.map((para, i) => (
                                 <p key={i} dangerouslySetInnerHTML={{ __html: para.replace(/\n/g, "<br />") }} />

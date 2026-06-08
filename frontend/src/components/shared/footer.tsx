@@ -24,7 +24,7 @@ export function Footer() {
           <div className="md:col-span-4">
             <Link href="/" className="mb-4 flex h-10 w-44 max-w-full items-center sm:w-56">
               <Image
-                src="/logo-white.png"
+                src="/logo-dark-trim.png"
                 alt="accredit.vip"
                 width={4086}
                 height={801}

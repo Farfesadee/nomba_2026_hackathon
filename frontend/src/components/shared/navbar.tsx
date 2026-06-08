@@ -78,10 +78,10 @@ export function Navbar({
             className="flex h-14 flex-shrink-0 items-center transition-transform duration-200 hover:scale-[1.02]"
           >
             <Image
-              src={isDark ? "/logo-white.png" : "/logo.png"}
+              src={isDark ? "/logo-dark-trim.png" : "/logo-trim.png"}
               alt="accredit.vip"
-              width={4071}
-              height={761}
+              width={4086}
+              height={801}
               className="h-12 sm:h-14 w-auto object-contain"
               priority
             />

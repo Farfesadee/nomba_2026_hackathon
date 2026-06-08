@@ -18,7 +18,7 @@ export function FeatureLayout({ icon, title, tag, tagColor, children }: Props) {
       <header className="border-b sticky top-0 bg-white/90 backdrop-blur z-40">
         <div className="container mx-auto px-4 h-20 flex items-center justify-between">
           <Link href="/" aria-label="accredit.vip home" className="flex h-14 w-40 flex-shrink-0 items-center transition-transform duration-200 hover:scale-[1.02] sm:w-72">
-            <Image src="/logo.png" alt="accredit.vip" width={4086} height={801} className="h-10 w-auto object-contain sm:h-16" priority />
+            <Image src="/logo-trim.png" alt="accredit.vip" width={4086} height={801} className="h-10 w-auto object-contain sm:h-16" priority />
           </Link>
           <Link href="/" className="rounded-lg border border-[rgba(13,27,42,0.18)] px-4 py-2 text-sm font-bold text-[#0D1B2A] hover:bg-[rgba(13,27,42,0.05)] transition-all duration-150">
             Back to Home

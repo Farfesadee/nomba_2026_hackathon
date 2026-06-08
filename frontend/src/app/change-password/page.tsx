@@ -119,7 +119,7 @@ export default function ChangePasswordPage() {
         <div className="text-center pt-0">
           <Link href="/" className="inline-block mb-4">
             <Image
-              src="/logo.png"
+              src="/logo-dark-trim.png"
               alt="accredit.vip"
               width={4071}
               height={761}

@@ -342,11 +342,43 @@ export default function CreateEventPage() {
     if (!loading && !user) router.push("/login");
   }, [loading, user, router]);
 
-  // Load saved draft when mode is selected
+  const initialRestoreDone = useRef(false);
+
+  // Restore navigation state on mount (after auth)
   useEffect(() => {
-    if (mode) {
-      const savedDraft = localStorage.getItem(`accredit_draft_${mode}`);
+    if (loading) return;
+    initialRestoreDone.current = true;
+    const lastMode = localStorage.getItem("accredit_last_dashboard_mode") as Mode | null;
+    if (lastMode && ["invite", "event"].includes(lastMode)) {
+      setMode(lastMode);
+      const savedDraft = localStorage.getItem(`accredit_draft_${lastMode}`);
       if (savedDraft) {
+        try {
+          const draft = JSON.parse(savedDraft);
+          setForm(draft.form || DEFAULT_FORM);
+          setPassPackages(draft.passPackages || [{ name: "Regular", price: "" }]);
+          setSocialHandles(draft.socialHandles || [{ platform: "instagram", handle: "" }]);
+          setLineup(draft.lineup || [{ role: "", name: "", attachHeadshot: true, headshotSource: "upload", headshotFileName: "", generatedHeadshot: false }]);
+          setUploadedImageData(draft.uploadedImageData || null);
+        } catch {}
+      }
+      const lastStep = localStorage.getItem("accredit_dashboard_step");
+      if (lastStep) setStep(parseInt(lastStep, 10));
+      const lastFormPage = localStorage.getItem("accredit_dashboard_formPage");
+      if (lastFormPage) setFormPage(parseInt(lastFormPage, 10));
+    }
+  }, [loading]);
+
+  // Load saved draft when user changes mode mid-session (skip initial restore)
+  useEffect(() => {
+    if (!mode) return;
+    if (initialRestoreDone.current) {
+      initialRestoreDone.current = false;
+      return;
+    }
+    const savedDraft = localStorage.getItem(`accredit_draft_${mode}`);
+    if (savedDraft) {
+      try {
         const draft = JSON.parse(savedDraft);
         if (draft) {
           setForm(draft.form || DEFAULT_FORM);
@@ -357,16 +389,19 @@ export default function CreateEventPage() {
           setStep(1);
           setFormPage(0);
         }
-      }
+      } catch {}
     }
   }, [mode]);
 
   useEffect(() => {
     const timer = setTimeout(() => {
       localStorage.setItem("accredit_draft_" + mode, JSON.stringify({ form, passPackages, socialHandles, lineup, uploadedImageData }));
+      localStorage.setItem("accredit_last_dashboard_mode", mode as string);
+      localStorage.setItem("accredit_dashboard_step", String(step));
+      localStorage.setItem("accredit_dashboard_formPage", String(formPage));
     }, 300);
     return () => clearTimeout(timer);
-  }, [form, passPackages, socialHandles, lineup, uploadedImageData, mode]);
+  }, [form, passPackages, socialHandles, lineup, uploadedImageData, mode, step, formPage]);
 
   useEffect(() => {
     return () => { if (uploadedImagePreviewUrl) URL.revokeObjectURL(uploadedImagePreviewUrl); };
@@ -713,7 +748,7 @@ export default function CreateEventPage() {
         <header className="border-b border-[#e8edf2] bg-white">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-20 flex items-center justify-between">
             <Link href="/" className="flex items-center hover:opacity-80 transition-opacity flex-shrink-0">
-              <Image src="/logo.png" alt="accredit.vip" width={4071} height={761} className="h-10 sm:h-12 w-auto object-contain" />
+              <Image src="/logo-dark-trim.png" alt="accredit.vip" width={4071} height={761} className="h-10 sm:h-12 w-auto object-contain" />
             </Link>
             <div className="flex items-center gap-3 sm:gap-4">
               <Link href="/dashboard" className="rounded-lg border border-[#0D1B2A] bg-[#0D1B2A] px-4 sm:px-6 py-2.5 sm:py-3 text-sm sm:text-base font-bold text-white shadow-sm transition-all hover:bg-[#13283d] hover:border-[#E91E8C] hover:shadow-md">Dashboard</Link>
@@ -811,7 +846,7 @@ export default function CreateEventPage() {
       <header className="border-b border-[#e8edf2] bg-white">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-20 flex items-center justify-between">
           <button type="button" onClick={() => setMode(null)} className="flex items-center hover:opacity-80 transition-opacity flex-shrink-0">
-            <Image src="/logo.png" alt="accredit.vip" width={4071} height={761} className="h-10 sm:h-12 w-auto object-contain" />
+            <Image src="/logo-dark-trim.png" alt="accredit.vip" width={4071} height={761} className="h-10 sm:h-12 w-auto object-contain" />
           </button>
           <div className="flex items-center gap-3 sm:gap-4">
             <Link href="/dashboard" className="rounded-lg border border-[#0D1B2A] bg-[#0D1B2A] px-4 sm:px-6 py-2.5 sm:py-3 text-sm sm:text-base font-bold text-white shadow-sm transition-all hover:bg-[#13283d] hover:border-[#E91E8C] hover:shadow-md">Dashboard</Link>
@@ -1589,18 +1624,18 @@ export default function CreateEventPage() {
                                       <dd className="mt-1 font-semibold">Free entry</dd>
                                     )}
                                   </div>
-                                  <div className="col-span-2 rounded-lg bg-[#f8fafc] p-2">
-                                    <dt className="font-bold uppercase tracking-widest text-[#475569]">Dress code</dt>
-                                  </div>
-                                  <div className="rounded-lg bg-[#f8fafc] p-2">
-                                    <dt className="font-bold uppercase tracking-widest text-[#475569]">Male</dt>
-                                    <dd className="mt-1 font-semibold">{form.male_dress_code || "Not specified"}</dd>
-                                  </div>
-                                  <div className="rounded-lg bg-[#f8fafc] p-2">
-                                    <dt className="font-bold uppercase tracking-widest text-[#475569]">Female</dt>
-                                    <dd className="mt-1 font-semibold">{form.female_dress_code || "Not specified"}</dd>
-                                  </div>
-                                  {visibleSocialHandles.length > 0 && (
+                                    <div className="col-span-2 rounded-lg bg-[#f8fafc] p-2">
+                                      <dt className="font-bold uppercase tracking-widest text-[#475569]">Dress code</dt>
+                                    </div>
+                                    <div className="rounded-lg bg-[#f8fafc] p-2">
+                                      <dt className="font-bold uppercase tracking-widest text-[#475569]">Female</dt>
+                                      <dd className="mt-1 font-semibold">{form.female_dress_code || "Not specified"}</dd>
+                                    </div>
+                                    <div className="rounded-lg bg-[#f8fafc] p-2">
+                                      <dt className="font-bold uppercase tracking-widest text-[#475569]">Male</dt>
+                                      <dd className="mt-1 font-semibold">{form.male_dress_code || "Not specified"}</dd>
+                                    </div>
+                                    {visibleSocialHandles.length > 0 && (
                                     <div className="rounded-lg bg-[#f8fafc] p-2">
                                       <dt className="font-bold uppercase tracking-widest text-[#475569]">Social</dt>
                                       <dd className="mt-1 font-semibold truncate">{visibleSocialHandles[0].handle}</dd>
