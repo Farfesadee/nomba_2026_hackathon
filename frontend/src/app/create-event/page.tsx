@@ -703,6 +703,9 @@ export default function CreateEventPage() {
     reader.onload = async () => {
       const dataUrl = reader.result as string;
       setFlierPreview(dataUrl);
+      setUploadedImagePreviewUrl(dataUrl);
+      setUploadedImageData(dataUrl);
+      setForm((prev) => ({ ...prev, media_source: "upload", uploaded_image_name: file.name }));
       setFlierParsing(true);
       try {
         const result = await parseFlier(dataUrl, file.type) as Record<string, unknown>;
@@ -2053,7 +2056,16 @@ className="block w-full cursor-pointer rounded-xl border border-[#d9e2ec] bg-whi
                   </div>
                 )}
 
-                <div className="mt-6 overflow-hidden rounded-xl bg-white text-[#07182f] border border-[#e8edf2]">
+                {(uploadedImagePreviewUrl || form.generated_image_url) && (
+                  <div className="mt-4 overflow-hidden rounded-xl bg-white">
+                    <img
+                      src={uploadedImagePreviewUrl || form.generated_image_url}
+                      alt="Event image"
+                      className="w-full object-cover"
+                    />
+                  </div>
+                )}
+                <div className="mt-4 overflow-hidden rounded-xl bg-white text-[#07182f] border border-[#e8edf2]">
                   {(() => {
                     const activeTemplate = mode === "invite" ? form.invite_template : form.event_template;
                     const styles = activeTemplate ? templateStyles[activeTemplate] : null;
