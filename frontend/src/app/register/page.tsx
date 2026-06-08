@@ -126,11 +126,11 @@ export default function RegisterPage() {
 
         <Link href="/" className="relative z-10">
           <Image
-            src="/logo-dark-trim.png"
+            src="/logo-trim.png"
             alt="accredit.vip"
             width={4071}
             height={761}
-            className="h-10 w-auto object-contain"
+            className="h-12 w-auto object-contain"
           />
         </Link>
 
@@ -233,9 +233,9 @@ export default function RegisterPage() {
 
       {/* Right panel — form */}
       <div className="flex-1 flex flex-col">
-        <div className="lg:hidden bg-[#0D1B2A] px-6 py-4">
+        <div className="lg:hidden bg-[#0D1B2A] px-6 py-6 flex items-center">
           <Link href="/">
-            <Image src="/logo-dark-trim.png" alt="accredit.vip" width={4071} height={761} className="h-10 w-auto object-contain" />
+            <Image src="/logo-trim.png" alt="accredit.vip" width={4071} height={761} className="h-12 w-auto object-contain" />
           </Link>
         </div>
 

@@ -87,7 +87,7 @@ export default function EventsPage() {
         {/* Logo */}
         <div className="flex items-center justify-between h-20 px-4 flex-shrink-0" style={{ borderBottom: "1px solid rgba(255,255,255,0.06)" }}>
           <Link href="/" onClick={() => setMobileNavOpen(false)} className="flex items-center flex-1 min-w-0">
-            <Image src="/logo-trim.png" alt="accredit.vip" width={4071} height={761} className="h-8 w-auto object-contain" />
+            <Image src="/logo-trim.png" alt="accredit.vip" width={4071} height={761} className="h-14 w-auto object-contain" />
           </Link>
           <button
             onClick={() => setSidebarOpen(!sidebarOpen)}

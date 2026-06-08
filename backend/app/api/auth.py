@@ -1,4 +1,4 @@
-import secrets, random, logging
+import secrets, random, logging, asyncio
 from datetime import datetime, timedelta, timezone
 from fastapi import APIRouter, Depends, HTTPException, Response, status, Request
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -123,7 +123,7 @@ async def register(
     await db.commit()
     await db.refresh(user)
 
-    # Send verification message
+    # Send verification message (non-blocking — don't block registration on email delivery)
     if channel == "whatsapp" and user.phone:
         msg = f"Your Accredit.vip verification code: {verification_token}. Expires in {VERIFICATION_EXPIRY_MINUTES} minutes."
         await send_whatsapp(user.phone, msg)
@@ -133,7 +133,7 @@ async def register(
     else:
         verify_link = f"{settings.FRONTEND_URL}/verify?token={verification_token}"
         html = f"<p>Welcome to Accredit.vip!</p><p>Click <a href='{verify_link}'>here</a> to verify your account. This link expires in {VERIFICATION_EXPIRY_MINUTES} minutes.</p>"
-        await send_email(user.email, f"Verify your Accredit.vip account (expires in {VERIFICATION_EXPIRY_MINUTES} min)", html)
+        asyncio.create_task(send_email(user.email, f"Verify your Accredit.vip account (expires in {VERIFICATION_EXPIRY_MINUTES} min)", html))
 
     # Log registration
     await AuditService.log_event(

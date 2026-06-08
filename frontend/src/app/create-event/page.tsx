@@ -1536,7 +1536,7 @@ export default function CreateEventPage() {
                     >
                       <option value="">Year</option>
                       {Array.from({ length: 10 }, (_, i) => {
-                        const year = 2024 + i;
+                        const year = new Date().getFullYear() + i;
                         return <option key={year} value={String(year)}>{year}</option>;
                       })}
                     </SelectDropdown>
@@ -2036,37 +2036,6 @@ className="block w-full cursor-pointer rounded-xl border border-[#d9e2ec] bg-whi
 
               {/* Mobile error + success message - shown after trial */}
               {error && <p className="mt-4 rounded-xl bg-red-50 px-4 py-3 text-sm font-medium text-red-700">{error}</p>}
-              {message && (
-                <div className="mt-6 rounded-xl border-2 border-[#E91E8C]/20 bg-gradient-to-br from-[#fef2f8] to-[#fff5f9] p-5 text-sm text-[#23466f]">
-                  <p className="text-base font-bold text-[#07182f]">{message}</p>
-                  <div className="mt-4 grid gap-3 sm:grid-cols-3">
-                    <div className="rounded-xl bg-white p-3 shadow-sm">
-                      <p className="text-xs font-bold uppercase tracking-widest text-[#94a3b8]">Preview</p>
-                      <p className="mt-1 font-bold text-[#07182f]">{mode === "event" ? "Flyer ready" : "Invite ready"}</p>
-                    </div>
-                    <div className="rounded-xl bg-white p-3 shadow-sm">
-                      <p className="text-xs font-bold uppercase tracking-widest text-[#94a3b8]">QR</p>
-                      <p className="mt-1 font-bold text-[#07182f]">Ready</p>
-                    </div>
-                    <div className="rounded-xl bg-white p-3 shadow-sm">
-                      <p className="text-xs font-bold uppercase tracking-widest text-[#94a3b8]">
-                        {mode === "event" ? "Discover" : "Channels"}
-                      </p>
-                      <p className="mt-1 font-bold text-[#07182f]">
-                        {mode === "event" ? "Publish after signup" : selectedChannelNames.join(" + ")}
-                      </p>
-                    </div>
-                  </div>
-                  <button
-                    type="button"
-                    onClick={handleTestAndSignup}
-                    disabled={submitting}
-                    className="mt-5 flex h-14 w-full items-center justify-center rounded-xl bg-[#E91E8C] px-6 text-base font-black text-white shadow-[0_8px_24px_rgba(233,30,140,0.35)] transition-all hover:bg-[#C4166F] disabled:opacity-50 disabled:cursor-not-allowed bounce-button"
-                  >
-                    {submitting ? "Setting up..." : "Would you like to continue with your invite?"}
-                  </button>
-                </div>
-              )}
 
               {/* Sticky Bottom Navigation Bar for Form Pages */}
               {(step === 1) && mode && (
@@ -2593,6 +2562,68 @@ className="block w-full cursor-pointer rounded-xl border border-[#d9e2ec] bg-whi
               >
                 {submitting ? "Sending..." : "Send Preview"}
               </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Test Invite Result Modal - Full Screen */}
+      {message && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
+          <div className="rounded-2xl bg-white w-full max-w-lg shadow-2xl overflow-hidden">
+            {/* Header with logo */}
+            <div className="bg-gradient-to-br from-[#E91E8C]/10 to-[#E91E8C]/5 px-6 py-8 text-center border-b border-[#e8edf2]">
+              <div className="mb-4 flex justify-center">
+                <svg className="w-12 h-12 text-[#E91E8C]" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+              </div>
+              <h2 className="text-2xl font-black text-[#0D1B2A]">Test Invite Sent!</h2>
+            </div>
+
+            {/* Content */}
+            <div className="px-6 py-8 space-y-6">
+              <p className="text-base font-medium text-[#0D1B2A]">{message}</p>
+
+              {/* Status Cards */}
+              <div className="space-y-3">
+                <div className="rounded-xl border-2 border-[#E91E8C]/20 bg-gradient-to-br from-[#fef2f8] to-[#fff5f9] p-4">
+                  <div className="flex items-center gap-3">
+                    <div className="flex-shrink-0">
+                      <p className="text-xs font-bold uppercase tracking-widest text-[#E91E8C] mb-1">PREVIEW</p>
+                      <p className="text-lg font-bold text-[#0D1B2A]">{mode === "event" ? "Flyer ready" : "Invite ready"}</p>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="rounded-xl border-2 border-[#E91E8C]/20 bg-gradient-to-br from-[#fef2f8] to-[#fff5f9] p-4">
+                  <p className="text-xs font-bold uppercase tracking-widest text-[#E91E8C] mb-1">QR CODE</p>
+                  <p className="text-lg font-bold text-[#0D1B2A]">Ready</p>
+                </div>
+
+                <div className="rounded-xl border-2 border-[#E91E8C]/20 bg-gradient-to-br from-[#fef2f8] to-[#fff5f9] p-4">
+                  <p className="text-xs font-bold uppercase tracking-widest text-[#E91E8C] mb-1">
+                    {mode === "event" ? "DISCOVER" : "CHANNELS"}
+                  </p>
+                  <p className="text-lg font-bold text-[#0D1B2A]">
+                    {mode === "event" ? "Publish after signup" : selectedChannelNames.join(" + ")}
+                  </p>
+                </div>
+              </div>
+
+              {/* CTA */}
+              <button
+                type="button"
+                onClick={handleTestAndSignup}
+                disabled={submitting}
+                className="w-full h-14 rounded-xl bg-[#E91E8C] px-6 text-lg font-black text-white shadow-[0_8px_24px_rgba(233,30,140,0.35)] transition-all hover:bg-[#C4166F] disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {submitting ? "Setting up..." : "Would you like to continue with your invite?"}
+              </button>
+
+              <p className="text-xs text-center text-[#94a3b8]">
+                Create an account to send real invites to your guest list
+              </p>
             </div>
           </div>
         </div>
