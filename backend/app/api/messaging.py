@@ -193,6 +193,26 @@ async def _send_to_guest(
     flyer = flyer_result.scalar_one_or_none()
     flyer_url = flyer.url if flyer else event.cover_image
 
+    # Fallback: use image_data (base64 uploaded during trial)
+    uploaded_image_path = None
+    if not flyer_url and event.image_data:
+        try:
+            import base64
+            upload_dir = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(__file__))), "uploads")
+            os.makedirs(upload_dir, exist_ok=True)
+            img_data = event.image_data
+            if "," in img_data:
+                img_data = img_data.split(",")[1]
+            decoded = base64.b64decode(img_data)
+            img_filename = f"trial_upload_{event.id}.png"
+            img_path = os.path.join(upload_dir, img_filename)
+            with open(img_path, "wb") as f:
+                f.write(decoded)
+            uploaded_image_path = img_path
+            flyer_url = f"/uploads/{img_filename}"
+        except Exception as e:
+            print(f"[Messaging] Failed to process image_data for event {event.id}: {e}")
+
     qr_data = qr_token_url
     qr_image_url_obj = qr_gif_to_url(qr_data, size=250, style="pulsing")
     qr_image_url = qr_image_url_obj if qr_image_url_obj else None
@@ -208,7 +228,8 @@ async def _send_to_guest(
             from_addr = f"{event.host_name} via Accredit.vip <noreply@wristbandsng.com>"
             email_images = []
             if flyer_url:
-                email_images.append(("flyer", _upload_path_from_url(flyer_url)))
+                fp = uploaded_image_path if uploaded_image_path else _upload_path_from_url(flyer_url)
+                email_images.append(("flyer", fp))
             if qr_image_url:
                 email_images.append(("qr_code", _upload_path_from_url(qr_image_url)))
             if email_images:
