@@ -1,6 +1,6 @@
 """Trial event migration - moves localStorage trial data to dashboard after signup."""
 
-import base64, os, logging
+import base64, os, re, logging
 from datetime import date, time
 from fastapi import APIRouter, Depends
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -61,9 +61,21 @@ async def migrate_trial_events(
             if ev_time:
                 try:
                     ev_time_clean = ev_time.strip()
-                    if len(ev_time_clean) == 5:
-                        ev_time_clean += ":00"
-                    parsed_time = time.fromisoformat(ev_time_clean)
+                    ampm = re.search(r'\s*(AM|PM)\s*$', ev_time_clean, re.IGNORECASE)
+                    if ampm:
+                        clean = ev_time_clean[:ampm.start()].strip()
+                        parts = clean.split(':')
+                        hour = int(parts[0])
+                        minute = int(parts[1]) if len(parts) > 1 else 0
+                        if ampm.group(1).upper() == 'PM' and hour != 12:
+                            hour += 12
+                        if ampm.group(1).upper() == 'AM' and hour == 12:
+                            hour = 0
+                        parsed_time = time(hour, minute)
+                    else:
+                        if len(ev_time_clean) == 5:
+                            ev_time_clean += ":00"
+                        parsed_time = time.fromisoformat(ev_time_clean)
                 except (ValueError, TypeError):
                     logger.warning("Could not parse event_time: %s", ev_time)
             if parsed_date is None:

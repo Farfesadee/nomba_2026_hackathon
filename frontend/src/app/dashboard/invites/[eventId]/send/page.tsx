@@ -116,12 +116,12 @@ export default function SendInvitesPage() {
         send_attempts_remaining: number;
       }>("/invites/send", {
         method: "POST",
-        body: JSON.stringify({
+        body: {
           event_id: eventId,
           channels: Array.from(selectedChannels),
           custom_message: customMessage || null,
           guest_ids: Array.from(selectedGuests),
-        }),
+        },
       });
 
       setSuccess(`Invites sent to ${response.invites_sent} guest(s)! You have ${response.send_attempts_remaining} send attempt(s) remaining.`);

@@ -8,6 +8,7 @@ import { Check, Mail, Smartphone } from "lucide-react";
 import { useAuth } from "@/contexts/auth-context";
 import { PhoneInput } from "@/components/shared/phone-input";
 import { TrialStore } from "@/lib/trial-store";
+import { parseTimeInputTo24Hour } from "@/lib/event-form-options";
 
 const QR_PATTERN = [
   1,1,1,0,1,0,1,1,
@@ -73,7 +74,7 @@ export default function RegisterPage() {
             event_type: trialEvent.event_type,
             host_name: trialEvent.host_name,
             event_date: trialEvent.event_date,
-            event_time: trialEvent.event_time,
+            event_time: parseTimeInputTo24Hour(trialEvent.event_time || ""),
             venue: trialEvent.venue,
             city: "",
             state: "",
