@@ -193,10 +193,14 @@ async def approve_event(
     }
 
 
+class RejectRequest(BaseModel):
+    reason: str = "No reason provided"
+
+
 @router.post("/admin/events/{event_id}/reject")
 async def reject_event(
     event_id: int,
-    reason: str = "No reason provided",
+    req: RejectRequest,
     admin: User = Depends(check_admin),
     db: AsyncSession = Depends(get_db),
 ):
@@ -214,7 +218,7 @@ async def reject_event(
     event.status = "rejected"
     event.is_public = False
     event.review_status = "rejected"
-    event.review_note = reason
+    event.review_note = req.reason
     event.updated_at = datetime.now(timezone.utc)
 
     db.add(event)
@@ -233,8 +237,8 @@ async def reject_event(
             user_id=organizer.id,
             type="event_rejected",
             title="Event Submission Requires Revision",
-            message=f"Your event '{event.title}' was not approved. Reason: {reason}",
-            data={"event_id": event.id, "reason": reason},
+            message=f"Your event '{event.title}' was not approved. Reason: {req.reason}",
+            data={"event_id": event.id, "reason": req.reason},
         )
 
     await log_action(

@@ -566,6 +566,9 @@ export default function CreateEventPage() {
         after_party_enabled: form.after_party_enabled,
         after_party_location: form.after_party_location || undefined,
         after_party_time: form.after_party_time ? parseTimeInputTo24Hour(form.after_party_time) : undefined,
+        qr_delivery: form.qr_delivery || undefined,
+        qr_style: form.qr_style || undefined,
+        qr_message: form.qr_message || undefined,
         country: "Nigeria",
       });
       localStorage.removeItem("accredit_draft_" + mode);
@@ -604,6 +607,9 @@ export default function CreateEventPage() {
         description: form.description,
         is_public: false,
         event_type: "private",
+        qr_delivery: form.qr_delivery || undefined,
+        qr_style: form.qr_style || undefined,
+        qr_message: form.qr_message || undefined,
         country: "Nigeria",
       });
 

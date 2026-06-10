@@ -65,6 +65,9 @@ class EventCreateRequest(BaseModel):
     after_party_enabled: bool = False
     after_party_location: str | None = None
     after_party_time: str | None = None
+    qr_delivery: str | None = None
+    qr_style: str | None = None
+    qr_message: str | None = None
 
 
 class EventPublicResponse(BaseModel):

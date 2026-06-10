@@ -34,6 +34,8 @@ export default function AdminEventsPage() {
   const [loading, setLoading] = useState(true);
   const [currentPage, setCurrentPage] = useState(1);
   const [pageInput, setPageInput] = useState("1");
+  const [rejectModal, setRejectModal] = useState<number | null>(null);
+  const [rejectReason, setRejectReason] = useState("");
   const itemsPerPage = 10;
 
   const fetchEvents = async () => {
@@ -62,9 +64,25 @@ export default function AdminEventsPage() {
     try {
       if (action === "delete") {
         await apiClient(`/admin/events/${eventId}`, { method: "DELETE" });
+      } else if (action === "reject") {
+        setRejectModal(eventId);
+        return;
       } else {
         await apiClient(`/admin/events/${eventId}/${action}`, { method: "POST" });
       }
+      fetchEvents();
+    } catch {}
+  };
+
+  const confirmReject = async () => {
+    if (!rejectModal) return;
+    try {
+      await apiClient(`/admin/events/${rejectModal}/reject`, {
+        method: "POST",
+        body: { reason: rejectReason || "No reason provided" },
+      });
+      setRejectModal(null);
+      setRejectReason("");
       fetchEvents();
     } catch {}
   };
@@ -164,8 +182,7 @@ export default function AdminEventsPage() {
               <p className="text-[#94a3b8]">Loading events...</p>
             </div>
           ) : (
-            <>
-              <div className="space-y-4">
+            <div className="space-y-4">
                 {events
                   .sort((a, b) => new Date(b.created_at || b.event_date || 0).getTime() - new Date(a.created_at || a.event_date || 0).getTime())
                   .filter((e) => !searchQuery || e.title?.toLowerCase().includes(searchQuery.toLowerCase()) || e.host_name?.toLowerCase().includes(searchQuery.toLowerCase()))
@@ -201,17 +218,34 @@ export default function AdminEventsPage() {
                       </div>
                     );
                   })}
-              </div>
-
               {events.length === 0 && (
                 <div className="bg-white rounded-2xl border border-[#e8edf2] p-12 text-center">
                   <p className="text-[#94a3b8]">No events found</p>
                 </div>
               )}
-            </>
+            </div>
           )}
         </main>
       </div>
+      {rejectModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50" onClick={() => setRejectModal(null)}>
+          <div className="bg-white rounded-2xl p-6 w-full max-w-md mx-4 shadow-xl" onClick={(e) => e.stopPropagation()}>
+            <h3 className="text-lg font-bold text-[#0D1B2A] mb-2">Reject Event</h3>
+            <p className="text-sm text-[#64748b] mb-4">Provide a reason for rejection (optional):</p>
+            <textarea
+              value={rejectReason}
+              onChange={(e) => setRejectReason(e.target.value)}
+              placeholder="Enter rejection reason..."
+              className="w-full h-24 rounded-xl border border-[#d9e2ec] p-3 text-sm outline-none focus:border-[#E91E8C] resize-none"
+            />
+            <div className="flex gap-3 mt-4">
+              <button onClick={() => { setRejectModal(null); setRejectReason(""); }} className="flex-1 h-11 rounded-xl border border-[#d9e2ec] text-sm font-semibold text-[#64748b] hover:bg-[#f8fafc]">Cancel</button>
+              <button onClick={confirmReject} className="flex-1 h-11 rounded-xl bg-red-600 text-sm font-semibold text-white hover:bg-red-700">Reject Event</button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
+

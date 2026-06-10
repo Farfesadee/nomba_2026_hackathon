@@ -1,5 +1,5 @@
-import os, uuid
-from fastapi import APIRouter, Depends, UploadFile, File, HTTPException
+import os, uuid, logging
+from fastapi import APIRouter, Depends, UploadFile, File, HTTPException, status
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
 
@@ -8,6 +8,9 @@ from app.core.security import get_current_user
 from app.models.user import User
 from app.models.event import Event
 from app.models.flier import FlierAsset
+from app.services.file_upload_security import FileUploadSecurityService, MAX_UPLOAD_SIZE
+
+logger = logging.getLogger(__name__)
 
 router = APIRouter()
 
@@ -31,6 +34,8 @@ async def upload_cover(
     event = result.scalar_one_or_none()
     if not event:
         raise HTTPException(status_code=404, detail="Event not found")
+
+    await FileUploadSecurityService.validate_upload(file)
 
     if file.content_type not in ALLOWED_TYPES:
         raise HTTPException(status_code=400, detail="Only JPEG, PNG, WebP, and GIF allowed")
@@ -64,6 +69,8 @@ async def upload_flier(
     event = result.scalar_one_or_none()
     if not event:
         raise HTTPException(status_code=404, detail="Event not found")
+
+    await FileUploadSecurityService.validate_upload(file)
 
     if file.content_type not in ALLOWED_TYPES:
         raise HTTPException(status_code=400, detail="Only JPEG, PNG, WebP, and GIF allowed")

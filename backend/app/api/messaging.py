@@ -195,7 +195,8 @@ async def _send_to_guest(
     flyer_url = flyer.url if flyer else event.cover_image
 
     qr_data = qr_token_url
-    qr_image_url_obj = qr_gif_to_url(qr_data, size=250, style="pulsing")
+    qr_style = event.qr_style or "pulsing"
+    qr_image_url_obj = qr_gif_to_url(qr_data, size=250, style=qr_style)
     qr_image_url = qr_image_url_obj if qr_image_url_obj else None
 
     msg = InviteMessage(batch_id=batch_id, guest_id=guest.id, channel=channel)
@@ -285,7 +286,8 @@ async def _send_qr_to_guest(
     qr = await get_or_create_guest_qr(db, event.id, guest.id)
     qr_token_url = f"{settings.FRONTEND_URL}/api/v1/qr/{qr.token}"
 
-    qr_image_url_obj = qr_gif_to_url(qr_token_url, size=250, style="pulsing")
+    qr_style = event.qr_style or "pulsing"
+    qr_image_url_obj = qr_gif_to_url(qr_token_url, size=250, style=qr_style)
     qr_image_url = qr_image_url_obj if qr_image_url_obj else None
 
     subject, body, html = _build_qr_message(guest, event, qr_image_url)

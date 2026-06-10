@@ -88,6 +88,34 @@ async def verify_qr(req: ScanRequest, request: Request, db: AsyncSession = Depen
     }
 
 
+@router.get("/{token}")
+async def qr_token_info(
+    token: str,
+    db: AsyncSession = Depends(get_db),
+):
+    """Return ticket info when a guest scans their own QR code with a phone camera."""
+    result = await db.execute(select(QRCode).where(QRCode.token == token))
+    qr = result.scalar_one_or_none()
+    if not qr:
+        raise HTTPException(status_code=404, detail="Invalid or expired QR code")
+
+    guest_result = await db.execute(select(Guest).where(Guest.id == qr.guest_id))
+    guest = guest_result.scalar_one_or_none()
+
+    event_result = await db.execute(select(Event).where(Event.id == qr.event_id))
+    event = event_result.scalar_one_or_none()
+
+    return {
+        "valid": qr.expires_at and qr.expires_at > datetime.now(timezone.utc),
+        "guest_name": guest.name if guest else None,
+        "event_title": event.title if event else None,
+        "event_date": str(event.event_date) if event else None,
+        "event_time": str(event.event_time) if event else None,
+        "venue": event.venue if event else None,
+        "status": qr.status,
+    }
+
+
 @router.post("/scan")
 async def scan_qr(req: ScanRequest, request: Request, db: AsyncSession = Depends(get_db)):
     ip, ua = _get_client_info(request)
