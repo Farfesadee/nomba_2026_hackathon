@@ -284,7 +284,7 @@ async def use_trial(
                 animated_qr_url = qr_to_base64(qr_data)
 
         # Create event+guest record early so we have a real RSVP token
-        rsvp_link_url = settings.FRONTEND_URL
+        rsvp_link_url = f"{settings.FRONTEND_URL}/create-event"
         if user and "email" in delivery_channels:
             event_id = await _maybe_create_event(req, user, flyer_url, db)
             if event_id:
