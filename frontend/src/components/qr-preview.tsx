@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useState } from 'react';
 import QRCodeStyling from 'qr-code-styling';
 import { FastAverageColor } from 'fast-average-color';
 
@@ -8,13 +8,13 @@ interface QRPreviewProps {
   qrValue: string;
   imageUrl: string;
   title?: string;
+  size?: number;
 }
 
-export function QRPreview({ qrValue, imageUrl, title }: QRPreviewProps) {
-  const containerRef = useRef<HTMLDivElement>(null);
+export function QRPreview({ qrValue, imageUrl, title, size = 160 }: QRPreviewProps) {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const qrInstanceRef = useRef<QRCodeStyling | null>(null);
+  const [qrImageUrl, setQrImageUrl] = useState<string | null>(null);
 
   useEffect(() => {
     if (!qrValue || !imageUrl) {
@@ -34,8 +34,8 @@ export function QRPreview({ qrValue, imageUrl, title }: QRPreviewProps) {
 
         // Create QR code
         const qrCode = new QRCodeStyling({
-          width: 300,
-          height: 300,
+          width: size,
+          height: size,
           data: qrValue,
           image: imageUrl,
           dotsOptions: {
@@ -55,17 +55,17 @@ export function QRPreview({ qrValue, imageUrl, title }: QRPreviewProps) {
           },
           imageOptions: {
             crossOrigin: 'anonymous',
-            margin: 10,
-            imageSize: 80,
+            margin: 8,
+            imageSize: Math.max(60, Math.floor(size * 0.35)),
+            hideBackgroundDots: true,
           },
         });
 
-        qrInstanceRef.current = qrCode;
-
-        // Clear previous QR and render new one
-        if (containerRef.current) {
-          containerRef.current.innerHTML = '';
-          qrCode.append(containerRef.current);
+        // Get QR code as image URL
+        const url = await qrCode.getRawData('png');
+        if (url) {
+          const objectUrl = URL.createObjectURL(url as Blob);
+          setQrImageUrl(objectUrl);
         }
 
         setLoading(false);
@@ -77,27 +77,37 @@ export function QRPreview({ qrValue, imageUrl, title }: QRPreviewProps) {
     };
 
     generateQR();
-  }, [qrValue, imageUrl]);
+  }, [qrValue, imageUrl, size]);
 
   return (
     <div className="flex flex-col items-center gap-4">
       {title && <p className="text-sm font-semibold text-[#0D1B2A]">{title}</p>}
 
-      <div className="flex items-center justify-center p-4 bg-white rounded-xl border border-[#e8edf2]">
+      <div className="flex items-center justify-center p-2 bg-white border border-[#e8edf2]" style={{ borderRadius: '20px' }}>
         {loading && (
-          <div className="w-[300px] h-[300px] flex items-center justify-center text-[#94a3b8]">
+          <div style={{ width: `${size}px`, height: `${size}px` }} className="flex items-center justify-center text-[#94a3b8]">
             Generating QR...
           </div>
         )}
 
         {error && (
-          <div className="w-[300px] h-[300px] flex items-center justify-center text-red-500 text-sm text-center">
+          <div style={{ width: `${size}px`, height: `${size}px` }} className="flex items-center justify-center text-red-500 text-sm text-center">
             {error}
           </div>
         )}
 
-        {!loading && !error && (
-          <div ref={containerRef} />
+        {!loading && !error && qrImageUrl && (
+          <img
+            src={qrImageUrl}
+            alt="QR Code"
+            onError={() => setError('Failed to load QR image')}
+            style={{
+              width: `${size}px`,
+              height: `${size}px`,
+              borderRadius: '16px',
+              display: 'block',
+            }}
+          />
         )}
       </div>
     </div>

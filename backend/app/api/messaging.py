@@ -147,6 +147,10 @@ def _build_invite_message(
         if absolute_flyer:
             flyer_html = f'<img src="{absolute_flyer}" alt="{event.title}" style="width:100%;max-width:600px;display:block;border-radius:0" />'
     host_section = f'<p style="margin:0 0 4px;font-size:14px;font-weight:bold;color:#fff">Hosted by {event.host_name}</p>' if event.host_name else ''
+    dress_code_row = '<tr><td style="padding:8px 0;color:#888;font-size:12px;text-transform:uppercase;letter-spacing:1px;width:100px;vertical-align:top">DRESS CODE</td><td style="padding:8px 0;font-size:14px;font-weight:bold">' + (event.dress_code or "Any") + '</td></tr>' if event.dress_code else ''
+    male_row = '<tr><td style="padding:8px 0;color:#888;font-size:12px;text-transform:uppercase;letter-spacing:1px;width:100px;vertical-align:top">MEN</td><td style="padding:8px 0;font-size:14px;font-weight:bold">' + (event.male_dress_code or '') + '</td></tr>' if getattr(event, 'male_dress_code', None) else ''
+    female_row = '<tr><td style="padding:8px 0;color:#888;font-size:12px;text-transform:uppercase;letter-spacing:1px;width:100px;vertical-align:top">WOMEN</td><td style="padding:8px 0;font-size:14px;font-weight:bold">' + (event.female_dress_code or '') + '</td></tr>' if getattr(event, 'female_dress_code', None) else ''
+    tracking_pixel = f'<img src="{settings.FRONTEND_URL}/api/v1/track/open/{message_id}" alt="" width="1" height="1" style="display:none" />' if message_id else ''
     html = (
         '<div style="max-width:600px;margin:0 auto;font-family:Georgia,serif;color:#1a1a2e">'
         '<style>@keyframes accredit-text{0%,10%{opacity:1}20%,70%{opacity:1}85%,100%{opacity:0}}@keyframes accredit-btn{0%,35%{opacity:1}45%,70%{opacity:1}85%,100%{opacity:0}}@keyframes accredit-pulse{0%,100%{box-shadow:0 0 0 0 rgba(233,30,140,0.3)}50%{box-shadow:0 0 0 12px rgba(233,30,140,0)}}</style>'
@@ -163,9 +167,9 @@ def _build_invite_message(
         f'<tr><td style="padding:8px 0;color:#888;font-size:12px;text-transform:uppercase;letter-spacing:1px;width:100px;vertical-align:top">DATE</td><td style="padding:8px 0;font-size:14px;font-weight:bold">{formatted_date}</td></tr>'
         f'<tr><td style="padding:8px 0;color:#888;font-size:12px;text-transform:uppercase;letter-spacing:1px;width:100px;vertical-align:top">TIME</td><td style="padding:8px 0;font-size:14px;font-weight:bold">{formatted_time}</td></tr>'
         f'<tr><td style="padding:8px 0;color:#888;font-size:12px;text-transform:uppercase;letter-spacing:1px;width:100px;vertical-align:top">VENUE</td><td style="padding:8px 0;font-size:14px;font-weight:bold">{event.venue}</td></tr>'
-        {'<tr><td style="padding:8px 0;color:#888;font-size:12px;text-transform:uppercase;letter-spacing:1px;width:100px;vertical-align:top">DRESS CODE</td><td style="padding:8px 0;font-size:14px;font-weight:bold">' + (event.dress_code or "Any") + '</td></tr>' if event.dress_code else ''}
-        {'<tr><td style="padding:8px 0;color:#888;font-size:12px;text-transform:uppercase;letter-spacing:1px;width:100px;vertical-align:top">MEN</td><td style="padding:8px 0;font-size:14px;font-weight:bold">' + event.male_dress_code + '</td></tr>' if getattr(event, 'male_dress_code', None) else ''}
-        {'<tr><td style="padding:8px 0;color:#888;font-size:12px;text-transform:uppercase;letter-spacing:1px;width:100px;vertical-align:top">WOMEN</td><td style="padding:8px 0;font-size:14px;font-weight:bold">' + event.female_dress_code + '</td></tr>' if getattr(event, 'female_dress_code', None) else ''}
+        f'{dress_code_row}'
+        f'{male_row}'
+        f'{female_row}'
         '</table>'
         f'<div style="text-align:center;margin:24px 0">'
         f'<a href="{rsvp_link}" style="display:inline-block;background:#E91E8C;color:#fff;padding:14px 40px;border-radius:50px;text-decoration:none;font-weight:bold;font-size:15px;font-family:Arial,sans-serif">RSVP NOW</a>'
@@ -176,8 +180,8 @@ def _build_invite_message(
         f'{host_section}'
         '<p style="margin:0;letter-spacing:1px">Accredit.vip — Premium Event Infrastructure</p>'
         '</div>'
-        + (f'<img src="{settings.FRONTEND_URL}/api/v1/track/open/{message_id}" alt="" width="1" height="1" style="display:none" />' if message_id else '')
-        + '</div>'
+        f'{tracking_pixel}'
+        '</div>'
     )
     return subject, body, html
 

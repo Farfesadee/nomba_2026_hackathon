@@ -726,36 +726,54 @@ export default function CreateEventPage() {
   }
 
   function extractDate(s: string): string | null {
-    // Strip common OCR artifacts
     const txt = s.replace(/[|°^~*_`]/g, " ").replace(/\s+/g, " ").trim();
-    // "18 September 2027" or "30th August, 2025"
-    const m = txt.match(/(\d{1,2})\s*(?:st|nd|rd|th)?\s*(Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec|January|February|March|April|May|June|July|August|September|October|November|December)[a-z]*\s*,?\s*(\d{2,4})/i);
+    const months: Record<string, string> = {
+      jan:"01",feb:"02",mar:"03",apr:"04",may:"05",jun:"06",jul:"07",aug:"08",sep:"09",oct:"10",nov:"11",dec:"12"
+    };
+
+    // Pattern 1: "18 JUL 2025" or "18 JULY 2025"
+    let m = txt.match(/(\d{1,2})\s+(JAN|FEB|MAR|APR|MAY|JUN|JUL|AUG|SEP|OCT|NOV|DEC|JANUARY|FEBRUARY|MARCH|APRIL|MAY|JUNE|JULY|AUGUST|SEPTEMBER|OCTOBER|NOVEMBER|DECEMBER)\s*\.?\s+(\d{4}|\d{2})/i);
     if (m) {
-      const months: Record<string, string> = {jan:"01",feb:"02",mar:"03",apr:"04",may:"05",jun:"06",jul:"07",aug:"08",sep:"09",oct:"10",nov:"11",dec:"12"};
-      const mn = m[2].slice(0, 3).toLowerCase();
-      const month = months[mn] || "01";
       const day = String(parseInt(m[1], 10)).padStart(2, "0");
+      const month = months[m[2].slice(0, 3).toLowerCase()] || "01";
       const year = m[3].length === 2 ? "20" + m[3] : m[3];
       return `${year}-${month}-${day}`;
     }
-    // "September 18, 2027" or "Saturday, September 18, 2027"
-    const mAlt = txt.match(/(Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec|January|February|March|April|May|June|July|August|September|October|November|December)[a-z]*\s+(\d{1,2})\s*,?\s*(\d{2,4})/i);
-    if (mAlt) {
-      const months: Record<string, string> = {jan:"01",feb:"02",mar:"03",apr:"04",may:"05",jun:"06",jul:"07",aug:"08",sep:"09",oct:"10",nov:"11",dec:"12"};
-      const mn = mAlt[1].slice(0, 3).toLowerCase();
-      const month = months[mn] || "01";
-      const day = String(parseInt(mAlt[2], 10)).padStart(2, "0");
-      const year = mAlt[3].length === 2 ? "20" + mAlt[3] : mAlt[3];
+
+    // Pattern 2: "18 September 2027" or "18th August, 2025"
+    m = txt.match(/(\d{1,2})\s*(?:st|nd|rd|th)?\s+(Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec|January|February|March|April|May|June|July|August|September|October|November|December)[a-z]*\s*,?\s*(\d{4}|\d{2})/i);
+    if (m) {
+      const day = String(parseInt(m[1], 10)).padStart(2, "0");
+      const month = months[m[2].slice(0, 3).toLowerCase()] || "01";
+      const year = m[3].length === 2 ? "20" + m[3] : m[3];
       return `${year}-${month}-${day}`;
     }
-    // "18/09/2027" or "05-15-2027"
-    const m2 = txt.match(/(\d{1,2})\s*[/.-]\s*(\d{1,2})\s*[/.-]\s*(\d{2,4})/);
-    if (m2) {
-      const month = String(parseInt(m2[1], 10)).padStart(2, "0");
-      const day = String(parseInt(m2[2], 10)).padStart(2, "0");
-      const year = m2[3].length === 2 ? "20" + m2[3] : m2[3];
+
+    // Pattern 3: "September 18, 2027"
+    m = txt.match(/(Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec|January|February|March|April|May|June|July|August|September|October|November|December)[a-z]*\s+(\d{1,2})\s*(?:st|nd|rd|th)?\s*,?\s*(\d{4}|\d{2})/i);
+    if (m) {
+      const day = String(parseInt(m[2], 10)).padStart(2, "0");
+      const month = months[m[1].slice(0, 3).toLowerCase()] || "01";
+      const year = m[3].length === 2 ? "20" + m[3] : m[3];
       return `${year}-${month}-${day}`;
     }
+
+    // Pattern 4: "18/09/2027", "18-09-2027", "18.09.2027", "2027-09-18"
+    m = txt.match(/(\d{1,2})\s*[/.-]\s*(\d{1,2})\s*[/.-]\s*(\d{4}|\d{2})|(\d{4})\s*[/.-]\s*(\d{1,2})\s*[/.-]\s*(\d{1,2})/);
+    if (m) {
+      if (m[1]) {
+        const day = String(parseInt(m[1], 10)).padStart(2, "0");
+        const month = String(parseInt(m[2], 10)).padStart(2, "0");
+        const year = m[3].length === 2 ? "20" + m[3] : m[3];
+        return `${year}-${month}-${day}`;
+      } else {
+        const year = m[4];
+        const month = String(parseInt(m[5], 10)).padStart(2, "0");
+        const day = String(parseInt(m[6], 10)).padStart(2, "0");
+        return `${year}-${month}-${day}`;
+      }
+    }
+
     return null;
   }
 
@@ -766,24 +784,49 @@ export default function CreateEventPage() {
   };
 
   function extractTime(s: string): string | null {
-    const txt = s.replace(/[|°^~*_`]/g, " ").replace(/\s+/g, " ").trim();
-    // "4:00 PM"
-    let tm = txt.match(/(\d{1,2}):(\d{2})\s*(AM|PM|am|pm)/i);
-    if (tm) return tm[1] + ":" + tm[2] + " " + tm[3].toUpperCase();
-    // "4 PM"
-    tm = txt.match(/(\d{1,2})\s*(AM|PM|am|pm)/i);
-    if (tm) return tm[1] + ":00 " + tm[2].toUpperCase();
-    // "four o'clock in the afternoon" or "four o'clock"
-    const wordHour = txt.match(/\b(one|two|three|four|five|six|seven|eight|nine|ten|eleven|twelve|noon|midnight)\b/i);
+    const txt = s.replace(/[|°^~*_`]/g, " ").replace(/\s+/g, " ").trim().toUpperCase();
+
+    // Pattern 1: "4:30 PM" or "4:30PM" or "16:30"
+    let tm = txt.match(/(\d{1,2}):(\d{2})\s*(?:AM|PM)?/);
+    if (tm) {
+      const hour = String(parseInt(tm[1], 10)).padStart(2, "0");
+      const minute = tm[2];
+      // If it looks like 24-hour format (hour > 12), convert to 12-hour
+      if (parseInt(tm[1], 10) >= 12) {
+        const h12 = parseInt(tm[1], 10) === 12 ? 12 : parseInt(tm[1], 10) - 12;
+        return String(h12).padStart(2, "0") + ":" + minute + " PM";
+      }
+      // Check for AM/PM in original string
+      const period = /PM/i.test(s) ? "PM" : /AM/i.test(s) ? "AM" : "AM";
+      return hour + ":" + minute + " " + period;
+    }
+
+    // Pattern 2: "4 PM" or "4PM" or "16:00"
+    tm = txt.match(/(\d{1,2})\s*(?::00)?\s*(?:AM|PM)?/);
+    if (tm && parseInt(tm[1], 10) <= 23) {
+      const hour = parseInt(tm[1], 10);
+      // If it looks like 24-hour format
+      if (hour >= 12) {
+        const h12 = hour === 12 ? 12 : hour - 12;
+        return String(h12).padStart(2, "0") + ":00 PM";
+      }
+      const period = /PM/i.test(s) ? "PM" : /AM|MORNING/i.test(s) ? "AM" : hour < 12 ? "AM" : "PM";
+      return String(hour).padStart(2, "0") + ":00 " + period;
+    }
+
+    // Pattern 3: Spelled out numbers "FOUR PM" or "FOUR O'CLOCK"
+    const wordHour = txt.match(/\b(ONE|TWO|THREE|FOUR|FIVE|SIX|SEVEN|EIGHT|NINE|TEN|ELEVEN|TWELVE|NOON|MIDNIGHT)\b/);
     if (wordHour) {
       const hour = NUMBERS[wordHour[1].toLowerCase()] || "12";
       let period = "AM";
-      if (/afternoon|evening|night|pm/i.test(txt)) period = "PM";
-      if (/morning|am/i.test(txt)) period = "AM";
-      if (/noon|midnight/i.test(txt)) period = /midnight/i.test(txt) ? "AM" : "PM";
-      const minute = /half\s+past/i.test(txt) ? "30" : /quarter\s+past/i.test(txt) ? "15" : /quarter\s+to/i.test(txt) ? "45" : "00";
-      return hour.padStart(2, "0") + ":" + minute + " " + period;
+      if (/PM|AFTERNOON|EVENING|NIGHT/.test(txt)) period = "PM";
+      if (/AM|MORNING/.test(txt)) period = "AM";
+      if (/NOON/.test(txt)) period = "PM";
+      if (/MIDNIGHT/.test(txt)) period = "AM";
+      const minute = /HALF.*PAST/.test(txt) ? "30" : /QUARTER.*PAST/.test(txt) ? "15" : /QUARTER.*TO/.test(txt) ? "45" : "00";
+      return String(parseInt(hour, 10)).padStart(2, "0") + ":" + minute + " " + period;
     }
+
     return null;
   }
 
@@ -1283,23 +1326,6 @@ export default function CreateEventPage() {
                   <p className="mt-2 text-xs font-medium text-amber-600">{flierParseError}</p>
                 )}
               </div>
-
-              {/* QR Preview Section */}
-              {uploadedImagePreviewUrl && (
-                <div className="rounded-xl border-2 border-[#E91E8C]/20 bg-gradient-to-br from-[#fef2f8] to-[#fff5f9] p-6">
-                  <p className="text-sm font-bold text-[#0D1B2A] mb-4">Your Event QR Code Preview</p>
-                  <div className="flex justify-center">
-                    <QRPreview
-                      qrValue={`${form.title}-${form.event_date}-${form.host_name}`}
-                      imageUrl={uploadedImagePreviewUrl}
-                      title="This is how your QR code will look"
-                    />
-                  </div>
-                  <p className="text-xs text-[#94a3b8] text-center mt-4">
-                    Your QR code automatically matches your uploaded image's color and displays your flier in the center.
-                  </p>
-                </div>
-              )}
 
               <div className="grid gap-4 md:grid-cols-2">
                 <label className="space-y-2">
@@ -2128,12 +2154,22 @@ className="block w-full cursor-pointer rounded-xl border border-[#d9e2ec] bg-whi
                         {(form.qr_message || form.qr_delivery === "with_qr") && (
                           <p className="mt-2 text-sm text-[#23466f]">{form.qr_message || "Attached to this invite is your QR code. Kindly present it at the event for entry."}</p>
                         )}
-                        <div className="mt-3 grid h-24 w-24 grid-cols-5 gap-1 rounded-lg bg-[#f8fafc] p-2 shadow-[0_0_0_4px_rgba(233,30,140,0.08)]">
-                          {Array.from({ length: 25 }).map((_, index) => (
-                            <span key={index}
-                              className={`rounded-sm ${[0, 1, 2, 5, 10, 12, 14, 18, 20, 21, 22, 24].includes(index) ? "bg-[#07182f]" : "bg-white"}`}
+                        <div className="mt-3 flex justify-center">
+                          {uploadedImagePreviewUrl ? (
+                            <QRPreview
+                              qrValue={`${form.title}-${form.event_date}-${form.host_name}`}
+                              imageUrl={uploadedImagePreviewUrl}
+                              size={160}
                             />
-                          ))}
+                          ) : (
+                            <div className="grid h-24 w-24 grid-cols-5 gap-1 rounded-lg bg-[#f8fafc] p-2 shadow-[0_0_0_4px_rgba(233,30,140,0.08)]">
+                              {Array.from({ length: 25 }).map((_, index) => (
+                                <span key={index}
+                                  className={`rounded-sm ${[0, 1, 2, 5, 10, 12, 14, 18, 20, 21, 22, 24].includes(index) ? "bg-[#07182f]" : "bg-white"}`}
+                                />
+                              ))}
+                            </div>
+                          )}
                         </div>
                       </div>
                     )}
@@ -2346,13 +2382,23 @@ className="block w-full cursor-pointer rounded-xl border border-[#d9e2ec] bg-whi
                         {(form.qr_message || form.qr_delivery === "with_qr") && (
                           <p className="mt-2 text-sm text-[#23466f]">{form.qr_message || "Attached to this invite is your QR code. Kindly present it at the event for entry."}</p>
                         )}
-                        <div className="mt-3 grid h-24 w-24 grid-cols-5 gap-1 rounded-lg bg-[#f8fafc] p-2 shadow-[0_0_0_4px_rgba(233,30,140,0.08)]">
-                          {Array.from({ length: 25 }).map((_, index) => (
-                            <span
-                              key={index}
-                              className={`rounded-sm ${[0, 1, 2, 5, 10, 12, 14, 18, 20, 21, 22, 24].includes(index) ? "bg-[#07182f]" : "bg-white"}`}
+                        <div className="mt-3 flex justify-center">
+                          {uploadedImagePreviewUrl ? (
+                            <QRPreview
+                              qrValue={`${form.title}-${form.event_date}-${form.host_name}`}
+                              imageUrl={uploadedImagePreviewUrl}
+                              size={160}
                             />
-                          ))}
+                          ) : (
+                            <div className="grid h-24 w-24 grid-cols-5 gap-1 rounded-lg bg-[#f8fafc] p-2 shadow-[0_0_0_4px_rgba(233,30,140,0.08)]">
+                              {Array.from({ length: 25 }).map((_, index) => (
+                                <span
+                                  key={index}
+                                  className={`rounded-sm ${[0, 1, 2, 5, 10, 12, 14, 18, 20, 21, 22, 24].includes(index) ? "bg-[#07182f]" : "bg-white"}`}
+                                />
+                              ))}
+                            </div>
+                          )}
                         </div>
                       </div>
                     )}
@@ -2498,6 +2544,7 @@ className="block w-full cursor-pointer rounded-xl border border-[#d9e2ec] bg-whi
                       <QRPreview
                         qrValue={qrValue || `${form.title}-${form.event_date}`}
                         imageUrl={uploadedImagePreviewUrl}
+                        size={220}
                       />
                     </div>
                   )}

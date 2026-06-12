@@ -229,6 +229,7 @@ async def use_trial(
         "message": "Trial used. Create an account to continue.",
     }
     event_id = None
+    guest_created = False
 
     # Handle invite trial - generate and send flyer via all channels
     if req.trial_type == "invite":
@@ -282,6 +283,19 @@ async def use_trial(
             else:
                 animated_qr_url = qr_to_base64(qr_data)
 
+        # Create event+guest record early so we have a real RSVP token
+        rsvp_link_url = settings.FRONTEND_URL
+        if user and "email" in delivery_channels:
+            event_id = await _maybe_create_event(req, user, flyer_url, db)
+            if event_id:
+                guest_created = True
+                result = await db.execute(
+                    select(Guest).where(Guest.event_id == event_id, Guest.email == test_email)
+                )
+                g = result.scalar_one_or_none()
+                if g and g.rsvp_token:
+                    rsvp_link_url = f"{settings.FRONTEND_URL}/rsvp/{g.rsvp_token}"
+
         # Send test invite flyer via all selected channels
         sent_channels = []
 
@@ -317,7 +331,7 @@ async def use_trial(
                         {dc_rows}
                     </table>
                     <div style="text-align:center;margin:24px 0">
-                        <a href="{settings.FRONTEND_URL}" style="display:inline-block;background:#E91E8C;color:#fff;padding:14px 40px;border-radius:50px;text-decoration:none;font-weight:bold;font-size:15px;font-family:Arial,sans-serif">RSVP NOW</a>
+                        <a href="{rsvp_link_url}" style="display:inline-block;background:#E91E8C;color:#fff;padding:14px 40px;border-radius:50px;text-decoration:none;font-weight:bold;font-size:15px;font-family:Arial,sans-serif">RSVP NOW</a>
                     </div>
                     {qr_section}
                 </div>
@@ -448,8 +462,8 @@ async def use_trial(
             except Exception:
                 pass
 
-    # Create Event + Guest records if user is authenticated
-    if user:
+    # Create Event + Guest records if user is authenticated (skip if already done for invite trial)
+    if user and not guest_created:
         event_id = await _maybe_create_event(req, user, flyer_url, db)
 
     # SECURITY: Detect multi-account abuse
