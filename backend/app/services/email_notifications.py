@@ -6,6 +6,8 @@ from typing import Optional
 from app.core.config import settings
 from app.services.email_service import send_email
 from app.services.qr_generator import generate_styled_qr
+from app.services.banner_generator import generate_animated_banner_gif
+import base64
 
 async def send_payment_confirmation(
     user_email: str,
@@ -187,6 +189,20 @@ async def send_guest_invitation(
         except Exception as e:
             print(f"Warning: Failed to generate QR code for email: {e}")
 
+    # Generate animated banner
+    banner_html = ""
+    try:
+        banner_gif_bytes = generate_animated_banner_gif()
+        banner_base64 = base64.b64encode(banner_gif_bytes).decode('utf-8')
+        banner_html = f'''
+                <div style="text-align: center; margin: 20px 0; background: white; padding: 15px; border-radius: 12px;">
+                    <img src="data:image/gif;base64,{banner_base64}" alt="Accredit.vip Banner" style="width: 100%; max-width: 600px; height: auto; border-radius: 8px; display: block; margin: 0 auto;">
+                    <p style="margin-top: 12px; font-size: 11px; color: #94a3b8; text-align: center;">Ready to host your own event?</p>
+                </div>
+        '''
+    except Exception as e:
+        print(f"Warning: Failed to generate banner: {e}")
+
     html_content = f"""
     <html>
         <head>
@@ -272,6 +288,8 @@ async def send_guest_invitation(
                     </p>
 
                     {qr_code_html}
+
+                    {banner_html}
                 </div>
 
                 <div class="footer">
