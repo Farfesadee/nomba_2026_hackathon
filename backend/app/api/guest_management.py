@@ -218,6 +218,10 @@ async def list_guests(
     if not event:
         raise HTTPException(status_code=404, detail="Event not found")
 
+    # Trial events have a placeholder guest, don't show in dashboard list
+    if event.status == "trial":
+        return []
+
     query = select(Guest).where(Guest.event_id == event_id)
     if rsvp_status:
         query = query.where(Guest.rsvp_status == rsvp_status)
@@ -308,6 +312,10 @@ async def get_guest_stats(
     event = result.scalar_one_or_none()
     if not event:
         raise HTTPException(status_code=404, detail="Event not found")
+
+    # Trial events don't count toward dashboard RSVP stats
+    if event.status == "trial":
+        return {"total": 1, "invited": 1, "pending": 1, "rsvp_yes": 0, "rsvp_no": 0, "rsvp_pending": 0}
 
     guests = await db.execute(select(Guest).where(Guest.event_id == event_id))
     all_guests = guests.scalars().all()
