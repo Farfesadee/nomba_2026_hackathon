@@ -19,31 +19,52 @@ class ScanTokenRequest(BaseModel):
     token: str
 
 
-@router.post("/scanner/verify")
-async def scanner_verify_token(req: ScanTokenRequest, request: Request, db: AsyncSession = Depends(get_db)):
-    token = req.token.split("/").pop() if "/" in req.token else req.token
+async def _resolve_guest_and_event(token: str, db: AsyncSession):
+    """Resolve guest + event from QR code record or fallback to guest rsvp_token lookup."""
     result = await db.execute(select(QRCode).where(QRCode.token == token))
     qr = result.scalar_one_or_none()
-    if not qr:
+
+    guest = None
+    event = None
+
+    if qr:
+        guest = await db.get(Guest, qr.guest_id)
+        event = await db.get(Event, qr.event_id)
+    else:
+        g_result = await db.execute(select(Guest).where(Guest.rsvp_token == token))
+        guest = g_result.scalar_one_or_none()
+        if guest:
+            event = await db.get(Event, guest.event_id)
+
+    return qr, guest, event
+
+
+@router.post("/scanner/verify")
+async def scanner_verify_token(req: ScanTokenRequest, request: Request, db: AsyncSession = Depends(get_db)):
+    raw_token = req.token.split("/").pop() if "/" in req.token else req.token
+    qr, guest, event = await _resolve_guest_and_event(raw_token, db)
+
+    if not guest or not event:
         return {"valid": False, "reason": "invalid", "message": "Invalid QR code"}
-    if qr.is_used:
+
+    if qr and qr.is_used:
         return {"valid": False, "reason": "used", "message": "Already checked in"}
-    guest = await db.get(Guest, qr.guest_id)
-    event = await db.get(Event, qr.event_id)
-    if guest and guest.rsvp_status == "no":
+
+    if guest.rsvp_status == "no":
         return {
             "valid": False,
             "reason": "declined",
             "message": f"{guest.name} declined the invitation and cannot be checked in.",
-            "guest": {"id": guest.id, "name": guest.name, "phone": guest.phone, "email": guest.email} if guest else None,
-            "event": {"id": event.id, "title": event.title} if event else None,
+            "guest": {"id": guest.id, "name": guest.name, "phone": guest.phone, "email": guest.email},
+            "event": {"id": event.id, "title": event.title},
         }
+
     return {
         "valid": True,
         "reason": "verified",
-        "message": f"{guest.name} can be checked in." if guest else "Guest found.",
-        "guest": {"id": guest.id, "name": guest.name, "phone": guest.phone, "email": guest.email, "rsvp_status": guest.rsvp_status} if guest else None,
-        "event": {"id": event.id, "title": event.title} if event else None,
+        "message": f"{guest.name} can be checked in.",
+        "guest": {"id": guest.id, "name": guest.name, "phone": guest.phone, "email": guest.email, "rsvp_status": guest.rsvp_status},
+        "event": {"id": event.id, "title": event.title},
     }
 
 
@@ -51,23 +72,26 @@ async def scanner_verify_token(req: ScanTokenRequest, request: Request, db: Asyn
 async def scanner_checkin(req: ScanTokenRequest, request: Request, db: AsyncSession = Depends(get_db)):
     ip = request.client.host if request.client else None
     ua = request.headers.get("user-agent")
-    token = req.token.split("/").pop() if "/" in req.token else req.token
-    result = await db.execute(select(QRCode).where(QRCode.token == token))
-    qr = result.scalar_one_or_none()
-    if not qr:
+    raw_token = req.token.split("/").pop() if "/" in req.token else req.token
+    qr, guest, event = await _resolve_guest_and_event(raw_token, db)
+
+    if not guest or not event:
         return {"status": "error", "message": "Invalid QR code"}
-    guest = await db.get(Guest, qr.guest_id)
-    if guest and guest.rsvp_status == "no":
-        scan = ScanAttempt(guest_id=qr.guest_id, event_id=qr.event_id, token=token, status="declined", device_info=ua, ip_address=ip)
+
+    if guest.rsvp_status == "no":
+        scan = ScanAttempt(guest_id=guest.id, event_id=event.id, token=raw_token, status="declined", device_info=ua, ip_address=ip)
         db.add(scan)
         await db.commit()
         return {"status": "declined", "message": f"{guest.name} declined the invitation and cannot be checked in."}
-    if qr.is_used:
+
+    if qr and qr.is_used:
         return {"status": "error", "message": "Already checked in"}
-    qr.is_used = True
-    checkin = CheckIn(guest_id=qr.guest_id, event_id=qr.event_id)
+
+    if qr:
+        qr.is_used = True
+    checkin = CheckIn(guest_id=guest.id, event_id=event.id)
     db.add(checkin)
-    scan = ScanAttempt(guest_id=qr.guest_id, event_id=qr.event_id, token=token, status="checked_in", device_info=ua, ip_address=ip)
+    scan = ScanAttempt(guest_id=guest.id, event_id=event.id, token=raw_token, status="checked_in", device_info=ua, ip_address=ip)
     db.add(scan)
     await db.commit()
     return {"status": "approved", "message": "Check-in successful"}

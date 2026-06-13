@@ -26,13 +26,32 @@ def _get_client_info(request: Request) -> tuple[str | None, str | None]:
     return ip, ua
 
 
+async def _resolve_guest_and_event(token: str, db: AsyncSession):
+    """Resolve guest + event from QR code record or fallback to guest rsvp_token lookup."""
+    result = await db.execute(select(QRCode).where(QRCode.token == token))
+    qr = result.scalar_one_or_none()
+
+    guest = None
+    event = None
+
+    if qr:
+        guest = await db.get(Guest, qr.guest_id)
+        event = await db.get(Event, qr.event_id)
+    else:
+        g_result = await db.execute(select(Guest).where(Guest.rsvp_token == token))
+        guest = g_result.scalar_one_or_none()
+        if guest:
+            event = await db.get(Event, guest.event_id)
+
+    return qr, guest, event
+
+
 @router.post("/verify")
 async def verify_qr(req: ScanRequest, request: Request, db: AsyncSession = Depends(get_db)):
     ip, ua = _get_client_info(request)
-    result = await db.execute(select(QRCode).where(QRCode.token == req.token))
-    qr = result.scalar_one_or_none()
+    qr, guest, event = await _resolve_guest_and_event(req.token, db)
 
-    if not qr:
+    if not guest or not event:
         scan = ScanAttempt(
             guest_id=None, event_id=0, token=req.token,
             status="invalid_token", device_info=ua, ip_address=ip,
@@ -41,7 +60,7 @@ async def verify_qr(req: ScanRequest, request: Request, db: AsyncSession = Depen
         await db.commit()
         raise HTTPException(status_code=404, detail="Invalid QR code")
 
-    if qr.is_used:
+    if qr and qr.is_used:
         scan = ScanAttempt(
             guest_id=qr.guest_id, event_id=qr.event_id, token=req.token,
             status="already_used", device_info=ua, ip_address=ip,
@@ -50,7 +69,7 @@ async def verify_qr(req: ScanRequest, request: Request, db: AsyncSession = Depen
         await db.commit()
         raise HTTPException(status_code=400, detail="QR code already used")
 
-    if qr.expires_at and qr.expires_at.replace(tzinfo=timezone.utc) < datetime.now(timezone.utc):
+    if qr and qr.expires_at and qr.expires_at.replace(tzinfo=timezone.utc) < datetime.now(timezone.utc):
         scan = ScanAttempt(
             guest_id=qr.guest_id, event_id=qr.event_id, token=req.token,
             status="expired", device_info=ua, ip_address=ip,
@@ -59,15 +78,9 @@ async def verify_qr(req: ScanRequest, request: Request, db: AsyncSession = Depen
         await db.commit()
         raise HTTPException(status_code=400, detail="QR code has expired")
 
-    guest_result = await db.execute(select(Guest).where(Guest.id == qr.guest_id))
-    guest = guest_result.scalar_one_or_none()
-
-    event_result = await db.execute(select(Event).where(Event.id == qr.event_id))
-    event = event_result.scalar_one_or_none()
-
-    if guest and guest.rsvp_status == "no":
+    if guest.rsvp_status == "no":
         scan = ScanAttempt(
-            guest_id=qr.guest_id, event_id=qr.event_id, token=req.token,
+            guest_id=guest.id, event_id=event.id, token=req.token,
             status="declined", device_info=ua, ip_address=ip,
         )
         db.add(scan)
@@ -81,16 +94,16 @@ async def verify_qr(req: ScanRequest, request: Request, db: AsyncSession = Depen
                 "name": guest.name,
                 "phone": guest.phone,
                 "email": guest.email,
-            } if guest else None,
+            },
             "event": {
                 "id": event.id,
                 "title": event.title,
                 "event_date": str(event.event_date),
-            } if event else None,
+            },
         }
 
     scan = ScanAttempt(
-        guest_id=qr.guest_id, event_id=qr.event_id, token=req.token,
+        guest_id=guest.id, event_id=event.id, token=req.token,
         status="verified", device_info=ua, ip_address=ip,
     )
     db.add(scan)
@@ -106,12 +119,12 @@ async def verify_qr(req: ScanRequest, request: Request, db: AsyncSession = Depen
             "phone": guest.phone,
             "email": guest.email,
             "rsvp_status": guest.rsvp_status,
-        } if guest else None,
+        },
         "event": {
             "id": event.id,
             "title": event.title,
             "event_date": str(event.event_date),
-        } if event else None,
+        },
     }
 
 
@@ -123,34 +136,47 @@ async def qr_token_info(
     """Return ticket info when a guest scans their own QR code with a phone camera."""
     result = await db.execute(select(QRCode).where(QRCode.token == token))
     qr = result.scalar_one_or_none()
-    if not qr:
+
+    guest = None
+    event = None
+
+    if qr:
+        guest_result = await db.execute(select(Guest).where(Guest.id == qr.guest_id))
+        guest = guest_result.scalar_one_or_none()
+        event_result = await db.execute(select(Event).where(Event.id == qr.event_id))
+        event = event_result.scalar_one_or_none()
+    else:
+        # Fallback: try looking up the guest directly by rsvp_token (used in trial QRs)
+        guest_result = await db.execute(select(Guest).where(Guest.rsvp_token == token))
+        guest = guest_result.scalar_one_or_none()
+        if guest:
+            event_result = await db.execute(select(Event).where(Event.id == guest.event_id))
+            event = event_result.scalar_one_or_none()
+
+    if not guest or not event:
         raise HTTPException(status_code=404, detail="Invalid or expired QR code")
 
-    guest_result = await db.execute(select(Guest).where(Guest.id == qr.guest_id))
-    guest = guest_result.scalar_one_or_none()
-
-    event_result = await db.execute(select(Event).where(Event.id == qr.event_id))
-    event = event_result.scalar_one_or_none()
+    is_used = qr.is_used if qr else False
+    is_expired = qr and qr.expires_at and qr.expires_at.replace(tzinfo=timezone.utc) < datetime.now(timezone.utc)
 
     return {
-        "valid": not qr.is_used and (not qr.expires_at or qr.expires_at.replace(tzinfo=timezone.utc) > datetime.now(timezone.utc)),
-        "guest_name": guest.name if guest else None,
-        "event_title": event.title if event else None,
-        "event_date": str(event.event_date) if event else None,
-        "event_time": str(event.event_time) if event else None,
-        "venue": event.venue if event else None,
-        "rsvp_status": guest.rsvp_status if guest else None,
-        "status": qr.status if hasattr(qr, 'status') else "active",
+        "valid": not is_used and not is_expired,
+        "guest_name": guest.name,
+        "event_title": event.title,
+        "event_date": str(event.event_date),
+        "event_time": str(event.event_time),
+        "venue": event.venue,
+        "rsvp_status": guest.rsvp_status,
+        "status": "active",
     }
 
 
 @router.post("/scan")
 async def scan_qr(req: ScanRequest, request: Request, db: AsyncSession = Depends(get_db)):
     ip, ua = _get_client_info(request)
-    result = await db.execute(select(QRCode).where(QRCode.token == req.token))
-    qr = result.scalar_one_or_none()
+    qr, guest, event = await _resolve_guest_and_event(req.token, db)
 
-    if not qr:
+    if not guest or not event:
         scan = ScanAttempt(
             guest_id=None, event_id=0, token=req.token,
             status="invalid_token", device_info=ua, ip_address=ip,
@@ -159,17 +185,16 @@ async def scan_qr(req: ScanRequest, request: Request, db: AsyncSession = Depends
         await db.commit()
         raise HTTPException(status_code=404, detail="Invalid QR code")
 
-    guest = await db.get(Guest, qr.guest_id)
-    if guest and guest.rsvp_status == "no":
+    if guest.rsvp_status == "no":
         scan = ScanAttempt(
-            guest_id=qr.guest_id, event_id=qr.event_id, token=req.token,
+            guest_id=guest.id, event_id=event.id, token=req.token,
             status="declined", device_info=ua, ip_address=ip,
         )
         db.add(scan)
         await db.commit()
         raise HTTPException(status_code=403, detail=f"{guest.name} declined the invitation and cannot be checked in.")
 
-    if qr.is_used:
+    if qr and qr.is_used:
         scan = ScanAttempt(
             guest_id=qr.guest_id, event_id=qr.event_id, token=req.token,
             status="already_used", device_info=ua, ip_address=ip,
@@ -178,7 +203,7 @@ async def scan_qr(req: ScanRequest, request: Request, db: AsyncSession = Depends
         await db.commit()
         raise HTTPException(status_code=400, detail="QR code already used")
 
-    if qr.expires_at and qr.expires_at.replace(tzinfo=timezone.utc) < datetime.now(timezone.utc):
+    if qr and qr.expires_at and qr.expires_at.replace(tzinfo=timezone.utc) < datetime.now(timezone.utc):
         scan = ScanAttempt(
             guest_id=qr.guest_id, event_id=qr.event_id, token=req.token,
             status="expired", device_info=ua, ip_address=ip,
@@ -187,12 +212,13 @@ async def scan_qr(req: ScanRequest, request: Request, db: AsyncSession = Depends
         await db.commit()
         raise HTTPException(status_code=400, detail="QR code has expired")
 
-    qr.is_used = True
-    checkin = CheckIn(guest_id=qr.guest_id, event_id=qr.event_id)
+    if qr:
+        qr.is_used = True
+    checkin = CheckIn(guest_id=guest.id, event_id=event.id)
     db.add(checkin)
 
     scan = ScanAttempt(
-        guest_id=qr.guest_id, event_id=qr.event_id, token=req.token,
+        guest_id=guest.id, event_id=event.id, token=req.token,
         status="checked_in", device_info=ua, ip_address=ip,
     )
     db.add(scan)
