@@ -296,9 +296,9 @@ async def use_trial(
                     rsvp_link_url = f"{settings.FRONTEND_URL}/rsvp/{g.rsvp_token}"
                     guest_name = g.name
 
-            # Generate QR code with RSVP URL (moved after guest creation so we have the real token)
+            # Generate QR code with ticket URL (guest scans at venue for accreditation)
             if qr_delivery in ["with_qr", "qr_later"]:
-                qr_data = rsvp_link_url
+                qr_data = rsvp_link_url.replace("/rsvp/", "/qr/")
                 flyer_path = None
                 image_data = None
                 if flyer_url:

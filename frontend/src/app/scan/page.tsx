@@ -66,12 +66,23 @@ function ScannerPage() {
     return null;
   };
 
-  const handleScan = async (token: string) => {
+  const extractToken = (raw: string) => {
+    try {
+      const url = new URL(raw);
+      const segments = url.pathname.split("/").filter(Boolean);
+      return segments.pop() || raw;
+    } catch {
+      return raw;
+    }
+  };
+
+  const handleScan = async (raw: string) => {
     setScanning(false);
     if (scanTimer.current) cancelAnimationFrame(scanTimer.current);
     if (videoRef.current?.srcObject) {
       (videoRef.current.srcObject as MediaStream).getTracks().forEach((t) => t.stop());
     }
+    const token = extractToken(raw);
     try {
       const res = await apiClient<any>("/scanner/checkin", { method: "POST", body: { token } });
       setResult(res);
@@ -86,9 +97,10 @@ function ScannerPage() {
   const handleManualLookup = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     const form = e.currentTarget;
-    const token = (form.elements.namedItem("token") as HTMLInputElement).value.trim();
-    if (!token) return;
+    const raw = (form.elements.namedItem("token") as HTMLInputElement).value.trim();
+    if (!raw) return;
     setResult(null);
+    const token = extractToken(raw);
     try {
       const res = await apiClient<any>("/scanner/verify", { method: "POST", body: { token } });
       if (res.valid) {
@@ -105,8 +117,8 @@ function ScannerPage() {
     if (!result?.guest) return;
     try {
       const form = document.getElementById("scan-form") as HTMLFormElement;
-      const token = (form?.elements.namedItem("token") as HTMLInputElement)?.value || "";
-      await handleScan(token);
+      const raw = (form?.elements.namedItem("token") as HTMLInputElement)?.value || "";
+      await handleScan(raw);
     } catch {}
   };
 
@@ -154,8 +166,8 @@ function ScannerPage() {
         )}
 
         {result && (
-          <div className={`rounded-xl p-4 ${result.status === "approved" ? "bg-green-900/50 border border-green-500" : result.status === "found" ? "bg-blue-900/50 border border-blue-500" : "bg-red-900/50 border border-red-500"}`}>
-            <p className="font-bold">{result.status === "approved" ? "Checked In" : result.status === "found" ? "Guest Found" : result.status === "error" ? "Error" : result.message}</p>
+          <div className={`rounded-xl p-4 ${result.status === "approved" ? "bg-green-900/50 border border-green-500" : result.status === "found" ? "bg-blue-900/50 border border-blue-500" : result.status === "declined" ? "bg-amber-900/50 border border-amber-500" : "bg-red-900/50 border border-red-500"}`}>
+            <p className="font-bold">{result.status === "approved" ? "Checked In" : result.status === "found" ? "Guest Found" : result.status === "declined" ? "Invitation Declined" : result.status === "error" ? "Error" : result.message}</p>
             <p className="text-sm text-white/70">{result.message}</p>
             {result.guest && <p className="text-sm mt-1">{result.guest.name} &middot; {result.guest.phone}</p>}
             {result.status === "found" && <button onClick={confirmCheckin} className="mt-3 w-full rounded-xl bg-green-600 py-3 font-bold text-sm hover:bg-green-700 transition">Confirm Check-in</button>}

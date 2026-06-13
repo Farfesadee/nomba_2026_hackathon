@@ -65,6 +65,30 @@ async def verify_qr(req: ScanRequest, request: Request, db: AsyncSession = Depen
     event_result = await db.execute(select(Event).where(Event.id == qr.event_id))
     event = event_result.scalar_one_or_none()
 
+    if guest and guest.rsvp_status == "no":
+        scan = ScanAttempt(
+            guest_id=qr.guest_id, event_id=qr.event_id, token=req.token,
+            status="declined", device_info=ua, ip_address=ip,
+        )
+        db.add(scan)
+        await db.commit()
+        return {
+            "valid": False,
+            "reason": "declined",
+            "message": f"{guest.name} declined the invitation and cannot be checked in.",
+            "guest": {
+                "id": guest.id,
+                "name": guest.name,
+                "phone": guest.phone,
+                "email": guest.email,
+            } if guest else None,
+            "event": {
+                "id": event.id,
+                "title": event.title,
+                "event_date": str(event.event_date),
+            } if event else None,
+        }
+
     scan = ScanAttempt(
         guest_id=qr.guest_id, event_id=qr.event_id, token=req.token,
         status="verified", device_info=ua, ip_address=ip,
@@ -74,11 +98,14 @@ async def verify_qr(req: ScanRequest, request: Request, db: AsyncSession = Depen
 
     return {
         "valid": True,
+        "reason": "verified",
+        "message": f"{guest.name} is invited and can be checked in.",
         "guest": {
             "id": guest.id,
             "name": guest.name,
             "phone": guest.phone,
             "email": guest.email,
+            "rsvp_status": guest.rsvp_status,
         } if guest else None,
         "event": {
             "id": event.id,
@@ -106,13 +133,14 @@ async def qr_token_info(
     event = event_result.scalar_one_or_none()
 
     return {
-        "valid": qr.expires_at and qr.expires_at > datetime.now(timezone.utc),
+        "valid": not qr.is_used and (not qr.expires_at or qr.expires_at.replace(tzinfo=timezone.utc) > datetime.now(timezone.utc)),
         "guest_name": guest.name if guest else None,
         "event_title": event.title if event else None,
         "event_date": str(event.event_date) if event else None,
         "event_time": str(event.event_time) if event else None,
         "venue": event.venue if event else None,
-        "status": qr.status,
+        "rsvp_status": guest.rsvp_status if guest else None,
+        "status": qr.status if hasattr(qr, 'status') else "active",
     }
 
 
@@ -130,6 +158,16 @@ async def scan_qr(req: ScanRequest, request: Request, db: AsyncSession = Depends
         db.add(scan)
         await db.commit()
         raise HTTPException(status_code=404, detail="Invalid QR code")
+
+    guest = await db.get(Guest, qr.guest_id)
+    if guest and guest.rsvp_status == "no":
+        scan = ScanAttempt(
+            guest_id=qr.guest_id, event_id=qr.event_id, token=req.token,
+            status="declined", device_info=ua, ip_address=ip,
+        )
+        db.add(scan)
+        await db.commit()
+        raise HTTPException(status_code=403, detail=f"{guest.name} declined the invitation and cannot be checked in.")
 
     if qr.is_used:
         scan = ScanAttempt(

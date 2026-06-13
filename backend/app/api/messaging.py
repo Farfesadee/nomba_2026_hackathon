@@ -213,7 +213,7 @@ async def _send_to_guest(
 
     guest.invite_attempts += 1
     qr = await get_or_create_guest_qr(db, event.id, guest.id)
-    qr_token_url = f"{settings.FRONTEND_URL}/api/v1/qr/{qr.token}"
+    qr_token_url = f"{settings.FRONTEND_URL}/qr/{qr.token}"
 
     flyer_result = await db.execute(select(FlierAsset).where(FlierAsset.event_id == event.id).order_by(FlierAsset.created_at.desc()))
     flyer = flyer_result.scalar_one_or_none()
@@ -326,7 +326,7 @@ async def _send_qr_to_guest(
     db: AsyncSession,
 ) -> tuple[bool, str]:
     qr = await get_or_create_guest_qr(db, event.id, guest.id)
-    qr_token_url = f"{settings.FRONTEND_URL}/api/v1/qr/{qr.token}"
+    qr_token_url = f"{settings.FRONTEND_URL}/qr/{qr.token}"
 
     flyer_result = await db.execute(select(FlierAsset).where(FlierAsset.event_id == event.id).order_by(FlierAsset.created_at.desc()))
     flyer = flyer_result.scalar_one_or_none()
