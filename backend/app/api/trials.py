@@ -275,38 +275,12 @@ async def use_trial(
             except Exception:
                 flyer_url = None
 
-        # Generate QR code with event flyer overlay
+        # Generate QR code after we have the RSVP token
         animated_qr_url = None
-        if qr_delivery in ["with_qr", "qr_later"]:
-            qr_data = f"accredit://invite/test/{int(datetime.now().timestamp())}"
-            flyer_path = None
-            image_data = None
-            if flyer_url:
-                flyer_path = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(__file__))), flyer_url.lstrip("/"))
-                if os.path.exists(flyer_path):
-                    try:
-                        with open(flyer_path, 'rb') as f:
-                            image_data = f.read()
-                    except Exception:
-                        pass
-
-            # Use styled QR if image is available
-            if image_data:
-                from app.services.qr_service import styled_qr_to_url
-                styled_url = styled_qr_to_url(qr_data, image_data=image_data, size=250)
-                if styled_url:
-                    animated_qr_url = styled_url
-
-            # Fallback to old QR if styled failed
-            if not animated_qr_url:
-                base_url = qr_to_url(qr_data, image_path=flyer_path, size=250)
-                if base_url:
-                    animated_qr_url = base_url
-                else:
-                    animated_qr_url = qr_to_base64(qr_data)
 
         # Create event+guest record early so we have a real RSVP token
         rsvp_link_url = f"{settings.FRONTEND_URL}/create-event"
+        guest_name = None
         if "email" in delivery_channels:
             event_id = await _maybe_create_event(req, user, flyer_url, db)
             if event_id:
@@ -317,6 +291,32 @@ async def use_trial(
                 g = result.scalar_one_or_none()
                 if g and g.rsvp_token:
                     rsvp_link_url = f"{settings.FRONTEND_URL}/rsvp/{g.rsvp_token}"
+                    guest_name = g.name
+
+            # Generate QR code with RSVP URL (moved after guest creation so we have the real token)
+            if qr_delivery in ["with_qr", "qr_later"]:
+                qr_data = rsvp_link_url
+                flyer_path = None
+                image_data = None
+                if flyer_url:
+                    flyer_path = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(__file__))), flyer_url.lstrip("/"))
+                    if os.path.exists(flyer_path):
+                        try:
+                            with open(flyer_path, 'rb') as f:
+                                image_data = f.read()
+                        except Exception:
+                            pass
+                if image_data:
+                    from app.services.qr_service import styled_qr_to_url
+                    styled_url = styled_qr_to_url(qr_data, image_data=image_data, size=250)
+                    if styled_url:
+                        animated_qr_url = styled_url
+                if not animated_qr_url:
+                    base_url = qr_to_url(qr_data, image_path=flyer_path, size=250)
+                    if base_url:
+                        animated_qr_url = base_url
+                    else:
+                        animated_qr_url = qr_to_base64(qr_data)
 
         # Send test invite flyer via all selected channels
         sent_channels = []
@@ -341,8 +341,10 @@ async def use_trial(
                 tz = tz.split("|")[1].strip()
             formatted_time = _format_time(event_time, tz or None)
             dc_rows = _dress_code_rows(req.payload)
+            guest_name_title = guest_name or "Guest"
             guest_section = f"""
                 <div style="padding:32px 28px;background:#ffffff">
+                    <p style="font-size:15px;color:#07182f;font-weight:bold;margin:0 0 16px">Dear {guest_name_title},</p>
                     <p style="font-size:13px;color:#888;text-transform:uppercase;letter-spacing:2px;margin:0 0 4px">You are cordially invited to</p>
                     <h1 style="font-size:28px;color:#07182f;margin:0 0 16px;line-height:1.2">{title}</h1>
                     <p style="font-size:15px;color:#555;line-height:1.6;margin:0 0 20px">{invitation_message_text}</p>

@@ -15,6 +15,23 @@ interface RSVPData {
   guest_name: string;
 }
 
+function formatDate(dateStr: string) {
+  if (!dateStr) return "TBD";
+  const d = new Date(dateStr);
+  return d.toLocaleDateString("en-US", { weekday: "long", year: "numeric", month: "long", day: "numeric" });
+}
+
+function formatTime(timeStr: string) {
+  if (!timeStr) return "TBD";
+  const parts = timeStr.split(":");
+  if (parts.length < 2) return timeStr;
+  const h = parseInt(parts[0]);
+  const m = parts[1];
+  const ampm = h >= 12 ? "PM" : "AM";
+  const h12 = h % 12 || 12;
+  return `${h12}:${m} ${ampm}`;
+}
+
 export default function RSVPPage() {
   const params = useParams();
   const router = useRouter();
@@ -143,14 +160,14 @@ export default function RSVPPage() {
                 <Calendar className="w-4 h-4" />
                 <span>Date</span>
               </div>
-              <p className="font-semibold text-[#0D1B2A]">{rsvpData.event_date}</p>
+              <p className="font-semibold text-[#0D1B2A]">{formatDate(rsvpData.event_date)}</p>
             </div>
             <div>
               <div className="flex items-center gap-1.5 text-sm text-[#64748b] mb-1">
                 <Clock className="w-4 h-4" />
                 <span>Time</span>
               </div>
-              <p className="font-semibold text-[#0D1B2A]">{rsvpData.event_time}</p>
+              <p className="font-semibold text-[#0D1B2A]">{formatTime(rsvpData.event_time)}</p>
             </div>
           </div>
           <div>
