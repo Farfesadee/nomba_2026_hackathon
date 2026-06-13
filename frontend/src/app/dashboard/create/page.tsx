@@ -899,7 +899,7 @@ export default function CreateEventPage() {
         `}</style>
         <header className="border-b border-[#e8edf2] bg-white">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-20 flex items-center justify-between">
-            <Link href="/" className="flex items-center hover:opacity-80 transition-opacity flex-shrink-0">
+            <Link href="/" className="flex items-center hover:opacity-80 transition-opacity flex-shrink-0 p-1.5 rounded-lg bg-[#f0f4f8]">
               <Image src="/logo-dark-trim.png" alt="accredit.vip" width={4086} height={801} className="h-10 sm:h-12 w-auto object-contain" />
             </Link>
             <div className="flex items-center gap-3 sm:gap-4">
@@ -997,7 +997,7 @@ export default function CreateEventPage() {
       {/* Header */}
       <header className="border-b border-[#e8edf2] bg-white">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-20 flex items-center justify-between">
-          <button type="button" onClick={() => setMode(null)} className="flex items-center hover:opacity-80 transition-opacity flex-shrink-0">
+          <button type="button" onClick={() => setMode(null)} className="flex items-center hover:opacity-80 transition-opacity flex-shrink-0 p-1.5 rounded-lg bg-[#f0f4f8]">
             <Image src="/logo-dark-trim.png" alt="accredit.vip" width={4086} height={801} className="h-10 sm:h-12 w-auto object-contain" />
           </button>
           <div className="flex items-center gap-3 sm:gap-4">
