@@ -2,6 +2,7 @@ import os
 import logging
 from contextlib import asynccontextmanager
 from fastapi import FastAPI, Request
+from fastapi.responses import StreamingResponse
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.middleware.trustedhost import TrustedHostMiddleware
 from fastapi.middleware.gzip import GZipMiddleware
@@ -144,6 +145,23 @@ app.include_router(wallet_api.router, prefix="/api/v1", tags=["Wallet"])
 app.include_router(withdrawals.router, prefix="/api/v1", tags=["Withdrawals"])
 app.include_router(trial_migration.router, prefix="/api/v1", tags=["Trial Migration"])
 app.include_router(admin_audience.router, prefix="/api/v1", tags=["Admin Audience"])
+
+
+@app.get("/api/v1/assets/banner.gif")
+async def get_banner_gif():
+    """Serve animated banner GIF for emails"""
+    from app.services.banner_generator import generate_animated_banner_gif
+
+    try:
+        gif_bytes = generate_animated_banner_gif()
+        return StreamingResponse(
+            iter([gif_bytes]),
+            media_type="image/gif",
+            headers={"Cache-Control": "public, max-age=3600"}
+        )
+    except Exception as e:
+        logger.error(f"Error generating banner: {e}")
+        return {"error": "Failed to generate banner"}
 
 
 @app.get("/api/v1/health")

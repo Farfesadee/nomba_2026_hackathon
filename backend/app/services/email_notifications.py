@@ -189,20 +189,18 @@ async def send_guest_invitation(
         except Exception as e:
             print(f"Warning: Failed to generate QR code for email: {e}")
 
-    # Generate banner (static for email, animated GIFs often don't render in emails)
+    # Include animated banner from CDN endpoint
     banner_html = ""
     try:
+        banner_url = f"{settings.BACKEND_URL}/api/v1/assets/banner.gif"
         banner_html = f'''
-                <div style="background: linear-gradient(135deg, #E91E8C 0%, #C4166F 50%, #E91E8C 100%); padding: 32px 24px; text-align: center; border-radius: 12px; margin: 30px 0;">
-                    <p style="margin: 0; color: #ffffff; font-size: 20px; font-weight: 900; letter-spacing: 1px; font-family: Arial, sans-serif;">✓ accredit.vip</p>
-                    <p style="margin: 8px 0 0 0; color: rgba(255,255,255,0.9); font-size: 13px;">Create events. Send branded invites. Track attendance.</p>
-                    <div style="margin-top: 16px;">
-                        <a href="{settings.FRONTEND_URL}/create-event" style="display: inline-block; background: #ffffff; color: #E91E8C; padding: 12px 32px; border-radius: 50px; text-decoration: none; font-weight: bold; font-size: 14px; font-family: Arial, sans-serif; letter-spacing: 0.5px;">Create Your Event</a>
-                    </div>
+                <div style="text-align: center; margin: 30px 0;">
+                    <img src="{banner_url}" alt="Accredit.vip Banner" style="width: 100%; max-width: 600px; height: auto; border-radius: 8px; display: block; margin: 0 auto;">
+                    <p style="margin-top: 12px; font-size: 11px; color: #94a3b8; text-align: center;">Ready to host your own event?</p>
                 </div>
         '''
     except Exception as e:
-        print(f"Warning: Failed to generate banner: {e}")
+        print(f"Warning: Failed to include banner: {e}")
 
     html_content = f"""
     <html>
