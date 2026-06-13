@@ -163,12 +163,16 @@ async def send_guest_invitation(
     event_time = f"{h12}{m_str} {ampm}{tz_str}"
 
     dress_rows = ""
-    if dress_code:
-        dress_rows += f'<div class="detail-row"><span class="detail-label">👔 Dress Code:</span><span class="detail-value">{dress_code}</span></div>'
-    if female_dress_code:
-        dress_rows += f'<div class="detail-row"><span class="detail-label">👗 Women:</span><span class="detail-value">{female_dress_code}</span></div>'
-    if male_dress_code:
-        dress_rows += f'<div class="detail-row"><span class="detail-label">👔 Men:</span><span class="detail-value">{male_dress_code}</span></div>'
+    # Add dress code section header if any dress code exists
+    if dress_code or female_dress_code or male_dress_code:
+        dress_rows += f'<div style="margin-top: 15px; padding-top: 15px; border-top: 1px solid #e8edf2;"><p style="margin: 0 0 10px 0; font-size: 13px; color: #64748b; font-weight: bold; text-transform: uppercase; letter-spacing: 0.5px;">DRESS CODE</p>'
+        if dress_code:
+            dress_rows += f'<div class="detail-row"><span class="detail-label">👔 Code:</span><span class="detail-value">{dress_code}</span></div>'
+        if female_dress_code:
+            dress_rows += f'<div class="detail-row"><span class="detail-label">👗 Women:</span><span class="detail-value">{female_dress_code}</span></div>'
+        if male_dress_code:
+            dress_rows += f'<div class="detail-row"><span class="detail-label">👔 Men:</span><span class="detail-value">{male_dress_code}</span></div>'
+        dress_rows += '</div>'
 
     # Generate styled QR code if image data is available
     qr_code_html = ""
@@ -189,18 +193,19 @@ async def send_guest_invitation(
         except Exception as e:
             print(f"Warning: Failed to generate QR code for email: {e}")
 
-    # Include animated banner from CDN endpoint
+    # Generate and embed animated banner as base64
     banner_html = ""
     try:
-        banner_url = f"{settings.BACKEND_URL}/api/v1/assets/banner.gif"
+        banner_gif_bytes = generate_animated_banner_gif()
+        banner_base64 = base64.b64encode(banner_gif_bytes).decode('utf-8')
         banner_html = f'''
                 <div style="text-align: center; margin: 30px 0;">
-                    <img src="{banner_url}" alt="Accredit.vip Banner" style="width: 100%; max-width: 600px; height: auto; border-radius: 8px; display: block; margin: 0 auto;">
+                    <img src="data:image/gif;base64,{banner_base64}" alt="Accredit.vip Banner" style="width: 100%; max-width: 600px; height: auto; border-radius: 8px; display: block; margin: 0 auto;">
                     <p style="margin-top: 12px; font-size: 11px; color: #94a3b8; text-align: center;">Ready to host your own event?</p>
                 </div>
         '''
     except Exception as e:
-        print(f"Warning: Failed to include banner: {e}")
+        print(f"Warning: Failed to generate banner: {e}")
 
     html_content = f"""
     <html>
