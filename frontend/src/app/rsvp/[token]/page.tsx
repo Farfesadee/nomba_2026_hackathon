@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
-import { Calendar, Clock, MapPin, Check, X } from "lucide-react";
+import { Calendar, Clock, MapPin, Check, X, MessageSquare } from "lucide-react";
 import { apiClient } from "@/lib/api-client";
 import { InviteMotionBanner } from "@/components/invite-motion-banner";
 
@@ -41,6 +41,7 @@ export default function RSVPPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [response, setResponse] = useState<"yes" | "no" | null>(null);
+  const [note, setNote] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [submitted, setSubmitted] = useState(false);
 
@@ -51,7 +52,7 @@ export default function RSVPPage() {
         setRsvpData(data);
         setLoading(false);
       } catch (err) {
-        setError(err instanceof Error ? err.message : "Invalid or expired RSVP link");
+        setError(err instanceof Error ? err.message : "This QR code is from a test preview — it isn't linked to any real event.");
         setLoading(false);
       }
     };
@@ -73,7 +74,7 @@ export default function RSVPPage() {
     try {
       await apiClient(`/rsvp/${token}`, {
         method: "POST",
-        body: JSON.stringify({ response }),
+        body: JSON.stringify({ response, note }),
       });
 
       setSubmitted(true);
@@ -105,9 +106,9 @@ export default function RSVPPage() {
             </svg>
           </div>
           <h1 className="text-2xl font-bold text-[#0D1B2A]">Invalid Link</h1>
-          <p className="mt-2 text-[#64748b]">{error || "This RSVP link is no longer valid"}</p>
+          <p className="mt-2 text-[#64748b]">{error || "This QR code is from a test preview — it isn't linked to any real event."}</p>
           <p className="mt-4 text-sm text-[#94a3b8]">
-            Please check your email for the correct link or contact the event organizer.
+            Create an account at Accredit.vip to generate real QR codes linked to your events!
           </p>
         </div>
       </div>
@@ -190,11 +191,14 @@ export default function RSVPPage() {
 
           <div className="space-y-3">
             <button
-              onClick={() => setResponse("yes")}
+              onClick={() => setResponse(response === "yes" ? null : "yes")}
+              disabled={response === "no"}
               className={`w-full flex items-center justify-center gap-2 px-6 py-4 rounded-xl font-bold text-base transition-all ${
                 response === "yes"
                   ? "bg-[#16a34a] text-white shadow-[0_4px_12px_rgba(22,163,74,0.4)] scale-[1.02] border-2 border-[#16a34a]"
-                  : "bg-[#16a34a] text-white shadow-[0_4px_12px_rgba(22,163,74,0.3)] hover:shadow-[0_6px_16px_rgba(22,163,74,0.45)] hover:scale-[1.02] border-2 border-[#16a34a]"
+                  : response === "no"
+                    ? "bg-gray-200 text-gray-400 border-2 border-gray-200 cursor-not-allowed"
+                    : "bg-[#16a34a] text-white shadow-[0_4px_12px_rgba(22,163,74,0.3)] hover:shadow-[0_6px_16px_rgba(22,163,74,0.45)] hover:scale-[1.02] border-2 border-[#16a34a]"
               }`}
             >
               <Check className="w-5 h-5" />
@@ -202,17 +206,36 @@ export default function RSVPPage() {
             </button>
 
             <button
-              onClick={() => setResponse("no")}
+              onClick={() => setResponse(response === "no" ? null : "no")}
+              disabled={response === "yes"}
               className={`w-full flex items-center justify-center gap-2 px-6 py-4 rounded-xl font-bold text-base transition-all ${
                 response === "no"
                   ? "bg-[#dc2626] text-white shadow-[0_4px_12px_rgba(220,38,38,0.4)] scale-[1.02] border-2 border-[#dc2626]"
-                  : "bg-[#dc2626] text-white shadow-[0_4px_12px_rgba(220,38,38,0.3)] hover:shadow-[0_6px_16px_rgba(220,38,38,0.45)] hover:scale-[1.02] border-2 border-[#dc2626]"
+                  : response === "yes"
+                    ? "bg-gray-200 text-gray-400 border-2 border-gray-200 cursor-not-allowed"
+                    : "bg-[#dc2626] text-white shadow-[0_4px_12px_rgba(220,38,38,0.3)] hover:shadow-[0_6px_16px_rgba(220,38,38,0.45)] hover:scale-[1.02] border-2 border-[#dc2626]"
               }`}
             >
               <X className="w-5 h-5" />
               Sorry, Can't Attend
             </button>
           </div>
+
+          {response === "no" && (
+            <div className="mt-4">
+              <label className="flex items-center gap-2 text-sm font-semibold text-[#64748b] mb-2">
+                <MessageSquare className="w-4 h-4" />
+                Let us know why (optional)
+              </label>
+              <textarea
+                value={note}
+                onChange={(e) => setNote(e.target.value)}
+                placeholder="Share your reason..."
+                rows={3}
+                className="w-full rounded-xl border border-[#e8edf2] px-4 py-3 text-sm text-[#0D1B2A] placeholder:text-[#94a3b8] focus:outline-none focus:ring-2 focus:ring-[#E91E8C] resize-none"
+              />
+            </div>
+          )}
         </div>
 
         <button

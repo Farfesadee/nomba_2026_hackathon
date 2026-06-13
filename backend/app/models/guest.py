@@ -14,6 +14,7 @@ class Guest(Base):
     rsvp_status = Column(String, default="pending")
     rsvp_token = Column(String, unique=True, index=True, default=lambda: str(uuid.uuid4()))
     rsvped_at = Column(DateTime(timezone=True), nullable=True)
+    rsvp_note = Column(String, nullable=True)
     invite_sent = Column(Boolean, default=False)
     invite_attempts = Column(Integer, default=0)
     invite_viewed_at = Column(DateTime(timezone=True), nullable=True)
@@ -28,6 +29,7 @@ class Guest(Base):
             "email": self.email,
             "rsvp_status": self.rsvp_status,
             "rsvp_token": self.rsvp_token,
+            "rsvp_note": self.rsvp_note,
             "invite_sent": self.invite_sent,
             "invite_attempts": self.invite_attempts,
             "invite_viewed_at": self.invite_viewed_at.isoformat() if self.invite_viewed_at else None,

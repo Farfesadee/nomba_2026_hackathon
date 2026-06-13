@@ -19,6 +19,7 @@ type Guest = {
   phone: string | null;
   email: string | null;
   rsvp_status: string;
+  rsvp_note?: string | null;
   invite_sent: boolean;
   invite_attempts?: number;
   invite_viewed_at?: string | null;
@@ -948,6 +949,9 @@ function EventDetailContent() {
                               <p className="text-xs text-muted-foreground truncate">
                                 {guest.phone || guest.email || "No contact"} &middot; {guest.rsvp_status}
                               </p>
+                              {guest.rsvp_note && (
+                                <p className="text-xs text-gray-500 italic mt-0.5 truncate">&ldquo;{guest.rsvp_note}&rdquo;</p>
+                              )}
                               <div className="flex gap-1 flex-wrap mt-1">
                                 {guest.invite_sent && (
                                   <span className="inline-block text-xs font-medium text-green-700 bg-green-100 px-2 py-0.5 rounded">Invite Sent</span>

@@ -14,6 +14,7 @@ router = APIRouter()
 
 class RSVPResponse(BaseModel):
     response: str
+    note: str | None = None
 
 
 @router.get("/rsvp/{token}")
@@ -27,7 +28,7 @@ async def get_rsvp_data(
     )
     guest = guest_result.scalar_one_or_none()
     if not guest:
-        raise HTTPException(status_code=404, detail="Invalid RSVP link")
+        raise HTTPException(status_code=404, detail="This QR code is from a test preview — it isn't linked to any real event. Create an account at Accredit.vip to generate real QR codes for your guests!")
 
     event_result = await db.execute(
         select(Event).where(Event.id == guest.event_id)
@@ -58,7 +59,7 @@ async def submit_rsvp(
     )
     guest = guest_result.scalar_one_or_none()
     if not guest:
-        raise HTTPException(status_code=404, detail="Invalid RSVP link")
+        raise HTTPException(status_code=404, detail="This QR code is from a test preview — it isn't linked to any real event. Create an account at Accredit.vip to generate real QR codes for your guests!")
 
     if rsvp.response.lower() == "yes":
         guest.rsvp_status = "yes"
@@ -66,6 +67,9 @@ async def submit_rsvp(
         guest.rsvp_status = "no"
     else:
         raise HTTPException(status_code=400, detail="Invalid response. Use 'yes' or 'no'")
+
+    if rsvp.note:
+        guest.rsvp_note = rsvp.note
 
     from datetime import datetime
     guest.rsvped_at = datetime.utcnow()
