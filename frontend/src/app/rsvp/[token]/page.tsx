@@ -191,25 +191,25 @@ export default function RSVPPage() {
           <div className="space-y-3">
             <button
               onClick={() => setResponse("yes")}
-              className={`w-full flex items-center justify-center gap-2 px-6 py-3 rounded-xl font-bold transition-all ${
+              className={`w-full flex items-center justify-center gap-2 px-6 py-4 rounded-xl font-bold text-base transition-all ${
                 response === "yes"
-                  ? "bg-[#E91E8C] text-white"
-                  : "bg-[#f0fdf4] text-[#166534] border border-[#dcfce7] hover:bg-[#dcfce7]"
+                  ? "bg-[#16a34a] text-white shadow-[0_4px_12px_rgba(22,163,74,0.4)] scale-[1.02] border-2 border-[#16a34a]"
+                  : "bg-[#16a34a] text-white shadow-[0_4px_12px_rgba(22,163,74,0.3)] hover:shadow-[0_6px_16px_rgba(22,163,74,0.45)] hover:scale-[1.02] border-2 border-[#16a34a]"
               }`}
             >
-              <Check className="w-4 h-4" />
+              <Check className="w-5 h-5" />
               Yes, I'll Attend
             </button>
 
             <button
               onClick={() => setResponse("no")}
-              className={`w-full flex items-center justify-center gap-2 px-6 py-3 rounded-xl font-bold transition-all ${
+              className={`w-full flex items-center justify-center gap-2 px-6 py-4 rounded-xl font-bold text-base transition-all ${
                 response === "no"
-                  ? "bg-[#ef4444] text-white"
-                  : "bg-[#fef2f2] text-[#991b1b] border border-[#fecdd3] hover:bg-[#fecdd3]"
+                  ? "bg-[#dc2626] text-white shadow-[0_4px_12px_rgba(220,38,38,0.4)] scale-[1.02] border-2 border-[#dc2626]"
+                  : "bg-[#dc2626] text-white shadow-[0_4px_12px_rgba(220,38,38,0.3)] hover:shadow-[0_6px_16px_rgba(220,38,38,0.45)] hover:scale-[1.02] border-2 border-[#dc2626]"
               }`}
             >
-              <X className="w-4 h-4" />
+              <X className="w-5 h-5" />
               Sorry, Can't Attend
             </button>
           </div>
@@ -218,7 +218,7 @@ export default function RSVPPage() {
         <button
           onClick={handleSubmit}
           disabled={!response || submitting}
-          className="w-full px-6 py-3 rounded-xl bg-[#E91E8C] text-white font-bold hover:bg-[#C4166F] disabled:opacity-50 transition-colors"
+          className="w-full px-6 py-4 rounded-xl bg-[#E91E8C] text-white font-bold text-base shadow-[0_4px_12px_rgba(233,30,140,0.4)] hover:bg-[#C4166F] hover:shadow-[0_6px_16px_rgba(233,30,140,0.5)] disabled:opacity-50 disabled:cursor-not-allowed transition-all"
         >
           {submitting ? "Submitting..." : "Submit Response"}
         </button>
