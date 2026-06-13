@@ -235,13 +235,17 @@ export default function EventsPage() {
                     className="rounded-2xl overflow-hidden transition-all duration-200 group-hover:-translate-y-1 group-hover:shadow-lg flex flex-col"
                     style={{ background: "white", border: "1px solid #e8edf2", boxShadow: "0 2px 8px rgba(0,0,0,0.04)" }}
                   >
-                    <div className="h-24 flex items-center justify-center text-white/90 relative overflow-hidden" style={event.cover_image ? { backgroundImage: `url(${event.cover_image})`, backgroundSize: "cover", backgroundPosition: "center" } : { background: "linear-gradient(135deg, #0D1B2A, #1a2e45)" }}>
-                      {!event.cover_image && (CATEGORY_ICONS[event.category || event.event_type || ""] || <PartyPopper className="h-9 w-9" />)}
-                    </div>
-                    <div className="p-4 flex flex-col flex-1">
-                      <div className="flex items-start justify-between gap-2 mb-2">
+                    <div className="h-40 flex items-end justify-start text-white/90 relative overflow-hidden" style={event.cover_image ? { backgroundImage: `url(${event.cover_image})`, backgroundSize: "cover", backgroundPosition: "center" } : { background: "linear-gradient(135deg, #0D1B2A, #1a2e45)" }}>
+                      {!event.cover_image && (
+                        <div className="absolute inset-0 flex items-center justify-center">
+                          {CATEGORY_ICONS[event.category || event.event_type || ""] || <PartyPopper className="h-12 w-12 opacity-50" />}
+                        </div>
+                      )}
+                      <div className="p-3 w-full relative z-10" style={{ background: "linear-gradient(transparent, rgba(0,0,0,0.6))" }}>
                         <span className="badge-pink text-[10px]">{(event.status || "draft").toUpperCase()}</span>
                       </div>
+                    </div>
+                    <div className="p-4 flex flex-col flex-1">
                       <h3 className="font-bold text-[#0D1B2A] text-sm line-clamp-2 group-hover:text-[#E91E8C] transition-colors">{event.title}</h3>
                       <div className="mt-3 pt-3 space-y-1" style={{ borderTop: "1px solid #f1f5f9" }}>
                         <p className="text-xs text-gray-400">{event.venue}</p>
