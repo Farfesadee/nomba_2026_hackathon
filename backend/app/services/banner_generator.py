@@ -18,7 +18,7 @@ BRAND_DARK = "#0D1B2A"
 def generate_animated_banner_gif(output_path: str = None) -> bytes:
     """
     Generate an animated GIF banner with typewriter effect for the Accredit.vip motion banner.
-    Shows text appearing character by character, forming words, then disappearing and repeating.
+    Shows "Join" text with logo, then features appearing character by character.
 
     Returns the GIF as bytes if output_path is None, otherwise saves to file.
     """
@@ -31,6 +31,24 @@ def generate_animated_banner_gif(output_path: str = None) -> bytes:
     bg_gradient_end = (196, 22, 111)    # Dark pink
     text_color_rgb = (255, 255, 255)    # White
 
+    # Try to load logo
+    logo = None
+    try:
+        import os as os_module
+        logo_path = os_module.path.join(
+            os_module.path.dirname(os_module.path.dirname(os_module.path.dirname(__file__))),
+            "..", "frontend", "public", "logo-white.png"
+        )
+        if os_module.path.exists(logo_path):
+            logo = Image.open(logo_path).convert("RGBA")
+            # Resize logo to fit in banner (height ~30px with padding)
+            logo_height = 30
+            aspect_ratio = logo.width / logo.height
+            logo_width = int(logo_height * aspect_ratio)
+            logo = logo.resize((logo_width, logo_height), Image.Resampling.LANCZOS)
+    except Exception as e:
+        print(f"Warning: Could not load logo: {e}")
+
     phrase_index = 0
     current_phrase = PHRASES[phrase_index]
 
@@ -42,7 +60,7 @@ def generate_animated_banner_gif(output_path: str = None) -> bytes:
         # Try to load a nice font, fall back to default
         try:
             font = ImageFont.truetype("arial.ttf", 36)
-            small_font = ImageFont.truetype("arial.ttf", 20)
+            small_font = ImageFont.truetype("arial.ttf", 14)
         except:
             font = ImageFont.load_default()
             small_font = ImageFont.load_default()
@@ -54,16 +72,29 @@ def generate_animated_banner_gif(output_path: str = None) -> bytes:
             b = int(bg_gradient_start[2] + (bg_gradient_end[2] - bg_gradient_start[2]) * x / width)
             draw.line([(x, 0), (x, height)], fill=(r, g, b))
 
-        # Draw "Join Accredit.vip" label
-        label_text = "Join Accredit.vip"
-        bbox = draw.textbbox((0, 0), label_text, font=small_font)
-        label_width = bbox[2] - bbox[0]
+        # Draw "Join" text and logo
+        join_text = "Join "
+        bbox = draw.textbbox((0, 0), join_text, font=small_font)
+        join_width = bbox[2] - bbox[0]
+
+        # Calculate positions for "Join" + logo
+        logo_width_px = logo.width if logo else 0
+        total_width = join_width + logo_width_px + 5  # 5px gap
+        start_x = (width - total_width) // 2
+
+        # Draw "Join" text
         draw.text(
-            ((width - label_width) // 2, 15),
-            label_text,
+            (start_x, 50),
+            join_text,
             fill=text_color_rgb,
             font=small_font
         )
+
+        # Draw logo if available
+        if logo:
+            logo_frame = Image.new("RGB", frame.size, color=bg_gradient_start)
+            logo_frame.paste(logo, (start_x + join_width + 5, 45), logo)
+            frame = Image.composite(logo_frame, frame, Image.new("L", frame.size, 0))
 
         # Draw typing text
         typing_text = current_phrase[:char_count]
@@ -95,17 +126,24 @@ def generate_animated_banner_gif(output_path: str = None) -> bytes:
             b = int(bg_gradient_start[2] + (bg_gradient_end[2] - bg_gradient_start[2]) * x / width)
             draw.line([(x, 0), (x, height)], fill=(r, g, b))
 
-        draw.text(
-            ((width - draw.textbbox((0, 0), label_text, font=small_font)[2]) // 2, 15),
-            label_text,
-            fill=text_color_rgb,
-            font=small_font
-        )
+        # Draw "Join" and logo
+        join_text = "Join "
+        bbox = draw.textbbox((0, 0), join_text, font=small_font)
+        join_width = bbox[2] - bbox[0]
+        logo_width_px = logo.width if logo else 0
+        total_width = join_width + logo_width_px + 5
+        start_x = (width - total_width) // 2
+
+        draw.text((start_x, 50), join_text, fill=text_color_rgb, font=small_font)
+        if logo:
+            logo_frame = Image.new("RGB", frame.size, color=bg_gradient_start)
+            logo_frame.paste(logo, (start_x + join_width + 5, 45), logo)
+            frame = Image.composite(logo_frame, frame, Image.new("L", frame.size, 0))
 
         bbox = draw.textbbox((0, 0), current_phrase, font=font)
         text_width = bbox[2] - bbox[0]
         draw.text(
-            ((width - text_width) // 2, 55),
+            ((width - text_width) // 2, 85),
             current_phrase,
             fill=text_color_rgb,
             font=font
@@ -125,19 +163,26 @@ def generate_animated_banner_gif(output_path: str = None) -> bytes:
             b = int(bg_gradient_start[2] + (bg_gradient_end[2] - bg_gradient_start[2]) * x / width)
             draw.line([(x, 0), (x, height)], fill=(r, g, b))
 
-        draw.text(
-            ((width - draw.textbbox((0, 0), label_text, font=small_font)[2]) // 2, 15),
-            label_text,
-            fill=text_color_rgb,
-            font=small_font
-        )
+        # Draw "Join" and logo
+        join_text = "Join "
+        bbox = draw.textbbox((0, 0), join_text, font=small_font)
+        join_width = bbox[2] - bbox[0]
+        logo_width_px = logo.width if logo else 0
+        total_width = join_width + logo_width_px + 5
+        start_x = (width - total_width) // 2
+
+        draw.text((start_x, 50), join_text, fill=text_color_rgb, font=small_font)
+        if logo:
+            logo_frame = Image.new("RGB", frame.size, color=bg_gradient_start)
+            logo_frame.paste(logo, (start_x + join_width + 5, 45), logo)
+            frame = Image.composite(logo_frame, frame, Image.new("L", frame.size, 0))
 
         typing_text = current_phrase[:char_count]
         if typing_text:
             bbox = draw.textbbox((0, 0), typing_text, font=font)
             text_width = bbox[2] - bbox[0]
             draw.text(
-                ((width - text_width) // 2, 55),
+                ((width - text_width) // 2, 85),
                 typing_text,
                 fill=text_color_rgb,
                 font=font
@@ -154,6 +199,21 @@ def generate_animated_banner_gif(output_path: str = None) -> bytes:
             g = int(bg_gradient_start[1] + (bg_gradient_end[1] - bg_gradient_start[1]) * x / width)
             b = int(bg_gradient_start[2] + (bg_gradient_end[2] - bg_gradient_start[2]) * x / width)
             draw.line([(x, 0), (x, height)], fill=(r, g, b))
+
+        # Draw "Join" and logo during pause
+        join_text = "Join "
+        bbox = draw.textbbox((0, 0), join_text, font=small_font)
+        join_width = bbox[2] - bbox[0]
+        logo_width_px = logo.width if logo else 0
+        total_width = join_width + logo_width_px + 5
+        start_x = (width - total_width) // 2
+
+        draw.text((start_x, 50), join_text, fill=text_color_rgb, font=small_font)
+        if logo:
+            logo_frame = Image.new("RGB", frame.size, color=bg_gradient_start)
+            logo_frame.paste(logo, (start_x + join_width + 5, 45), logo)
+            frame = Image.composite(logo_frame, frame, Image.new("L", frame.size, 0))
+
         frames.append(frame)
 
     # Save as GIF
