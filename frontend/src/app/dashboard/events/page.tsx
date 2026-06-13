@@ -235,8 +235,8 @@ export default function EventsPage() {
                     className="rounded-2xl overflow-hidden transition-all duration-200 group-hover:-translate-y-1 group-hover:shadow-lg flex flex-col"
                     style={{ background: "white", border: "1px solid #e8edf2", boxShadow: "0 2px 8px rgba(0,0,0,0.04)" }}
                   >
-                    <div className="h-24 flex items-center justify-center text-white/90" style={{ background: "linear-gradient(135deg, #0D1B2A, #1a2e45)" }}>
-                      {CATEGORY_ICONS[event.category || event.event_type || ""] || <PartyPopper className="h-9 w-9" />}
+                    <div className="h-24 flex items-center justify-center text-white/90 relative overflow-hidden" style={event.cover_image ? { backgroundImage: `url(${event.cover_image})`, backgroundSize: "cover", backgroundPosition: "center" } : { background: "linear-gradient(135deg, #0D1B2A, #1a2e45)" }}>
+                      {!event.cover_image && (CATEGORY_ICONS[event.category || event.event_type || ""] || <PartyPopper className="h-9 w-9" />)}
                     </div>
                     <div className="p-4 flex flex-col flex-1">
                       <div className="flex items-start justify-between gap-2 mb-2">

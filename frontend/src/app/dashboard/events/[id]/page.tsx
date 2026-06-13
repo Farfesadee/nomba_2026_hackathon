@@ -103,6 +103,7 @@ function EventDetailContent() {
   const [checkinStats, setCheckinStats] = useState<{ checked_in: number; rsvp_accepted: number; total_guests: number; recent_checkins: any[] } | null>(null);
   const [accreditationLog, setAccreditationLog] = useState<{ attempts: any[]; suspicious_count: number } | null>(null);
   const [showAccreditationLog, setShowAccreditationLog] = useState(false);
+  const [activeTab, setActiveTab] = useState("overview");
 
   const loadGuests = useCallback(async (search?: string, rsvpStatus?: string, page?: number) => {
     try {
@@ -558,7 +559,6 @@ function EventDetailContent() {
     channel === "email" ? !guest.email : !guest.phone
   );
   const canSendInvites = totalGuests > 0 && invalidPhoneGuests.length === 0;
-  const [activeTab, setActiveTab] = useState("overview");
 
   const tabs = [
     { id: "overview", label: "Overview", icon: BarChart3 },
