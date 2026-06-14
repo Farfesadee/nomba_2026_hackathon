@@ -224,7 +224,7 @@ export default function RemindersPage() {
           <div className="max-w-2xl space-y-4">
             {/* Description */}
             <p className="text-sm text-slate-600">
-              Guests will receive reminders automatically based on these rules. You can use template variables like <code className="bg-slate-100 px-2 py-1 rounded text-xs">{{event_title}}</code>, <code className="bg-slate-100 px-2 py-1 rounded text-xs">{{event_date}}</code>, and <code className="bg-slate-100 px-2 py-1 rounded text-xs">{{venue}}</code>.
+              Guests will receive reminders automatically based on these rules. You can use template variables like <code className="bg-slate-100 px-2 py-1 rounded text-xs">{'{{event_title}}'}</code>, <code className="bg-slate-100 px-2 py-1 rounded text-xs">{'{{event_date}}'}</code>, and <code className="bg-slate-100 px-2 py-1 rounded text-xs">{'{{venue}}'}</code>.
             </p>
 
             {/* Rules List */}
