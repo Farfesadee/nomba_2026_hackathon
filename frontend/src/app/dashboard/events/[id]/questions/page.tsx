@@ -5,7 +5,7 @@ import { useParams, useRouter } from "next/navigation";
 import { useAuth } from "@/contexts/auth-context";
 import { apiClient } from "@/lib/api-client";
 import { getEvent, type EventData } from "@/lib/api/events";
-import { Menu, X, MapPin, Calendar, Clock, Edit2, Delete2, Users, BarChart3, Mail, Settings, Plus, ArrowLeft, HelpCircle, Trash2 } from "lucide-react";
+import { Menu, X, MapPin, Calendar, Clock, Edit2, Delete, Users, BarChart3, Mail, Settings, Plus, ArrowLeft, HelpCircle, Trash2 } from "lucide-react";
 
 export default function QuestionsPage() {
   const { user, loading } = useAuth();
