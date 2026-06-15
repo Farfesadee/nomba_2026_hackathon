@@ -666,6 +666,11 @@ function EventDetailContent() {
             <div className="bg-white rounded-2xl shadow-sm border border-slate-200 p-8">
             {activeTab === "overview" && (
               <div className="space-y-8">
+                {event.cover_image && (
+                  <div className="rounded-xl overflow-hidden border border-slate-200 shadow-sm -mx-4 sm:-mx-0">
+                    <img src={event.cover_image} alt="Event cover" className="w-full object-contain max-h-[500px] bg-slate-100" />
+                  </div>
+                )}
                 {event.description && (
                   <div>
                     <h2 className="text-lg font-bold text-slate-900 mb-3">About This Event</h2>
