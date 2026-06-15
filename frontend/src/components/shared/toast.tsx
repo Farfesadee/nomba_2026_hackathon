@@ -10,7 +10,7 @@ type ToastProps = {
   duration?: number;
 };
 
-export function Toast({ message, type = "success", visible, onClose, duration = 8000 }: ToastProps) {
+export function Toast({ message, type = "success", visible, onClose }: ToastProps) {
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const onCloseRef = useRef(onClose);
   onCloseRef.current = onClose;
@@ -18,12 +18,15 @@ export function Toast({ message, type = "success", visible, onClose, duration = 
   useEffect(() => {
     if (visible) {
       if (timerRef.current) clearTimeout(timerRef.current);
-      timerRef.current = setTimeout(() => onCloseRef.current(), duration);
+      // Only auto-dismiss success toasts; errors stay until dismissed
+      if (type === "success") {
+        timerRef.current = setTimeout(() => onCloseRef.current(), 10000);
+      }
     }
     return () => {
       if (timerRef.current) clearTimeout(timerRef.current);
     };
-  }, [visible, duration]);
+  }, [visible, type]);
 
   if (!visible) return null;
 

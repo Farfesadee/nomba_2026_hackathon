@@ -26,7 +26,7 @@ ALLOWED_MIMETYPES = {
 
 # File signatures (magic bytes)
 FILE_SIGNATURES = {
-    b"\xff\xd8\xff": ".jpg",
+    b"\xff\xd8\xff": [".jpg", ".jpeg"],
     b"\x89PNG": ".png",
     b"GIF8": ".gif",
     b"%PDF": ".pdf",
