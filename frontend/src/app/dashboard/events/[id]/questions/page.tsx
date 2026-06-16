@@ -196,7 +196,7 @@ export default function QuestionsPage() {
               className="flex items-center gap-2 text-sm text-slate-600 hover:text-slate-900 transition-colors"
             >
               <ArrowLeft className="w-4 h-4" />
-              Back to Dashboard
+              Back
             </a>
             <h1 className="text-lg font-bold text-slate-900 ml-auto">RSVP Questions</h1>
           </div>
@@ -269,9 +269,10 @@ export default function QuestionsPage() {
             <button
               onClick={addQuestion}
               className="w-full h-10 rounded-lg border-2 border-dashed border-slate-300 text-slate-600 font-medium hover:border-slate-900 hover:text-slate-900 transition-colors flex items-center justify-center gap-2"
+              title="Add a new question"
             >
               <Plus className="w-4 h-4" />
-              Add Question
+              Add
             </button>
 
             {/* Save Button */}
@@ -279,8 +280,9 @@ export default function QuestionsPage() {
               <button
                 onClick={save}
                 className="w-full h-10 rounded-lg bg-slate-900 hover:bg-slate-800 text-white font-medium transition-colors"
+                title="Save all questions"
               >
-                Save Questions
+                Save
               </button>
             )}
           </div>

@@ -211,7 +211,7 @@ export default function TemplatesPage() {
               className="flex items-center gap-2 text-sm text-slate-600 hover:text-slate-900 transition-colors"
             >
               <ArrowLeft className="w-4 h-4" />
-              Back to Dashboard
+              Back
             </a>
             <h1 className="text-lg font-bold text-slate-900 ml-auto">Event Templates</h1>
           </div>
@@ -240,8 +240,9 @@ export default function TemplatesPage() {
                   onClick={saveAsTemplate}
                   disabled={!templateName}
                   className="w-full h-10 rounded-lg bg-slate-900 hover:bg-slate-800 text-white font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                  title="Save current event as a template"
                 >
-                  Save Template
+                  Save
                 </button>
               </div>
             </div>

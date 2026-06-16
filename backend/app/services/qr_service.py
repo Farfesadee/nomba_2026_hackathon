@@ -20,7 +20,7 @@ def generate_qr_code(data: str, size: int = 200) -> Image.Image:
     return img.resize((size, size), Image.Resampling.LANCZOS)
 
 
-def overlay_image_on_qr(qr_img: Image.Image, overlay_img: Image.Image, max_overlay_pct: float = 0.30) -> Image.Image:
+def overlay_image_on_qr(qr_img: Image.Image, overlay_img: Image.Image, max_overlay_pct: float = 0.40) -> Image.Image:
     qr_size = qr_img.width
     max_overlay = int(qr_size * max_overlay_pct)
     overlay = overlay_img.convert("RGBA")

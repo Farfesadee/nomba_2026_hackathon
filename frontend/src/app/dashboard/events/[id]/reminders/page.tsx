@@ -213,7 +213,7 @@ export default function RemindersPage() {
               className="flex items-center gap-2 text-sm text-slate-600 hover:text-slate-900 transition-colors"
             >
               <ArrowLeft className="w-4 h-4" />
-              Back to Dashboard
+              Back
             </a>
             <h1 className="text-lg font-bold text-slate-900 ml-auto">Automated Reminders</h1>
           </div>
@@ -311,9 +311,10 @@ export default function RemindersPage() {
             <button
               onClick={addRule}
               className="w-full h-10 rounded-lg border-2 border-dashed border-slate-300 text-slate-600 font-medium hover:border-slate-900 hover:text-slate-900 transition-colors flex items-center justify-center gap-2"
+              title="Add a new reminder rule"
             >
               <Plus className="w-4 h-4" />
-              Add Rule
+              Add
             </button>
 
             {/* Save Button */}
@@ -321,9 +322,10 @@ export default function RemindersPage() {
               <button
                 onClick={saveRules}
                 className="w-full h-10 rounded-lg bg-slate-900 hover:bg-slate-800 text-white font-medium transition-colors flex items-center justify-center gap-2"
+                title="Save all reminder rules"
               >
                 <Bell className="w-4 h-4" />
-                Save Reminder Rules
+                Save Rules
               </button>
             )}
           </div>

@@ -11,7 +11,7 @@ import { ErrorBoundary } from "@/components/shared/error-boundary";
 import { ConfirmDialog } from "@/components/shared/confirm-dialog";
 import { Toast } from "@/components/shared/toast";
 import Link from "next/link";
-import { AlertTriangle, BarChart3, Users, Mail, Settings, Share2, Loader, HelpCircle, Bell, Ticket, Copy, Edit2, Zap } from "lucide-react";
+import { AlertTriangle, ArrowLeft, BarChart3, Users, Mail, Settings, Share2, Loader, HelpCircle, Bell, Ticket, Copy, Edit2, Zap } from "lucide-react";
 import { DashboardSidebar } from "@/components/dashboard/sidebar";
 import { DashboardTopbar } from "@/components/dashboard/topbar";
 import GuestsTabContent from "@/components/events/GuestsTabContent";
@@ -92,6 +92,7 @@ function EventDetailContent() {
   const [editName, setEditName] = useState("");
   const [editPhone, setEditPhone] = useState("");
   const [editEmail, setEditEmail] = useState("");
+  const [savingGuest, setSavingGuest] = useState<number | null>(null);
   const [deleteConfirm, setDeleteConfirm] = useState<number | null>(null);
   const [purchases, setPurchases] = useState<any[]>([]);
   const [coverUploading, setCoverUploading] = useState(false);
@@ -568,13 +569,32 @@ function EventDetailContent() {
   };
 
   const saveEdit = async (guestId: number) => {
+    if (!editName.trim()) {
+      showToast("Guest name is required", "error");
+      return;
+    }
+    if (editEmail && !editEmail.includes("@")) {
+      showToast("Please enter a valid email address", "error");
+      return;
+    }
+    if (editPhone && editPhone.length < 10) {
+      showToast("Phone number should be at least 10 digits", "error");
+      return;
+    }
     try {
+      setSavingGuest(guestId);
       await apiClient(`/events/${id}/guests/${guestId}`, {
         method: "PUT",
         body: { name: editName, phone: editPhone || null, email: editEmail || null },
       });
-      setEditingGuest(null); loadGuests();
-    } catch {}
+      showToast("Guest updated successfully");
+      setEditingGuest(null);
+      loadGuests();
+    } catch (err: any) {
+      showToast(err.message || "Could not update guest", "error");
+    } finally {
+      setSavingGuest(null);
+    }
   };
 
   const handleDeleteGuest = async (guestId: number) => {
@@ -596,7 +616,10 @@ function EventDetailContent() {
         <AlertTriangle className="mx-auto h-10 w-10 text-amber-500" aria-hidden="true" />
         <h2 className="text-xl font-semibold">Could not load event</h2>
         <p className="text-sm text-muted-foreground">The event may have been deleted or a network error occurred.</p>
-        <button onClick={() => router.push("/dashboard")} className="rounded-lg border border-input px-4 py-2 text-sm font-medium hover:bg-accent">Go to Dashboard</button>
+        <button onClick={() => router.push("/dashboard")} className="rounded-lg border border-input px-4 py-2 text-sm font-medium hover:bg-accent flex items-center gap-2 justify-center">
+          <ArrowLeft className="w-4 h-4" />
+          Dashboard
+        </button>
       </div>
     </div>
   );
@@ -850,6 +873,7 @@ function EventDetailContent() {
                 editEmail={editEmail}
                 setEditEmail={setEditEmail}
                 saveEdit={saveEdit}
+                savingGuest={savingGuest}
                 deleteConfirm={deleteConfirm}
                 setDeleteConfirm={setDeleteConfirm}
                 handleDeleteGuest={handleDeleteGuest}

@@ -204,8 +204,9 @@ export default function InvitesTabContent({
               disabled={sending || !canSendInvites}
               variant="outline"
               className="h-10 font-medium"
+              title="Send QR codes to all guests"
             >
-              {sending ? "Sending..." : "Send All QR Codes"}
+              {sending ? "Sending..." : "Send QR"}
             </Button>
             <Button
               variant="outline"

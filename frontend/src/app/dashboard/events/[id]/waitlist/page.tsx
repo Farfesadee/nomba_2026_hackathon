@@ -187,7 +187,7 @@ export default function WaitlistPage() {
               className="flex items-center gap-2 text-sm text-slate-600 hover:text-slate-900 transition-colors"
             >
               <ArrowLeft className="w-4 h-4" />
-              Back to Dashboard
+              Back
             </a>
             <h1 className="text-lg font-bold text-slate-900 ml-auto">Waitlist</h1>
           </div>
