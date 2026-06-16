@@ -1,4 +1,4 @@
-from sqlalchemy import Column, Integer, String, Boolean, DateTime, ForeignKey, func
+from sqlalchemy import Column, Integer, String, Boolean, DateTime, ForeignKey, JSON, func
 from app.core.database import Base
 
 
@@ -11,4 +11,5 @@ class EventSetting(Base):
     delivery_channel = Column(String, nullable=False)
     allow_rsvp = Column(Boolean, default=True)
     send_reminders = Column(Boolean, default=False)
+    custom_fields = Column(JSON, nullable=True, default=[])
     created_at = Column(DateTime(timezone=True), server_default=func.now())

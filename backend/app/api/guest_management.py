@@ -13,6 +13,7 @@ from app.core.security import get_current_user
 from app.models.user import User
 from app.models.guest import Guest
 from app.models.event import Event
+from app.models.event_settings import EventSetting
 from app.services.phone_validator import PhoneValidator, validate_email
 
 router = APIRouter()
@@ -22,12 +23,14 @@ class GuestCreate(BaseModel):
     name: str
     email: Optional[str] = None
     phone: Optional[str] = None
+    custom_data: Optional[dict] = None
 
 
 class GuestUpdate(BaseModel):
     name: Optional[str] = None
     email: Optional[str] = None
     phone: Optional[str] = None
+    custom_data: Optional[dict] = None
 
 
 class GuestResponse(BaseModel):
@@ -45,6 +48,7 @@ class GuestResponse(BaseModel):
     invite_sent: bool
     invite_attempts: int
     invite_viewed_at: Optional[str] = None
+    custom_data: Optional[dict] = None
 
     class Config:
         from_attributes = True
@@ -98,6 +102,7 @@ async def add_guest(
         phone_normalized=phone_normalized,
         phone_country_code=phone_country_code,
         phone_valid=phone_valid,
+        custom_data=guest.custom_data or {},
     )
     db.add(new_guest)
     await db.commit()
@@ -328,3 +333,72 @@ async def get_guest_stats(
         "rsvp_no": len([g for g in all_guests if g.rsvp_status == "no"]),
         "rsvp_pending": len([g for g in all_guests if g.rsvp_status == "pending"]),
     }
+
+
+@router.get("/events/{event_id}/custom-fields")
+async def get_custom_fields(
+    event_id: int,
+    user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+):
+    """Get custom fields configuration for an event."""
+    result = await db.execute(
+        select(Event).where(Event.id == event_id, Event.organizer_id == user.id)
+    )
+    event = result.scalar_one_or_none()
+    if not event:
+        raise HTTPException(status_code=404, detail="Event not found")
+
+    settings_result = await db.execute(
+        select(EventSetting).where(EventSetting.event_id == event_id)
+    )
+    settings = settings_result.scalar_one_or_none()
+
+    if not settings:
+        return {"custom_fields": []}
+
+    return {"custom_fields": settings.custom_fields or []}
+
+
+class CustomField(BaseModel):
+    name: str
+    label: str
+    type: str  # text, select, checkbox, textarea, email, number, etc.
+    required: bool = False
+    options: Optional[List[str]] = None
+    placeholder: Optional[str] = None
+
+
+class CustomFieldsUpdate(BaseModel):
+    custom_fields: List[CustomField]
+
+
+@router.put("/events/{event_id}/custom-fields")
+async def update_custom_fields(
+    event_id: int,
+    data: CustomFieldsUpdate,
+    user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+):
+    """Update custom fields configuration for an event."""
+    result = await db.execute(
+        select(Event).where(Event.id == event_id, Event.organizer_id == user.id)
+    )
+    event = result.scalar_one_or_none()
+    if not event:
+        raise HTTPException(status_code=404, detail="Event not found")
+
+    settings_result = await db.execute(
+        select(EventSetting).where(EventSetting.event_id == event_id)
+    )
+    settings = settings_result.scalar_one_or_none()
+
+    if not settings:
+        settings = EventSetting(event_id=event_id, delivery_channel="email")
+        db.add(settings)
+
+    settings.custom_fields = [field.dict() for field in data.custom_fields]
+    await db.commit()
+    await db.refresh(settings)
+
+    return {"custom_fields": settings.custom_fields}

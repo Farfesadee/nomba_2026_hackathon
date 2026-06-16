@@ -1,5 +1,5 @@
 import uuid
-from sqlalchemy import Column, Integer, String, Boolean, DateTime, ForeignKey, func
+from sqlalchemy import Column, Integer, String, Boolean, DateTime, ForeignKey, JSON, func
 from app.core.database import Base
 
 
@@ -18,6 +18,7 @@ class Guest(Base):
     invite_sent = Column(Boolean, default=False)
     invite_attempts = Column(Integer, default=0)
     invite_viewed_at = Column(DateTime(timezone=True), nullable=True)
+    custom_data = Column(JSON, nullable=True, default={})
     created_at = Column(DateTime(timezone=True), server_default=func.now())
 
     def to_dict(self):
