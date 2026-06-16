@@ -2,7 +2,7 @@
 
 import { useRef, useState, useEffect, type FormEvent } from "react";
 import { Button } from "@/components/ui/button";
-import { Plus, Upload, Users, Mail, Trash2, Edit2, Loader, Search, Filter, Check, AlertCircle } from "lucide-react";
+import { Plus, Upload, Users, Mail, Trash2, Edit2, Loader, Search, Check } from "lucide-react";
 
 type Guest = {
   id: number;
@@ -317,68 +317,7 @@ export default function GuestsTabContent({
                 <tbody className="divide-y divide-slate-200">
                   {guests.map((guest) => (
                     <tr key={guest.id} className="hover:bg-slate-50 transition-colors">
-                      {editingGuest === guest.id ? (
-                        <td colSpan={6} className="px-4 py-4">
-                          <div className="space-y-4 p-4 bg-slate-50 rounded-lg border border-slate-200">
-                            <div>
-                              <label className="text-xs font-medium text-slate-700 block mb-1.5">Full Name *</label>
-                              <input
-                                value={editName}
-                                onChange={(e) => setEditName(e.target.value)}
-                                className="flex h-10 w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-slate-900"
-                              />
-                              {!editName.trim() && <p className="text-xs text-red-600 mt-1">Name is required</p>}
-                            </div>
-                            <div className="grid grid-cols-2 gap-4">
-                              <div>
-                                <label className="text-xs font-medium text-slate-700 block mb-1.5">Phone</label>
-                                <input
-                                  value={editPhone}
-                                  onChange={(e) => setEditPhone(e.target.value)}
-                                  placeholder={guest.phone || "Enter phone"}
-                                  className="flex h-10 w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-slate-900"
-                                />
-                              </div>
-                              <div>
-                                <label className="text-xs font-medium text-slate-700 block mb-1.5">Email</label>
-                                <input
-                                  type="email"
-                                  value={editEmail}
-                                  onChange={(e) => setEditEmail(e.target.value)}
-                                  placeholder={guest.email || "Enter email"}
-                                  className="flex h-10 w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-slate-900"
-                                />
-                              </div>
-                            </div>
-                            <div className="flex gap-2 pt-2 border-t border-slate-200">
-                              <Button
-                                size="sm"
-                                onClick={() => saveEdit(guest.id)}
-                                disabled={!editName.trim() || savingGuest === guest.id}
-                                className="flex-1 bg-slate-900 hover:bg-slate-800 text-white disabled:opacity-50"
-                              >
-                                {savingGuest === guest.id ? (
-                                  <>
-                                    <Loader className="w-3 h-3 animate-spin mr-1" />
-                                    Saving
-                                  </>
-                                ) : (
-                                  "Save"
-                                )}
-                              </Button>
-                              <Button
-                                size="sm"
-                                variant="outline"
-                                onClick={() => setEditingGuest(null)}
-                                disabled={savingGuest === guest.id}
-                                className="flex-1"
-                              >
-                                Cancel
-                              </Button>
-                            </div>
-                          </div>
-                        </td>
-                      ) : deleteConfirm === guest.id ? (
+                      {deleteConfirm === guest.id ? (
                         <td colSpan={6} className="px-4 py-4">
                           <div className="flex items-center justify-between p-4 bg-red-50 rounded-lg border border-red-200">
                             <p className="text-sm font-medium text-slate-900">Delete {guest.name}? This cannot be undone.</p>
@@ -495,6 +434,99 @@ export default function GuestsTabContent({
           </>
         )}
       </div>
+
+      {/* Edit Guest Modal */}
+      {editingGuest && (
+        <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
+          <div className="bg-white rounded-xl border border-slate-200 w-full max-w-lg p-6 space-y-6">
+            {/* Header */}
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-xs font-semibold text-slate-500 uppercase tracking-wide">Guest Management</p>
+                <h2 className="text-2xl font-bold text-slate-900 mt-1">Edit guest</h2>
+              </div>
+              <button
+                onClick={() => setEditingGuest(null)}
+                disabled={savingGuest !== null}
+                className="p-1 hover:bg-slate-100 rounded-lg transition-colors disabled:opacity-50"
+              >
+                <svg className="w-6 h-6 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            </div>
+
+            {/* Form */}
+            <div className="space-y-4">
+              {/* Full Name */}
+              <div>
+                <label className="text-xs font-semibold text-slate-700 uppercase tracking-wide block mb-2">Full Name *</label>
+                <input
+                  value={editName}
+                  onChange={(e) => setEditName(e.target.value)}
+                  placeholder="Enter guest name"
+                  className="flex h-10 w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-slate-900"
+                />
+                {!editName.trim() && (
+                  <p className="text-xs text-red-600 mt-1.5">Name is required</p>
+                )}
+              </div>
+
+              {/* Phone & Email */}
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="text-xs font-semibold text-slate-700 uppercase tracking-wide block mb-2">Phone</label>
+                  <input
+                    value={editPhone}
+                    onChange={(e) => setEditPhone(e.target.value)}
+                    placeholder={guests.find(g => g.id === editingGuest)?.phone || "Enter phone"}
+                    className="flex h-10 w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-slate-900"
+                  />
+                </div>
+                <div>
+                  <label className="text-xs font-semibold text-slate-700 uppercase tracking-wide block mb-2">Email</label>
+                  <input
+                    type="email"
+                    value={editEmail}
+                    onChange={(e) => setEditEmail(e.target.value)}
+                    placeholder={guests.find(g => g.id === editingGuest)?.email || "Enter email"}
+                    className="flex h-10 w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-slate-900"
+                  />
+                </div>
+              </div>
+            </div>
+
+            {/* Action Buttons */}
+            <div className="flex gap-3 pt-2 border-t border-slate-200">
+              <Button
+                onClick={() => saveEdit(editingGuest)}
+                disabled={!editName.trim() || savingGuest !== null}
+                className="flex-1 bg-teal-600 hover:bg-teal-700 text-white h-10 font-medium rounded-lg flex items-center justify-center gap-2 disabled:opacity-50"
+              >
+                {savingGuest !== null ? (
+                  <>
+                    <Loader className="w-4 h-4 animate-spin" />
+                    Saving...
+                  </>
+                ) : (
+                  <>
+                    <Check className="w-4 h-4" />
+                    Save changes
+                  </>
+                )}
+              </Button>
+              <Button
+                onClick={() => setEditingGuest(null)}
+                disabled={savingGuest !== null}
+                variant="outline"
+                className="flex-1 h-10 font-medium rounded-lg"
+              >
+                Cancel
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
