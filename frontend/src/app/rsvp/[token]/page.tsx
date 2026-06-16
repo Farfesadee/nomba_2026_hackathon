@@ -14,6 +14,7 @@ interface RSVPData {
   host_name: string;
   guest_name: string;
   cover_image: string | null;
+  event_theme_color?: string;
 }
 
 function formatDate(dateStr: string) {
@@ -44,6 +45,8 @@ export default function RSVPPage() {
   const [submitting, setSubmitting] = useState(false);
   const [submitted, setSubmitted] = useState(false);
   const [submittedResponse, setSubmittedResponse] = useState<"yes" | "no">("yes");
+  const [guestName, setGuestName] = useState("");
+  const themeColor = rsvpData?.event_theme_color || "#E91E8C";
 
   useEffect(() => {
     const loadRsvpData = async () => {
@@ -63,11 +66,12 @@ export default function RSVPPage() {
     setSubmitting(true);
     setError("");
     try {
-      await apiClient(`/rsvp/${token}`, {
+      const res = await apiClient<any>(`/rsvp/${token}`, {
         method: "POST",
         body: { response: selected },
       });
       setSubmittedResponse(selected);
+      setGuestName(res.guest_name || rsvpData?.guest_name || "");
       setSubmitted(true);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to submit RSVP");
@@ -80,7 +84,7 @@ export default function RSVPPage() {
     return (
       <div className="flex min-h-screen items-center justify-center bg-[#f8f9fc]">
         <div className="text-center">
-          <div className="mx-auto mb-4 h-12 w-12 animate-spin rounded-full border-4 border-[#e8edf2] border-t-[#E91E8C]" />
+          <div className="mx-auto mb-4 h-12 w-12 animate-spin rounded-full border-4 border-[#e8edf2]" style={{ borderTopColor: themeColor }} />
           <p className="text-[#64748b]">Loading your invitation...</p>
         </div>
       </div>
@@ -115,10 +119,27 @@ export default function RSVPPage() {
               <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
             </svg>
           </div>
-          <h1 className="text-2xl font-bold text-[#0D1B2A]">Thank You!</h1>
-          <p className="mt-2 text-[#64748b]">
-            Your response has been recorded. {submittedResponse === "yes" ? "See you at the event!" : "We'll miss you!"}
-          </p>
+          {submittedResponse === "yes" ? (
+            <>
+              <h1 className="text-2xl font-bold text-[#0D1B2A]">You&apos;re Confirmed</h1>
+              <p className="mt-2 text-[#64748b] leading-relaxed">
+                Thank you, {guestName || rsvpData?.guest_name || "Guest"}. Your attendance has been recorded.
+              </p>
+              <p className="mt-3 text-sm text-[#94a3b8] leading-relaxed">
+                Your unique QR code will be sent to your registered contact shortly. Please present it at the venue for entry.
+              </p>
+            </>
+          ) : (
+            <>
+              <h1 className="text-2xl font-bold text-[#0D1B2A]">Response Recorded</h1>
+              <p className="mt-2 text-[#64748b] leading-relaxed">
+                Thank you, {guestName || rsvpData?.guest_name || "Guest"}. Your response has been received and noted.
+              </p>
+              <p className="mt-3 text-sm text-[#94a3b8]">
+                We appreciate your reply and wish you all the best.
+              </p>
+            </>
+          )}
         </div>
       </div>
     );
@@ -128,9 +149,9 @@ export default function RSVPPage() {
     <div className="min-h-screen bg-[#f8f9fc] relative overflow-hidden">
       {/* Animated floating orbs */}
       <div className="fixed inset-0 pointer-events-none overflow-hidden">
-        <div className="animate-orb absolute -top-20 -left-20 w-72 h-72 rounded-full bg-gradient-to-br from-[#E91E8C]/10 to-transparent opacity-60" />
-        <div className="animate-orb absolute top-1/3 -right-16 w-56 h-56 rounded-full bg-gradient-to-bl from-[#E91E8C]/8 to-transparent opacity-50" style={{ animationDelay: "-3s" }} />
-        <div className="animate-orb absolute -bottom-32 left-1/4 w-80 h-80 rounded-full bg-gradient-to-tr from-[#E91E8C]/6 to-transparent opacity-40" style={{ animationDelay: "-6s" }} />
+        <div className="animate-orb absolute -top-20 -left-20 w-72 h-72 rounded-full opacity-60" style={{ background: `linear-gradient(to bottom right, ${themeColor}15, transparent)` }} />
+        <div className="animate-orb absolute top-1/3 -right-16 w-56 h-56 rounded-full opacity-50" style={{ background: `linear-gradient(to bottom left, ${themeColor}12, transparent)`, animationDelay: "-3s" }} />
+        <div className="animate-orb absolute -bottom-32 left-1/4 w-80 h-80 rounded-full opacity-40" style={{ background: `linear-gradient(to top right, ${themeColor}0d, transparent)`, animationDelay: "-6s" }} />
       </div>
 
       {/* Branded header bar */}
@@ -139,7 +160,7 @@ export default function RSVPPage() {
           <div className="flex items-center gap-2">
             <Image src="/logo-trim.png" alt="accredit.vip" width={130} height={24} className="h-5 w-auto object-contain" />
           </div>
-          <a href="/create-event" className="text-xs font-bold text-[#E91E8C] hover:underline">
+          <a href="/create-event" className="text-xs font-bold hover:underline" style={{ color: themeColor }}>
             Create Event &rarr;
           </a>
         </div>
@@ -165,18 +186,18 @@ export default function RSVPPage() {
             {/* Event details */}
             <div className="space-y-4 mb-8 pb-8 border-b border-[#e8edf2] motion-rise" style={{ animationDelay: "0.2s" }}>
               <div className="text-center">
-                <h2 className="text-2xl font-bold text-[#E91E8C]">{rsvpData.event_title}</h2>
+                <h2 className="text-2xl font-bold" style={{ color: themeColor }}>{rsvpData.event_title}</h2>
               </div>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-6">
                 <div className="flex items-start gap-3 bg-[#f8f9fc] rounded-xl p-4 motion-float-card">
-                  <Calendar className="w-5 h-5 text-[#E91E8C] flex-shrink-0 mt-0.5" />
+                  <Calendar className="w-5 h-5 flex-shrink-0 mt-0.5" style={{ color: themeColor }} />
                   <div>
                     <p className="text-xs text-[#94a3b8] uppercase tracking-wider mb-0.5">Date</p>
                     <p className="font-semibold text-[#0D1B2A]">{formatDate(rsvpData.event_date)}</p>
                   </div>
                 </div>
                 <div className="flex items-start gap-3 bg-[#f8f9fc] rounded-xl p-4 motion-float-card-alt">
-                  <Clock className="w-5 h-5 text-[#E91E8C] flex-shrink-0 mt-0.5" />
+                  <Clock className="w-5 h-5 flex-shrink-0 mt-0.5" style={{ color: themeColor }} />
                   <div>
                     <p className="text-xs text-[#94a3b8] uppercase tracking-wider mb-0.5">Time</p>
                     <p className="font-semibold text-[#0D1B2A]">{formatTime(rsvpData.event_time)}</p>
@@ -184,7 +205,7 @@ export default function RSVPPage() {
                 </div>
               </div>
               <div className="flex items-start gap-3 bg-[#f8f9fc] rounded-xl p-4 motion-float-card" style={{ animationDelay: "-2s" }}>
-                <MapPin className="w-5 h-5 text-[#E91E8C] flex-shrink-0 mt-0.5" />
+                <MapPin className="w-5 h-5 flex-shrink-0 mt-0.5" style={{ color: themeColor }} />
                 <div>
                   <p className="text-xs text-[#94a3b8] uppercase tracking-wider mb-0.5">Venue</p>
                   <p className="font-semibold text-[#0D1B2A]">{rsvpData.venue}</p>
@@ -227,7 +248,7 @@ export default function RSVPPage() {
           {/* Footer branding */}
           <div className="bg-[#f8f9fc] px-6 py-4 text-center border-t border-[#e8edf2] motion-fade-in" style={{ animationDelay: "0.5s" }}>
             <p className="text-xs text-[#94a3b8]">
-              Powered by <a href="/" className="text-[#E91E8C] font-semibold hover:underline">Accredit.vip</a>
+              Powered by <a href="/" className="font-semibold hover:underline" style={{ color: themeColor }}>Accredit.vip</a>
             </p>
           </div>
         </div>
