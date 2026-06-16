@@ -841,6 +841,7 @@ function EventDetailContent() {
 
             {activeTab === "guests" && (
               <GuestsTabContent
+                eventId={Number(id)}
                 guestLimit={guestLimit}
                 totalGuests={totalGuests}
                 remainingGuests={remainingGuests}

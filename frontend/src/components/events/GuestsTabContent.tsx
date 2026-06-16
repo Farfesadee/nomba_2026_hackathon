@@ -19,7 +19,17 @@ type Guest = {
   communication_status?: Record<string, { status: string; sent_count: number; last_sent?: string }>;
 };
 
+type CustomField = {
+  name: string;
+  label: string;
+  type: string;
+  required?: boolean;
+  options?: string[];
+  placeholder?: string;
+};
+
 type GuestsTabContentProps = {
+  eventId: number;
   guestLimit: number | null;
   totalGuests: number;
   remainingGuests: number | null;
@@ -66,6 +76,7 @@ type GuestsTabContentProps = {
 };
 
 export default function GuestsTabContent({
+  eventId,
   guestLimit,
   totalGuests,
   remainingGuests,
@@ -113,6 +124,24 @@ export default function GuestsTabContent({
   const localFileRef = useRef<HTMLInputElement | null>(null);
   const resolvedFileRef = fileInputRef ?? localFileRef;
   const [selectedGuests, setSelectedGuests] = useState<Set<number>>(new Set());
+  const [customFields, setCustomFields] = useState<CustomField[]>([]);
+  const [customFieldValues, setCustomFieldValues] = useState<Record<string, any>>({});
+
+  useEffect(() => {
+    const fetchCustomFields = async () => {
+      try {
+        const response = await fetch(`/api/events/${eventId}/custom-fields`);
+        if (response.ok) {
+          const data = await response.json();
+          setCustomFields(data.custom_fields || []);
+        }
+      } catch (error) {
+        console.error("Failed to fetch custom fields:", error);
+      }
+    };
+
+    fetchCustomFields();
+  }, [eventId]);
 
   const toggleGuestSelection = (guestId: number) => {
     const newSelected = new Set(selectedGuests);
@@ -129,6 +158,82 @@ export default function GuestsTabContent({
   const acceptedCount = guests.filter(g => g.rsvp_status === "accepted").length;
   const declinedCount = guests.filter(g => g.rsvp_status === "declined").length;
   const pendingCount = guests.filter(g => g.rsvp_status === "pending").length;
+
+  const renderCustomField = (field: CustomField, value: any, onChange: (val: any) => void) => {
+    const baseClasses = "flex h-10 w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-slate-900";
+
+    switch (field.type) {
+      case "select":
+        return (
+          <select value={value || ""} onChange={(e) => onChange(e.target.value)} className={baseClasses}>
+            <option value="">Select {field.label}</option>
+            {field.options?.map((opt) => (
+              <option key={opt} value={opt}>{opt}</option>
+            ))}
+          </select>
+        );
+      case "checkbox":
+        return (
+          <label className="flex items-center gap-2">
+            <input
+              type="checkbox"
+              checked={value || false}
+              onChange={(e) => onChange(e.target.checked)}
+              className="rounded border-slate-300"
+            />
+            <span className="text-sm text-slate-700">{field.label}</span>
+          </label>
+        );
+      case "textarea":
+        return (
+          <textarea
+            value={value || ""}
+            onChange={(e) => onChange(e.target.value)}
+            placeholder={field.placeholder}
+            className={`${baseClasses} h-24`}
+          />
+        );
+      case "number":
+        return (
+          <input
+            type="number"
+            value={value || ""}
+            onChange={(e) => onChange(e.target.value ? Number(e.target.value) : "")}
+            placeholder={field.placeholder}
+            className={baseClasses}
+          />
+        );
+      case "email":
+        return (
+          <input
+            type="email"
+            value={value || ""}
+            onChange={(e) => onChange(e.target.value)}
+            placeholder={field.placeholder}
+            className={baseClasses}
+          />
+        );
+      case "date":
+        return (
+          <input
+            type="date"
+            value={value || ""}
+            onChange={(e) => onChange(e.target.value)}
+            className={baseClasses}
+          />
+        );
+      default:
+        return (
+          <input
+            type="text"
+            value={value || ""}
+            onChange={(e) => onChange(e.target.value)}
+            placeholder={field.placeholder}
+            className={baseClasses}
+          />
+        );
+    }
+  };
 
   return (
     <div className="space-y-6">
@@ -159,8 +264,8 @@ export default function GuestsTabContent({
           <Plus className="w-5 h-5" />
           Add Guest
         </h2>
-        <form onSubmit={addGuest} className="space-y-3">
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+        <form onSubmit={addGuest} className="space-y-4">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div>
               <label className="text-xs font-medium text-slate-700 block mb-1.5">Full Name *</label>
               <input
@@ -190,6 +295,30 @@ export default function GuestsTabContent({
               />
             </div>
           </div>
+
+          {/* Custom Fields */}
+          {customFields.length > 0 && (
+            <div className="border-t border-slate-200 pt-4">
+              <p className="text-xs font-semibold text-slate-700 uppercase tracking-wide mb-3">Event Details</p>
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                {customFields.map((field) => (
+                  <div key={field.name}>
+                    {field.type !== "checkbox" && (
+                      <label className="text-xs font-medium text-slate-700 block mb-1.5">
+                        {field.label} {field.required && "*"}
+                      </label>
+                    )}
+                    {renderCustomField(
+                      field,
+                      customFieldValues[field.name],
+                      (val) => setCustomFieldValues({ ...customFieldValues, [field.name]: val })
+                    )}
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
           <Button
             type="submit"
             disabled={guestLimit !== null && totalGuests >= guestLimit}
@@ -494,6 +623,29 @@ export default function GuestsTabContent({
                   />
                 </div>
               </div>
+
+              {/* Custom Fields */}
+              {customFields.length > 0 && (
+                <div className="border-t border-slate-200 pt-4">
+                  <p className="text-xs font-semibold text-slate-700 uppercase tracking-wide mb-3">Event Details</p>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    {customFields.map((field) => (
+                      <div key={field.name}>
+                        {field.type !== "checkbox" && (
+                          <label className="text-xs font-semibold text-slate-700 uppercase tracking-wide block mb-2">
+                            {field.label}
+                          </label>
+                        )}
+                        {renderCustomField(
+                          field,
+                          customFieldValues[field.name],
+                          (val) => setCustomFieldValues({ ...customFieldValues, [field.name]: val })
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
             </div>
 
             {/* Action Buttons */}
