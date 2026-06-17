@@ -198,17 +198,18 @@ export default function GuestsTabContent({
   const [sendReviewForce, setSendReviewForce] = useState(false);
   const searchTimerRef = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
   const [openMenuId, setOpenMenuId] = useState<number | null>(null);
-  const menuRef = useRef<HTMLDivElement | null>(null);
 
   useEffect(() => {
+    if (openMenuId === null) return;
     const handleClickOutside = (e: MouseEvent) => {
-      if (menuRef.current && !menuRef.current.contains(e.target as Node)) {
+      const target = e.target as HTMLElement;
+      if (!target.closest('[data-menu-id]')) {
         setOpenMenuId(null);
       }
     };
-    document.addEventListener("mousedown", handleClickOutside);
-    return () => document.removeEventListener("mousedown", handleClickOutside);
-  }, []);
+    document.addEventListener("click", handleClickOutside);
+    return () => document.removeEventListener("click", handleClickOutside);
+  }, [openMenuId]);
 
   useEffect(() => {
     const fetchCustomFields = async () => {
@@ -887,7 +888,7 @@ export default function GuestsTabContent({
                             )}
                           </div>
                         </div>
-                        <div className="relative shrink-0" ref={menuRef}>
+                        <div className="relative shrink-0" data-menu-id={guest.id}>
                           <button
                             onClick={(e) => { e.stopPropagation(); setOpenMenuId(openMenuId === guest.id ? null : guest.id); }}
                             className="h-8 w-8 flex items-center justify-center rounded-lg hover:bg-slate-100 transition-colors"

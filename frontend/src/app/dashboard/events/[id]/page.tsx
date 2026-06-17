@@ -778,8 +778,8 @@ function EventDetailContent() {
               <div ref={tabContainerRef} className="flex items-center gap-2 overflow-x-auto whitespace-nowrap no-scrollbar">
                 {allTabs}
               </div>
-              <div className={`pointer-events-none absolute right-0 top-0 bottom-0 w-12 bg-gradient-to-l from-slate-50 to-transparent flex items-center justify-end pr-1 transition-opacity duration-500 ${canScrollRight ? "opacity-100" : "opacity-0"}`}>
-                <ChevronRight className="w-4 h-4 text-primary animate-pulse" />
+              <div className={`pointer-events-none absolute -right-2 top-1/2 -translate-y-1/2 w-10 h-10 bg-gradient-to-l from-slate-50 via-slate-50/80 to-transparent flex items-center justify-end pr-3 transition-opacity duration-500 rounded-full ${canScrollRight ? "opacity-100" : "opacity-0"}`}>
+                <ChevronRight className="w-5 h-5 text-primary animate-bounce" />
               </div>
             </div>
           </div>
