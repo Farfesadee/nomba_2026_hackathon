@@ -726,7 +726,23 @@ export default function GuestsTabContent({
                           </td>
                           <td className="px-4 py-4 text-center">
                             <div className="flex items-center justify-center gap-1 flex-wrap text-xs">
-                              {guest.invite_sent && (
+                              {guest.communication_status && Object.entries(guest.communication_status).map(([ch, info]: [string, any]) => {
+                                const statusColor = info.status === "read" || info.status === "opened" ? "bg-emerald-50 text-emerald-700"
+                                  : info.status === "delivered" || info.status === "sent" ? "bg-blue-50 text-blue-700"
+                                  : info.status === "failed" ? "bg-red-50 text-red-700"
+                                  : "bg-slate-50 text-slate-500";
+                                const statusIcon = info.status === "read" || info.status === "opened" ? "👁"
+                                  : info.status === "delivered" ? "✓"
+                                  : info.status === "sent" ? "◌"
+                                  : info.status === "failed" ? "✗"
+                                  : "—";
+                                return (
+                                  <span key={ch} className={`px-2 py-1 rounded-full font-medium flex items-center gap-1 ${statusColor}`} title={`${ch}: ${info.status}${info.delivered_at ? ` delivered ${new Date(info.delivered_at).toLocaleString()}` : ""}${info.opened_at ? ` opened ${new Date(info.opened_at).toLocaleString()}` : ""}`}>
+                                    {statusIcon} <span className="capitalize">{ch}</span>
+                                  </span>
+                                );
+                              })}
+                              {(!guest.communication_status || Object.keys(guest.communication_status).length === 0) && guest.invite_sent && (
                                 <span className="px-2 py-1 rounded-full bg-blue-50 text-blue-700 font-medium">
                                   Sent {guest.invite_attempts || 1}/3
                                 </span>
@@ -736,6 +752,9 @@ export default function GuestsTabContent({
                                   <Check className="w-3 h-3" />
                                   Viewed
                                 </span>
+                              )}
+                              {!guest.invite_sent && (!guest.communication_status || Object.keys(guest.communication_status).length === 0) && (
+                                <span className="text-slate-400">—</span>
                               )}
                             </div>
                           </td>

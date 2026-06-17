@@ -252,6 +252,7 @@ async def _send_to_guest(
         msg.status = "delivered" if ok else "failed"
         if ok:
             msg.sent_at = func.now()
+            msg.delivered_at = func.now()
         await db.flush()
         return ok, msg.status
     except Exception as e:

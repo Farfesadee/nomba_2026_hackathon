@@ -13,6 +13,7 @@ from app.models.guest import Guest
 from app.models.event import Event
 
 from app.models.guest import Guest
+from app.models.invite import InviteMessage
 
 router = APIRouter()
 
@@ -113,8 +114,35 @@ async def list_guests(
     result = await db.execute(query)
     guests = result.scalars().all()
 
+    # Build communication_status: per-channel latest message status per guest
+    guest_ids = [g.id for g in guests]
+    comm_status_map: dict[int, dict] = {g.id: {} for g in guests}
+    if guest_ids:
+        msg_result = await db.execute(
+            select(InviteMessage).where(InviteMessage.guest_id.in_(guest_ids))
+        )
+        for msg in msg_result.scalars().all():
+            gid = msg.guest_id
+            if gid not in comm_status_map:
+                comm_status_map[gid] = {}
+            existing = comm_status_map[gid].get(msg.channel)
+            if not existing or (msg.created_at and existing.get("created_at") and msg.created_at > existing["created_at"]):
+                comm_status_map[gid][msg.channel] = {
+                    "status": msg.status,
+                    "sent_at": msg.sent_at.isoformat() if msg.sent_at else None,
+                    "delivered_at": msg.delivered_at.isoformat() if msg.delivered_at else None,
+                    "opened_at": msg.opened_at.isoformat() if msg.opened_at else None,
+                    "error": msg.error,
+                }
+
+    guest_list = []
+    for g in guests:
+        d = g.to_dict()
+        d["communication_status"] = comm_status_map.get(g.id, {})
+        guest_list.append(d)
+
     return {
-        "guests": [g.to_dict() for g in guests],
+        "guests": guest_list,
         "total": total,
         "offset": offset,
         "limit": limit,
