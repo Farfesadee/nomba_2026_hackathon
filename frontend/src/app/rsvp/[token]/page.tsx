@@ -186,21 +186,21 @@ export default function RSVPPage() {
             {/* Event details */}
             <div className="space-y-4 mb-8 pb-8 border-b border-[#e8edf2] motion-rise" style={{ animationDelay: "0.2s" }}>
               <div className="text-center">
-                <h2 className="text-2xl font-bold" style={{ color: themeColor }}>{rsvpData.event_title}</h2>
+                <h2 className="text-2xl font-extrabold" style={{ color: themeColor }}>{rsvpData.event_title}</h2>
               </div>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-6">
                 <div className="flex items-start gap-3 bg-[#f8f9fc] rounded-xl p-4 motion-float-card">
                   <Calendar className="w-5 h-5 flex-shrink-0 mt-0.5" style={{ color: themeColor }} />
                   <div>
                     <p className="text-xs text-[#94a3b8] uppercase tracking-wider mb-0.5">Date</p>
-                    <p className="font-semibold text-[#0D1B2A]">{formatDate(rsvpData.event_date)}</p>
+                    <p className="font-bold text-[#0D1B2A]">{formatDate(rsvpData.event_date)}</p>
                   </div>
                 </div>
                 <div className="flex items-start gap-3 bg-[#f8f9fc] rounded-xl p-4 motion-float-card-alt">
                   <Clock className="w-5 h-5 flex-shrink-0 mt-0.5" style={{ color: themeColor }} />
                   <div>
                     <p className="text-xs text-[#94a3b8] uppercase tracking-wider mb-0.5">Time</p>
-                    <p className="font-semibold text-[#0D1B2A]">{formatTime(rsvpData.event_time)}</p>
+                    <p className="font-bold text-[#0D1B2A]">{formatTime(rsvpData.event_time)}</p>
                   </div>
                 </div>
               </div>
@@ -208,7 +208,7 @@ export default function RSVPPage() {
                 <MapPin className="w-5 h-5 flex-shrink-0 mt-0.5" style={{ color: themeColor }} />
                 <div>
                   <p className="text-xs text-[#94a3b8] uppercase tracking-wider mb-0.5">Venue</p>
-                  <p className="font-semibold text-[#0D1B2A]">{rsvpData.venue}</p>
+                  <p className="font-bold text-[#0D1B2A]">{rsvpData.venue}</p>
                 </div>
               </div>
             </div>

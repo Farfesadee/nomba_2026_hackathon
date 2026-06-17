@@ -109,7 +109,7 @@ async def verify_qr(req: ScanRequest, request: Request, db: AsyncSession = Depen
             },
         }
 
-    if guest.rsvp_status == "no":
+    if guest.rsvp_status == "declined":
         scan = ScanAttempt(
             guest_id=guest.id, event_id=event.id, token=req.token,
             status="declined", device_info=ua, ip_address=ip,
@@ -217,7 +217,7 @@ async def scan_qr(req: ScanRequest, request: Request, db: AsyncSession = Depends
         await db.commit()
         raise HTTPException(status_code=404, detail="Invalid QR code")
 
-    if guest.rsvp_status == "no":
+    if guest.rsvp_status == "declined":
         scan = ScanAttempt(
             guest_id=guest.id, event_id=event.id, token=req.token,
             status="declined", device_info=ua, ip_address=ip,

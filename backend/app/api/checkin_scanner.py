@@ -58,7 +58,7 @@ async def scanner_verify_token(req: ScanTokenRequest, request: Request, db: Asyn
     if qr and qr.is_used:
         return {"valid": False, "reason": "used", "message": "Already checked in"}
 
-    if guest.rsvp_status == "no":
+    if guest.rsvp_status == "declined":
         return {
             "valid": False,
             "reason": "declined",
@@ -95,7 +95,7 @@ async def scanner_checkin(req: ScanTokenRequest, request: Request, db: AsyncSess
     if not guest or not event:
         return {"status": "error", "message": "Invalid QR code"}
 
-    if guest.rsvp_status == "no":
+    if guest.rsvp_status == "declined":
         scan = ScanAttempt(guest_id=guest.id, event_id=event.id, token=raw_token, status="declined", device_info=ua, ip_address=ip)
         db.add(scan)
         await db.commit()

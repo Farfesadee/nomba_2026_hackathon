@@ -241,16 +241,16 @@ async def get_event_details(
     guests_result = await db.execute(select(func.count(Guest.id)).where(Guest.event_id == event_id))
     guest_count = guests_result.scalar() or 0
     
-    rsvp_yes_result = await db.execute(
+    rsvp_accepted_result = await db.execute(
         select(func.count(Guest.id)).where(
             Guest.event_id == event_id,
-            Guest.rsvp_status == "yes"
+            Guest.rsvp_status == "accepted"
         )
     )
-    rsvp_no_result = await db.execute(
+    rsvp_declined_result = await db.execute(
         select(func.count(Guest.id)).where(
             Guest.event_id == event_id,
-            Guest.rsvp_status == "no"
+            Guest.rsvp_status == "declined"
         )
     )
 
@@ -267,7 +267,7 @@ async def get_event_details(
         },
         "statistics": {
             "total_guests": guest_count,
-            "rsvp_yes": rsvp_yes_result.scalar() or 0,
-            "rsvp_no": rsvp_no_result.scalar() or 0,
+            "rsvp_accepted": rsvp_accepted_result.scalar() or 0,
+            "rsvp_declined": rsvp_declined_result.scalar() or 0,
         }
     }

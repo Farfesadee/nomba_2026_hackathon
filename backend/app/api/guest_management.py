@@ -329,8 +329,8 @@ async def get_guest_stats(
         "total": len(all_guests),
         "invited": len([g for g in all_guests if g.invite_sent]),
         "pending": len([g for g in all_guests if not g.invite_sent]),
-        "rsvp_yes": len([g for g in all_guests if g.rsvp_status == "yes"]),
-        "rsvp_no": len([g for g in all_guests if g.rsvp_status == "no"]),
+        "rsvp_yes": len([g for g in all_guests if g.rsvp_status == "accepted"]),
+        "rsvp_no": len([g for g in all_guests if g.rsvp_status == "declined"]),
         "rsvp_pending": len([g for g in all_guests if g.rsvp_status == "pending"]),
     }
 

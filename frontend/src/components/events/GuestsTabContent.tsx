@@ -19,6 +19,7 @@ type Guest = {
   notes?: string | null;
   qr_token?: string | null;
   custom_data?: Record<string, any>;
+  created_at?: string | null;
   communication_status?: Record<string, { status: string; sent_count: number; last_sent?: string }>;
 };
 
@@ -83,6 +84,12 @@ type GuestsTabContentProps = {
   setExportStatus?: (v: string) => void;
   exportGuests?: () => Promise<void>;
 };
+
+function isValidPhone(value?: string | null) {
+  if (!value) return false;
+  const compact = value.replace(/[\s().-]/g, "");
+  return /^\+?\d{7,15}$/.test(compact);
+}
 
 export default function GuestsTabContent({
   eventId,
@@ -500,6 +507,7 @@ export default function GuestsTabContent({
                     <th className="px-4 py-3 text-center text-xs font-semibold text-slate-700">RSVP Status</th>
                     <th className="px-4 py-3 text-center text-xs font-semibold text-slate-700">QR</th>
                     <th className="px-4 py-3 text-center text-xs font-semibold text-slate-700">Message Status</th>
+                    <th className="px-4 py-3 text-center text-xs font-semibold text-slate-700">Added</th>
                     <th className="px-4 py-3 text-right text-xs font-semibold text-slate-700">Actions</th>
                   </tr>
                 </thead>
@@ -507,7 +515,7 @@ export default function GuestsTabContent({
                   {guests.map((guest) => (
                     <tr key={guest.id} className="hover:bg-slate-50 transition-colors">
                       {deleteConfirm === guest.id ? (
-                        <td colSpan={7} className="px-4 py-4">
+                        <td colSpan={8} className="px-4 py-4">
                           <div className="flex items-center justify-between p-4 bg-red-50 rounded-lg border border-red-200">
                             <p className="text-sm font-medium text-slate-900">Delete {guest.name}? This cannot be undone.</p>
                             <div className="flex gap-2">
@@ -589,6 +597,13 @@ export default function GuestsTabContent({
                               )}
                             </div>
                           </td>
+                          <td className="px-4 py-4 text-center">
+                            <span className="text-xs text-slate-500">
+                              {guest.created_at
+                                ? new Date(guest.created_at).toLocaleDateString("en-US", { month: "short", day: "numeric" })
+                                : "—"}
+                            </span>
+                          </td>
                           <td className="px-4 py-4">
                             <div className="flex items-center justify-end gap-1">
                               <Button
@@ -630,14 +645,30 @@ export default function GuestsTabContent({
 
             {/* Pagination */}
             {pageCount > 1 && (
-              <div className="flex items-center justify-center gap-1 pt-4 border-t border-slate-200">
-                <button className="px-2 py-1.5 text-xs rounded border border-slate-200 hover:bg-slate-50 disabled:opacity-30" disabled={currentPage === 0} onClick={() => goToPage(0)}>⌜</button>
-                <button className="px-2 py-1.5 text-xs rounded border border-slate-200 hover:bg-slate-50 disabled:opacity-30" disabled={currentPage === 0} onClick={() => goToPage(currentPage - 1)}>‹</button>
-                {Array.from({ length: pageCount }, (_, i) => (
-                  <button key={i} onClick={() => goToPage(i)} className={`px-3 py-1.5 text-xs rounded border ${i === currentPage ? "bg-slate-900 text-white border-slate-900 font-bold" : "border-slate-200 hover:bg-slate-50"}`}>{i + 1}</button>
-                ))}
-                <button className="px-2 py-1.5 text-xs rounded border border-slate-200 hover:bg-slate-50 disabled:opacity-30" disabled={currentPage >= pageCount - 1} onClick={() => goToPage(currentPage + 1)}>›</button>
-                <button className="px-2 py-1.5 text-xs rounded border border-slate-200 hover:bg-slate-50 disabled:opacity-30" disabled={currentPage >= pageCount - 1} onClick={() => goToPage(pageCount - 1)}>⌟</button>
+              <div className="flex items-center justify-between pt-4 border-t border-slate-200">
+                <p className="text-xs text-slate-500">Page {currentPage + 1} of {pageCount}</p>
+                <div className="flex items-center gap-1">
+                  <button className="px-2 py-1.5 text-xs rounded border border-slate-200 hover:bg-slate-50 disabled:opacity-30" disabled={currentPage === 0} onClick={() => goToPage(0)} title="First page">First</button>
+                  <button className="px-2 py-1.5 text-xs rounded border border-slate-200 hover:bg-slate-50 disabled:opacity-30" disabled={currentPage === 0} onClick={() => goToPage(currentPage - 1)} title="Previous page">Prev</button>
+                  {Array.from({ length: Math.min(pageCount, 10) }, (_, i) => {
+                    let pageNum: number;
+                    if (pageCount <= 10) {
+                      pageNum = i;
+                    } else if (currentPage <= 4) {
+                      pageNum = i;
+                    } else if (currentPage >= pageCount - 5) {
+                      pageNum = pageCount - 10 + i;
+                    } else {
+                      pageNum = currentPage - 5 + i;
+                    }
+                    if (pageNum < 0 || pageNum >= pageCount) return null;
+                    return (
+                      <button key={pageNum} onClick={() => goToPage(pageNum)} className={`px-3 py-1.5 text-xs rounded border ${pageNum === currentPage ? "bg-slate-900 text-white border-slate-900 font-bold" : "border-slate-200 hover:bg-slate-50"}`}>{pageNum + 1}</button>
+                    );
+                  })}
+                  <button className="px-2 py-1.5 text-xs rounded border border-slate-200 hover:bg-slate-50 disabled:opacity-30" disabled={currentPage >= pageCount - 1} onClick={() => goToPage(currentPage + 1)} title="Next page">Next</button>
+                  <button className="px-2 py-1.5 text-xs rounded border border-slate-200 hover:bg-slate-50 disabled:opacity-30" disabled={currentPage >= pageCount - 1} onClick={() => goToPage(pageCount - 1)} title="Last page">Last</button>
+                </div>
               </div>
             )}
           </>
@@ -676,6 +707,17 @@ export default function GuestsTabContent({
               <p className="text-xs text-slate-500 mb-2 font-medium uppercase tracking-wide">Invite Contents</p>
               <p className="text-sm text-slate-700">The invite will include event details, an RSVP link, and a QR code for check-in. Message is delivered via your selected channels.</p>
             </div>
+
+            {sendReviewGuest.phone && !isValidPhone(sendReviewGuest.phone) && (
+              <div className="rounded-lg border border-amber-200 bg-amber-50 p-3 flex gap-2">
+                <span className="text-sm text-amber-800">Phone number appears invalid. WhatsApp/SMS delivery may fail.</span>
+              </div>
+            )}
+            {sendReviewGuest.email && !sendReviewGuest.phone && (
+              <div className="rounded-lg border border-amber-200 bg-amber-50 p-3 flex gap-2">
+                <span className="text-sm text-amber-800">No phone number on file. WhatsApp/SMS will be skipped.</span>
+              </div>
+            )}
 
             {sendReviewGuest.invite_sent && (
               <label className="flex items-center gap-3 p-3 rounded-lg border border-amber-200 bg-amber-50 cursor-pointer">
@@ -735,6 +777,23 @@ export default function GuestsTabContent({
               ))}
               {bulkChannels.length === 0 && (
                 <p className="text-xs text-red-600">Select at least one channel</p>
+              )}
+              {bulkChannels.some(c => c === "whatsapp" || c === "sms") && selectedGuests.size > 0 && (
+                (() => {
+                  const selectedGuestList = guests.filter(g => selectedGuests.has(g.id));
+                  const invalidPhones = selectedGuestList.filter(g => g.phone && !isValidPhone(g.phone));
+                  const missingPhones = selectedGuestList.filter(g => !g.phone);
+                  if (invalidPhones.length > 0 || missingPhones.length > 0) {
+                    return (
+                      <div className="rounded-lg border border-amber-200 bg-amber-50 p-3 text-xs text-amber-800">
+                        {invalidPhones.length > 0 && <p>{invalidPhones.length} guest(s) have invalid phone numbers.</p>}
+                        {missingPhones.length > 0 && <p>{missingPhones.length} guest(s) have no phone number.</p>}
+                        <p>WhatsApp/SMS will be skipped for these guests.</p>
+                      </div>
+                    );
+                  }
+                  return null;
+                })()
               )}
             </div>
             <div className="flex gap-3 pt-2">

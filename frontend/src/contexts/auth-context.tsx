@@ -19,7 +19,7 @@ export type User = {
 type AuthContextType = {
   user: User | null;
   loading: boolean;
-  login: (email: string, password: string) => Promise<void>;
+  login: (email: string, password: string, rememberMe?: boolean) => Promise<void>;
   register: (data: {
     email: string;
     password: string;
@@ -45,6 +45,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     if (typeof window !== "undefined") {
       localStorage.removeItem("last_activity");
       localStorage.removeItem("user_data");
+      localStorage.removeItem("remember_me");
       sessionStorage.clear();
     }
   }, []);
@@ -98,12 +99,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     return () => events.forEach((e) => window.removeEventListener(e, handler));
   }, []);
 
-  const login = async (email: string, password: string) => {
+  const login = async (email: string, password: string, rememberMe: boolean = false) => {
     const res = await apiClient<{ access_token: string; user: User }>("/auth/login", {
       method: "POST",
       body: { email, password },
     });
-    touchActivity();
+    touchActivity(rememberMe);
     setUser(res.user);
     localStorage.setItem("user_data", JSON.stringify(res.user));
   };

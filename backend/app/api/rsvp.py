@@ -179,9 +179,9 @@ async def submit_rsvp(
 
     response_lower = rsvp.response.lower()
     if response_lower == "yes":
-        guest.rsvp_status = "yes"
+        guest.rsvp_status = "accepted"
     elif response_lower == "no":
-        guest.rsvp_status = "no"
+        guest.rsvp_status = "declined"
     else:
         raise HTTPException(status_code=400, detail="Invalid response. Use 'yes' or 'no'")
 
@@ -193,7 +193,7 @@ async def submit_rsvp(
 
     await db.commit()
 
-    # Fire QR delivery asynchronously for "yes" responses
+    # Fire QR delivery asynchronously for accepted responses
     if response_lower == "yes":
         asyncio.create_task(_send_qr_after_rsvp(guest.id, event.id))
 

@@ -22,6 +22,7 @@ function LoginForm() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showPass, setShowPass] = useState(false);
+  const [rememberMe, setRememberMe] = useState(false);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
   const { login } = useAuth();
@@ -39,7 +40,7 @@ function LoginForm() {
     setLoading(true);
     console.log("Login: submitting", email);
     try {
-      await login(email, password);
+      await login(email, password, rememberMe);
       console.log("Login: success, redirecting");
       router.push(redirect || "/dashboard");
     } catch (err: any) {
@@ -310,6 +311,16 @@ function LoginForm() {
                   </button>
                 </div>
               </div>
+
+              <label className="flex items-center gap-2 cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={rememberMe}
+                  onChange={(e) => setRememberMe(e.target.checked)}
+                  className="w-4 h-4 rounded border-slate-300 text-[#E91E8C] focus:ring-[#E91E8C]"
+                />
+                <span className="text-sm text-slate-600">Remember me for 7 days</span>
+              </label>
 
               <button
                 type="submit"
