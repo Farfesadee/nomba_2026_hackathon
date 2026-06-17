@@ -45,7 +45,7 @@ function DashboardContent() {
     <div className="flex min-h-screen bg-[#f8f9fc]">
       <DashboardSidebar sidebarOpen={sidebarOpen} onToggleSidebar={() => setSidebarOpen(!sidebarOpen)} mobileNavOpen={mobileNavOpen} onMobileNavClose={() => setMobileNavOpen(false)} />
 
-      <div className="flex-1 flex flex-col min-w-0">
+      <div className={`flex-1 flex flex-col min-w-0 transition-all duration-300 ${sidebarOpen ? "lg:ml-64" : "lg:ml-20"}`}>
         <DashboardTopbar title="Dashboard" subtitle={`${totalEvents} event${totalEvents !== 1 ? "s" : ""}`} onMenuClick={() => setMobileNavOpen(true)} />
 
         <main className="flex-1 px-6 py-8 overflow-auto">

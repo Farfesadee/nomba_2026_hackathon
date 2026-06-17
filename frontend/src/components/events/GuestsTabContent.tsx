@@ -790,8 +790,8 @@ export default function GuestsTabContent({
               <div className="flex items-center justify-between pt-4 border-t border-slate-200">
                 <p className="text-xs text-slate-500">Page {currentPage + 1} of {pageCount}</p>
                 <div className="flex items-center gap-1">
-                  <button className="px-2 py-1.5 text-xs rounded border border-slate-200 hover:bg-slate-50 disabled:opacity-30" disabled={currentPage === 0} onClick={() => goToPage(0)} title="First page">First</button>
-                  <button className="px-2 py-1.5 text-xs rounded border border-slate-200 hover:bg-slate-50 disabled:opacity-30" disabled={currentPage === 0} onClick={() => goToPage(currentPage - 1)} title="Previous page">Prev</button>
+                  <button className="px-2 py-1.5 text-xs rounded border border-slate-200 hover:bg-slate-50 disabled:opacity-30" disabled={currentPage === 0} onClick={() => goToPage(0)} title="First page">«</button>
+                  <button className="px-2 py-1.5 text-xs rounded border border-slate-200 hover:bg-slate-50 disabled:opacity-30" disabled={currentPage === 0} onClick={() => goToPage(currentPage - 1)} title="Previous page">‹</button>
                   {Array.from({ length: Math.min(pageCount, 10) }, (_, i) => {
                     let pageNum: number;
                     if (pageCount <= 10) {
@@ -808,8 +808,8 @@ export default function GuestsTabContent({
                       <button key={pageNum} onClick={() => goToPage(pageNum)} className={`px-3 py-1.5 text-xs rounded border ${pageNum === currentPage ? "bg-slate-900 text-white border-slate-900 font-bold" : "border-slate-200 hover:bg-slate-50"}`}>{pageNum + 1}</button>
                     );
                   })}
-                  <button className="px-2 py-1.5 text-xs rounded border border-slate-200 hover:bg-slate-50 disabled:opacity-30" disabled={currentPage >= pageCount - 1} onClick={() => goToPage(currentPage + 1)} title="Next page">Next</button>
-                  <button className="px-2 py-1.5 text-xs rounded border border-slate-200 hover:bg-slate-50 disabled:opacity-30" disabled={currentPage >= pageCount - 1} onClick={() => goToPage(pageCount - 1)} title="Last page">Last</button>
+                  <button className="px-2 py-1.5 text-xs rounded border border-slate-200 hover:bg-slate-50 disabled:opacity-30" disabled={currentPage >= pageCount - 1} onClick={() => goToPage(currentPage + 1)} title="Next page">›</button>
+                  <button className="px-2 py-1.5 text-xs rounded border border-slate-200 hover:bg-slate-50 disabled:opacity-30" disabled={currentPage >= pageCount - 1} onClick={() => goToPage(pageCount - 1)} title="Last page">»</button>
                 </div>
               </div>
             )}

@@ -706,11 +706,13 @@ function EventDetailContent() {
 
   return (
     <div className="min-h-screen bg-slate-50 flex flex-col">
-      <DashboardTopbar
-        title={event.title}
-        subtitle="Event Details"
-        onMenuClick={() => setMobileNavOpen(true)}
-      />
+      <div className={`transition-all duration-300 ${sidebarOpen ? "lg:ml-64" : "lg:ml-20"}`}>
+        <DashboardTopbar
+          title={event.title}
+          subtitle="Event Details"
+          onMenuClick={() => setMobileNavOpen(true)}
+        />
+      </div>
 
       <div className="flex flex-1">
         <DashboardSidebar

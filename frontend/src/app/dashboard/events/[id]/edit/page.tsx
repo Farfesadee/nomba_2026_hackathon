@@ -111,11 +111,13 @@ export default function EditEventPage() {
 
   return (
     <div className="min-h-screen bg-slate-50 flex flex-col">
-      <DashboardTopbar
-        title="Edit Event"
-        subtitle={event.title}
-        onMenuClick={() => setMobileNavOpen(true)}
-      />
+      <div className={`transition-all duration-300 ${sidebarOpen ? "lg:ml-64" : "lg:ml-20"}`}>
+        <DashboardTopbar
+          title="Edit Event"
+          subtitle={event.title}
+          onMenuClick={() => setMobileNavOpen(true)}
+        />
+      </div>
 
       <div className="flex flex-1">
         <DashboardSidebar
@@ -125,7 +127,7 @@ export default function EditEventPage() {
           onMobileNavClose={() => setMobileNavOpen(false)}
         />
 
-        <div className="flex-1 px-4 py-6 overflow-auto">
+        <div className={`flex-1 px-4 py-6 transition-all duration-300 ${sidebarOpen ? "lg:ml-64" : "lg:ml-20"}`}>
           <div className="container mx-auto max-w-7xl">
             <Link href={`/dashboard/events/${id}`} className="inline-flex items-center gap-2 text-sm font-medium text-slate-600 hover:text-slate-900 mb-6">
               <ArrowLeft className="w-4 h-4" />
