@@ -7,7 +7,6 @@ export async function getDominantColor(imageUrl: string): Promise<string> {
     const color = await fac.getColorAsync(imageUrl);
     return color.hex;
   } catch (error) {
-    console.error('Error extracting dominant color:', error);
     return '#E91E8C'; // Fallback to brand color
   }
 }
@@ -58,7 +57,6 @@ export async function generateQRWithImage(
       }).catch(reject);
     });
   } catch (error) {
-    console.error('Error generating QR code:', error);
     throw error;
   }
 }

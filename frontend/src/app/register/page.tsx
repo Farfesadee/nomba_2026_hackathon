@@ -59,7 +59,7 @@ export default function RegisterPage() {
           TrialStore.clearAll();
         }
       } catch (err) {
-        console.error("Trial migration failed:", err);
+        // Trial migration failed - silently continue
       }
     }
 
@@ -94,7 +94,7 @@ export default function RegisterPage() {
           sessionStorage.removeItem("post_event_trial_data");
         }
       } catch (err) {
-        console.error("POST EVENT migration failed:", err);
+        // POST EVENT migration failed - silently continue
       }
     }
   };
