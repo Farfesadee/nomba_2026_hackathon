@@ -1,515 +1,143 @@
 "use client";
 
-import { useEffect, useRef, useState, useCallback } from "react";
-import { useRouter } from "next/navigation";
+import { useState } from "react";
+import Link from "next/link";
 import Image from "next/image";
+import { Eye, EyeOff, QrCode } from "lucide-react";
 import { apiClient } from "@/lib/api-client";
-import { Check, X, Search, Camera, User, RefreshCw, Clock, Loader, ChevronDown, QrCode, LogOut, Calendar } from "lucide-react";
 
-interface GuestResult {
-  id: number;
-  name: string;
-  phone: string | null;
-  email: string | null;
-  rsvp_status: string;
-  rsvp_token: string;
-  checked_in: boolean;
-}
-
-interface ActivityItem {
-  id: number;
-  guest_id: number;
-  guest_name: string;
-  guest_phone: string | null;
-  guest_email: string | null;
-  checked_in_at: string;
-}
-
-export default function AccreditationPage() {
-  const router = useRouter();
-  const scannerRef = useRef<any>(null);
-  const [authLoading, setAuthLoading] = useState(true);
-  const [user, setUser] = useState<any>(null);
-  const [events, setEvents] = useState<any[]>([]);
-  const [selectedEvent, setSelectedEvent] = useState<any>(null);
-  const [stats, setStats] = useState({ checked_in: 0, total_guests: 0 });
-  const [scannerStarted, setScannerStarted] = useState(false);
-  const [scanResult, setScanResult] = useState<{ status: string; message: string; guest?: any } | null>(null);
-  const [manualQuery, setManualQuery] = useState("");
-  const [manualResults, setManualResults] = useState<GuestResult[]>([]);
-  const [searching, setSearching] = useState(false);
-  const [checkingIn, setCheckingIn] = useState<number | null>(null);
-  const [activity, setActivity] = useState<ActivityItem[]>([]);
-  const [activityLoading, setActivityLoading] = useState(false);
+export default function AccreditationLoginPage() {
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
   const [error, setError] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
 
-  useEffect(() => {
-    apiClient<{ id: number; email: string; full_name: string; role: string }>("/auth/me")
-      .then((u) => { setUser(u); setAuthLoading(false); })
-      .catch(() => { router.push("/accreditation/login"); });
-  }, [router]);
-
-  useEffect(() => {
-    if (user) {
-      apiClient<any[]>("/scanner/events")
-        .then((evts) => {
-          setEvents(evts);
-          const savedId = localStorage.getItem("accreditation_event_id");
-          const saved = savedId ? evts.find((e: any) => e.id === Number(savedId)) : null;
-          if (saved) {
-            setSelectedEvent(saved);
-          } else if (evts.length === 1) {
-            setSelectedEvent(evts[0]);
-            localStorage.setItem("accreditation_event_id", String(evts[0].id));
-          }
-        })
-        .catch(() => {});
-    }
-  }, [user]);
-
-  const loadStats = useCallback(async (eventId: number) => {
-    try {
-      const d = await apiClient<any>(`/scanner/events/${eventId}/stats`);
-      setStats(d);
-    } catch {}
-  }, []);
-
-  const loadActivity = useCallback(async (eventId: number) => {
-    setActivityLoading(true);
-    try {
-      const d = await apiClient<{ activity: ActivityItem[] }>(`/scanner/events/${eventId}/activity`);
-      setActivity(d.activity || []);
-    } catch { setActivity([]); }
-    setActivityLoading(false);
-  }, []);
-
-  useEffect(() => {
-    if (selectedEvent) {
-      localStorage.setItem("accreditation_event_id", String(selectedEvent.id));
-      loadStats(selectedEvent.id);
-      loadActivity(selectedEvent.id);
-    }
-  }, [selectedEvent, loadStats, loadActivity]);
-
-  const handleEventChange = (eventId: number) => {
-    stopScanner();
-    setScanResult(null);
-    setManualResults([]);
-    setManualQuery("");
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
     setError("");
-    const ev = events.find((e) => e.id === eventId) || null;
-    setSelectedEvent(ev);
-    if (ev) {
-      localStorage.setItem("accreditation_event_id", String(ev.id));
-    } else {
-      localStorage.removeItem("accreditation_event_id");
-    }
-  };
+    setLoading(true);
 
-  const startScanner = async () => {
-    setError("");
-    setScanResult(null);
     try {
-      const { Html5Qrcode } = await import("html5-qrcode");
-      const scanner = new Html5Qrcode("qr-reader");
-      scannerRef.current = scanner;
-      await scanner.start(
-        { facingMode: "environment" },
-        { fps: 10, qrbox: { width: 250, height: 250 } },
-        async (decodedText: string) => {
-          scanner.stop().catch(() => {});
-          setScannerStarted(false);
-          const token = decodedText.split("/").pop() || decodedText;
-          await handleVerify(token);
-        },
-        () => {}
-      );
-      setScannerStarted(true);
-    } catch (err: any) {
-      setError(err.message || "Camera access denied. Use manual search instead.");
+      await apiClient<{ access_token: string; user: any }>("/auth/login", {
+        method: "POST",
+        body: { email, password },
+      });
+
+      window.location.href = "/accreditation/scan";
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Login failed. Please try again.");
+    } finally {
+      setLoading(false);
     }
   };
-
-  const stopScanner = () => {
-    if (scannerRef.current) {
-      scannerRef.current.stop().catch(() => {});
-      scannerRef.current = null;
-    }
-    setScannerStarted(false);
-  };
-
-  const handleVerify = async (token: string) => {
-    setScanResult(null);
-    setError("");
-    try {
-      const res = await apiClient<any>("/scanner/verify", { method: "POST", body: { token } });
-      if (res.valid) {
-        setScanResult({ status: "found", message: `${res.guest.name}`, guest: res.guest });
-      } else {
-        setScanResult({ status: res.reason || "error", message: res.message, guest: res.guest });
-      }
-    } catch (err: any) {
-      setScanResult({ status: "error", message: err.message || "Verification failed" });
-    }
-  };
-
-  const handleCheckin = async (token: string) => {
-    try {
-      const res = await apiClient<any>("/scanner/checkin", { method: "POST", body: { token } });
-      setScanResult({ status: res.status, message: res.message });
-      if (selectedEvent) {
-        loadStats(selectedEvent.id);
-        loadActivity(selectedEvent.id);
-      }
-    } catch (err: any) {
-      setScanResult({ status: "error", message: err.message || "Check-in failed" });
-    }
-  };
-
-  const handleManualSearch = async () => {
-    if (!manualQuery.trim() || !selectedEvent) return;
-    setSearching(true);
-    setError("");
-    try {
-      const res = await apiClient<{ guests: GuestResult[] }>(`/scanner/events/${selectedEvent.id}/guests?q=${encodeURIComponent(manualQuery)}`);
-      setManualResults(res.guests || []);
-    } catch (err: any) {
-      setError(err.message || "Search failed");
-    }
-    setSearching(false);
-  };
-
-  const handleManualCheckin = async (guest: GuestResult) => {
-    setCheckingIn(guest.id);
-    setError("");
-    try {
-      const res = await apiClient<any>("/scanner/checkin", { method: "POST", body: { token: guest.rsvp_token } });
-      setManualResults((prev) => prev.map((g) => g.id === guest.id ? { ...g, checked_in: res.status === "approved" } : g));
-      if (selectedEvent) {
-        loadStats(selectedEvent.id);
-        loadActivity(selectedEvent.id);
-      }
-    } catch (err: any) {
-      setError(err.message || "Check-in failed");
-    }
-    setCheckingIn(null);
-  };
-
-  const handleScanCheckin = async () => {
-    if (!scanResult?.guest) return;
-    const token = scanResult.guest.rsvp_token;
-    if (!token) return;
-    await handleCheckin(token);
-    if (selectedEvent) {
-      loadStats(selectedEvent.id);
-      loadActivity(selectedEvent.id);
-    }
-  };
-
-  const handleLogout = async () => {
-    try { await apiClient("/auth/logout", { method: "POST" }); } catch {}
-    router.push("/accreditation/login");
-  };
-
-  if (authLoading) {
-    return (
-      <div className="min-h-screen bg-[#0D1B2A] flex items-center justify-center">
-        <Loader className="w-8 h-8 animate-spin text-pink-500" />
-      </div>
-    );
-  }
-
-  if (events.length === 0 && !authLoading) {
-    return (
-      <div className="min-h-screen bg-[#0D1B2A] text-white flex flex-col">
-        <header className="border-b border-white/10 bg-[#0D1B2A]/95 px-4 py-3">
-          <div className="max-w-7xl mx-auto flex items-center gap-3">
-            <Image src="/logo-trim.png" alt="accredit.vip" width={120} height={22} className="h-6 w-auto object-contain" />
-          </div>
-        </header>
-        <main className="flex-1 flex items-center justify-center px-4">
-          <div className="text-center max-w-md">
-            <Calendar className="w-16 h-16 mx-auto mb-4 text-white/20" />
-            <h2 className="text-xl font-bold mb-2">No Events Available</h2>
-            <p className="text-white/50 text-sm leading-relaxed">
-              You don't have any events to check guests into. Create an event in your dashboard first, then return here to manage check-ins.
-            </p>
-            <button onClick={() => router.push("/dashboard/create")} className="mt-6 px-6 py-3 rounded-xl bg-pink-600 hover:bg-pink-700 font-semibold text-sm transition">
-              Create an Event
-            </button>
-          </div>
-        </main>
-      </div>
-    );
-  }
 
   return (
-    <div className="min-h-screen bg-[#0D1B2A] text-white flex flex-col">
-      <header className="border-b border-white/10 bg-[#0D1B2A]/95 sticky top-0 z-30">
-        <div className="max-w-7xl mx-auto px-4 py-3 flex items-center justify-between gap-3">
-          <div className="flex items-center gap-3 min-w-0">
-            <Image src="/logo-trim.png" alt="accredit.vip" width={120} height={22} className="h-6 w-auto object-contain flex-shrink-0" />
-            {selectedEvent && (
-              <>
-                <span className="hidden sm:block text-white/20">|</span>
-                <div className="hidden sm:block min-w-0">
-                  <p className="text-sm font-semibold truncate">{selectedEvent.title}</p>
-                  <p className="text-xs text-white/50">
-                    {stats.checked_in} / {stats.total_guests} checked in
-                  </p>
-                </div>
-              </>
-            )}
+    <div className="min-h-screen flex flex-col items-center justify-center bg-white px-4 py-4">
+      <Link href="/" className="mb-8 hover:opacity-80 transition-opacity">
+        <Image
+          src="/logo.png"
+          alt="accredit.vip"
+          width={4071}
+          height={761}
+          className="h-16 w-auto object-contain"
+        />
+      </Link>
+
+      <div className="w-full max-w-md">
+        <div className="bg-white rounded-2xl border border-[#e8edf2] shadow-[0_16px_42px_rgba(15,23,42,0.08)] p-8">
+          <div className="mb-8 text-center">
+            <div className="inline-block px-4 py-2 rounded-lg bg-[#E91E8C]/10 mb-4">
+              <p className="text-xs font-bold uppercase tracking-[0.18em] text-[#E91E8C]">Accreditation Access</p>
+            </div>
+            <h1 className="text-3xl font-black text-[#0D1B2A] mt-3">Sign In</h1>
+            <p className="text-sm text-[#64748b] mt-2">
+              Sign in to scan guest QR codes and manage venue access
+            </p>
           </div>
-          <div className="flex items-center gap-2 sm:gap-3">
-            {selectedEvent && (
-              <div className="flex items-center gap-3 text-xs text-white/60 mr-2">
-                <span className="flex items-center gap-1"><Check className="w-3 h-3 text-green-400" /> {stats.checked_in}</span>
-                <span className="flex items-center gap-1"><User className="w-3 h-3" /> {stats.total_guests}</span>
-              </div>
-            )}
-            {events.length > 1 ? (
+
+          {error && (
+            <div className="mb-6 p-4 rounded-lg bg-red-50 border border-red-200">
+              <p className="text-sm text-red-700 font-medium">{error}</p>
+            </div>
+          )}
+
+          <form onSubmit={handleSubmit} className="space-y-5">
+            <div>
+              <label htmlFor="email" className="block text-sm font-bold text-[#23466f] mb-2">
+                Email Address
+              </label>
+              <input
+                id="email"
+                type="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                placeholder="you@company.com"
+                required
+                disabled={loading}
+                className="w-full px-4 py-3 rounded-xl border border-[#d9e2ec] bg-white text-[#0D1B2A] placeholder-[#94a3b8] focus:outline-none focus:ring-2 focus:ring-[#E91E8C]/20 focus:border-[#E91E8C] disabled:opacity-50 disabled:cursor-not-allowed transition-all"
+              />
+            </div>
+
+            <div>
+              <label htmlFor="password" className="block text-sm font-bold text-[#23466f] mb-2">
+                Password
+              </label>
               <div className="relative">
-                <select
-                  value={selectedEvent?.id || ""}
-                  onChange={(e) => handleEventChange(Number(e.target.value))}
-                  className="appearance-none bg-white/10 border border-white/20 rounded-xl pl-3 pr-8 py-2 text-sm text-white max-w-[180px] sm:max-w-[220px] truncate cursor-pointer"
+                <input
+                  id="password"
+                  type={showPassword ? "text" : "password"}
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  placeholder="••••••••"
+                  required
+                  disabled={loading}
+                  className="w-full px-4 py-3 pr-12 rounded-xl border border-[#d9e2ec] bg-white text-[#0D1B2A] placeholder-[#94a3b8] focus:outline-none focus:ring-2 focus:ring-[#E91E8C]/20 focus:border-[#E91E8C] disabled:opacity-50 disabled:cursor-not-allowed transition-all"
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword(!showPassword)}
+                  className="absolute right-4 top-1/2 -translate-y-1/2 text-[#94a3b8] hover:text-[#0D1B2A] transition-colors"
+                  disabled={loading}
                 >
-                  {!selectedEvent && <option value="">Select event</option>}
-                  {events.map((ev) => (
-                    <option key={ev.id} value={ev.id}>{ev.title}</option>
-                  ))}
-                </select>
-                <ChevronDown className="absolute right-2.5 top-1/2 -translate-y-1/2 w-4 h-4 text-white/40 pointer-events-none" />
+                  {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
+                </button>
               </div>
-            ) : selectedEvent ? (
-              <span className="text-xs text-white/40 bg-white/5 px-3 py-1.5 rounded-full">1 event</span>
-            ) : null}
-            <button onClick={handleLogout} className="p-2 rounded-xl hover:bg-white/10 transition text-white/50 hover:text-white" title="Logout">
-              <LogOut className="w-4 h-4" />
+            </div>
+
+            <button
+              type="submit"
+              disabled={loading}
+              className="w-full h-12 rounded-xl font-bold text-white transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+              style={{
+                background: loading ? "#94a3b8" : "linear-gradient(135deg, #E91E8C, #C4166F)",
+                boxShadow: loading ? "none" : "0 6px 20px rgba(233,30,140,0.35)",
+              }}
+            >
+              {loading ? "Signing in..." : "Sign In"}
             </button>
+          </form>
+
+          <div className="mt-6 pt-6 border-t border-[#e8edf2] text-center">
+            <p className="text-xs text-[#94a3b8]">
+              Not an accreditation officer?{" "}
+              <Link href="/login" className="font-bold text-[#E91E8C] hover:underline">
+                User Login
+              </Link>
+            </p>
           </div>
         </div>
-      </header>
 
-      <main className="flex-1 max-w-7xl w-full mx-auto p-4">
-        {error && (
-          <div className="mb-4 rounded-xl bg-red-900/40 border border-red-500/50 p-3 flex items-center gap-2 text-sm">
-            <X className="w-4 h-4 text-red-400 flex-shrink-0" />
-            <span className="flex-1">{error}</span>
-            <button onClick={() => setError("")} className="text-red-400 hover:text-red-300 flex-shrink-0">Dismiss</button>
+        <div className="mt-6 p-4 rounded-xl bg-[#0D1B2A] flex gap-3 shadow-lg">
+          <QrCode className="w-5 h-5 text-[#E91E8C] flex-shrink-0 mt-0.5" />
+          <div>
+            <p className="text-sm font-bold text-white mb-1">Venue Check-in Portal</p>
+            <p className="text-xs text-white/70 leading-snug">
+              Use this portal to scan guest QR codes, verify identities, and manage event entry at the venue.
+            </p>
           </div>
-        )}
-
-        {!selectedEvent ? (
-          <div className="flex items-center justify-center min-h-[60vh]">
-            <div className="text-center text-white/40">
-              <Camera className="w-16 h-16 mx-auto mb-4 opacity-30" />
-              <p className="text-lg font-medium">Select an event to begin</p>
-              <p className="text-sm mt-1">Choose an event from the dropdown above to start checking in guests</p>
-            </div>
-          </div>
-        ) : (
-          <>
-            <div className="sm:hidden mb-4 rounded-xl bg-white/5 border border-white/10 p-3">
-              <p className="text-sm font-semibold">{selectedEvent.title}</p>
-              <p className="text-xs text-white/50 mt-0.5">{stats.checked_in} / {stats.total_guests} checked in</p>
-            </div>
-
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
-              <div className="lg:col-span-2 space-y-4">
-                <div className="rounded-2xl bg-white/5 border border-white/10 overflow-hidden">
-                  <div className="p-4 border-b border-white/10 flex items-center justify-between">
-                    <h2 className="font-bold flex items-center gap-2 text-sm sm:text-base">
-                      <QrCode className="w-4 h-4 text-pink-400" />
-                      Live Scanner
-                    </h2>
-                    {!scannerStarted ? (
-                      <button onClick={startScanner} className="flex items-center gap-1.5 px-4 py-2.5 rounded-xl bg-pink-600 hover:bg-pink-700 text-sm font-semibold transition min-h-[44px]">
-                        <Camera className="w-4 h-4" />
-                        <span className="hidden sm:inline">Start Scanner</span>
-                        <span className="sm:hidden">Scan</span>
-                      </button>
-                    ) : (
-                      <button onClick={stopScanner} className="flex items-center gap-1.5 px-4 py-2.5 rounded-xl bg-red-600/80 hover:bg-red-700 text-sm font-semibold transition min-h-[44px]">
-                        <X className="w-4 h-4" />
-                        Stop
-                      </button>
-                    )}
-                  </div>
-                  <div className="p-4">
-                    {scannerStarted ? (
-                      <div id="qr-reader" className="w-full max-w-sm mx-auto rounded-xl overflow-hidden [&_video]:rounded-xl [&_img]:rounded-xl" />
-                    ) : (
-                      <div className="flex flex-col items-center justify-center py-12 sm:py-16 text-white/30">
-                        <Camera className="w-12 h-12 mb-3" />
-                        <p className="font-medium text-white/50">Scanner idle</p>
-                        <p className="text-sm mt-1 text-center px-4">Tap "Scan" to open the camera and start checking in guests</p>
-                      </div>
-                    )}
-                  </div>
-                </div>
-
-                {scanResult && (
-                  <div className={`rounded-2xl border p-4 sm:p-5 ${
-                    scanResult.status === "approved" ? "bg-green-900/30 border-green-500/50" :
-                    scanResult.status === "found" ? "bg-blue-900/30 border-blue-500/50" :
-                    scanResult.status === "declined" ? "bg-amber-900/30 border-amber-500/50" :
-                    "bg-red-900/30 border-red-500/50"
-                  }`}>
-                    <div className="flex items-start justify-between gap-3">
-                      <div className="min-w-0 flex-1">
-                        <div className="flex items-center gap-2">
-                          {scanResult.status === "approved" ? <Check className="w-5 h-5 text-green-400 flex-shrink-0" /> :
-                           scanResult.status === "found" ? <User className="w-5 h-5 text-blue-400 flex-shrink-0" /> :
-                           scanResult.status === "declined" ? <X className="w-5 h-5 text-amber-400 flex-shrink-0" /> :
-                           <X className="w-5 h-5 text-red-400 flex-shrink-0" />}
-                          <p className="font-bold text-base sm:text-lg truncate">
-                            {scanResult.status === "approved" ? "Checked In" :
-                             scanResult.status === "found" ? "Guest Found" :
-                             scanResult.status === "declined" ? "Invitation Declined" :
-                             scanResult.status === "error" ? "Error" : scanResult.message}
-                          </p>
-                        </div>
-                        {scanResult.guest && (
-                          <div className="mt-2 space-y-1 text-sm text-white/70">
-                            <p className="font-semibold text-white">{scanResult.guest.name}</p>
-                            {scanResult.guest.phone && <p>{scanResult.guest.phone}</p>}
-                            {scanResult.guest.email && <p className="truncate">{scanResult.guest.email}</p>}
-                            <p className="capitalize">RSVP: {scanResult.guest.rsvp_status}</p>
-                          </div>
-                        )}
-                        <p className="text-sm text-white/60 mt-2">{scanResult.message}</p>
-                      </div>
-                      <div className="flex gap-2 flex-shrink-0">
-                        {scanResult.status === "found" && (
-                          <button onClick={handleScanCheckin} className="px-4 sm:px-5 py-2.5 rounded-xl bg-green-600 hover:bg-green-700 font-semibold text-sm transition min-h-[44px]">
-                            Check In
-                          </button>
-                        )}
-                        <button onClick={() => setScanResult(null)} className="px-4 py-2.5 rounded-xl bg-white/10 hover:bg-white/20 font-semibold text-sm transition min-h-[44px]">
-                          {scanResult.status === "found" ? "Cancel" : "Dismiss"}
-                        </button>
-                      </div>
-                    </div>
-                  </div>
-                )}
-
-                <div className="rounded-2xl bg-white/5 border border-white/10 p-4">
-                  <h3 className="font-semibold text-sm flex items-center gap-2 mb-3">
-                    <Search className="w-4 h-4 text-pink-400" />
-                    Manual Entry
-                    <span className="ml-auto text-[10px] text-white/30 bg-white/5 px-2 py-0.5 rounded-full truncate max-w-[140px]">{selectedEvent.title}</span>
-                  </h3>
-                  <div className="flex gap-2">
-                    <input
-                      value={manualQuery}
-                      onChange={(e) => setManualQuery(e.target.value)}
-                      onKeyDown={(e) => e.key === "Enter" && handleManualSearch()}
-                      placeholder="Search name, email, phone, or code..."
-                      className="flex-1 min-w-0 rounded-xl bg-white/10 border border-white/20 px-4 py-3 text-sm placeholder:text-white/30 focus:outline-none focus:border-pink-500"
-                    />
-                    <button onClick={handleManualSearch} disabled={searching || !manualQuery.trim()} className="px-4 sm:px-5 py-3 rounded-xl bg-pink-600 hover:bg-pink-700 disabled:opacity-40 font-semibold text-sm transition flex items-center gap-1.5 min-h-[44px]">
-                      {searching ? <Loader className="w-4 h-4 animate-spin" /> : <Search className="w-4 h-4" />}
-                      <span className="hidden sm:inline">Search</span>
-                    </button>
-                  </div>
-
-                  {manualResults.length > 0 && (
-                    <div className="mt-3 space-y-2 max-h-64 overflow-y-auto">
-                      {manualResults.map((g) => (
-                        <div key={g.id} className="flex items-center justify-between rounded-xl bg-white/5 border border-white/10 p-3 hover:bg-white/10 transition">
-                          <div className="min-w-0 flex-1">
-                            <p className="font-semibold text-sm truncate">{g.name}</p>
-                            <div className="flex items-center gap-2 text-xs text-white/50 mt-0.5">
-                              {g.email && <span className="truncate">{g.email}</span>}
-                              {g.phone && <span className="hidden sm:inline">{g.phone}</span>}
-                            </div>
-                            <div className="flex items-center gap-2 mt-1 flex-wrap">
-                              <span className={`inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded text-[10px] font-medium ${
-                                g.rsvp_status === "accepted" ? "bg-green-900/50 text-green-400" :
-                                g.rsvp_status === "declined" ? "bg-red-900/50 text-red-400" :
-                                "bg-amber-900/50 text-amber-400"
-                              }`}>
-                                {g.rsvp_status || "pending"}
-                              </span>
-                              {g.checked_in && (
-                                <span className="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded text-[10px] font-medium bg-blue-900/50 text-blue-400">
-                                  <Check className="w-2.5 h-2.5" /> Checked in
-                                </span>
-                              )}
-                            </div>
-                          </div>
-                          {!g.checked_in && g.rsvp_status !== "declined" && (
-                            <button
-                              onClick={() => handleManualCheckin(g)}
-                              disabled={checkingIn === g.id}
-                              className="ml-3 px-4 py-2.5 rounded-xl bg-green-600 hover:bg-green-700 disabled:opacity-40 text-xs font-semibold transition flex items-center gap-1 flex-shrink-0 min-h-[44px]"
-                            >
-                              {checkingIn === g.id ? <Loader className="w-3 h-3 animate-spin" /> : <Check className="w-3 h-3" />}
-                              Verify
-                            </button>
-                          )}
-                        </div>
-                      ))}
-                    </div>
-                  )}
-                  {manualQuery && !searching && manualResults.length === 0 && (
-                    <p className="text-sm text-white/40 mt-3 text-center">No guests found matching "{manualQuery}"</p>
-                  )}
-                </div>
-              </div>
-
-              <div className="rounded-2xl bg-white/5 border border-white/10 p-4 h-fit lg:sticky lg:top-20">
-                <h3 className="font-semibold text-sm flex items-center gap-2 mb-4">
-                  <Clock className="w-4 h-4 text-pink-400" />
-                  Recent Activity
-                </h3>
-                {activityLoading && activity.length === 0 ? (
-                  <div className="text-center py-8 text-white/30">
-                    <Loader className="w-6 h-6 animate-spin mx-auto mb-2" />
-                    <p className="text-sm">Loading activity...</p>
-                  </div>
-                ) : activity.length === 0 ? (
-                  <div className="text-center py-8 text-white/30">
-                    <User className="w-8 h-8 mx-auto mb-2 opacity-50" />
-                    <p className="text-sm">No check-ins yet</p>
-                    <p className="text-xs mt-1">Guests will appear here as they check in</p>
-                  </div>
-                ) : (
-                  <div className="space-y-2 max-h-[500px] overflow-y-auto">
-                    {activity.map((item) => (
-                      <div key={item.id} className="flex items-center gap-3 rounded-xl bg-white/5 border border-white/10 p-3">
-                        <div className="w-9 h-9 rounded-full bg-pink-600/30 flex items-center justify-center flex-shrink-0">
-                          <User className="w-4 h-4 text-pink-400" />
-                        </div>
-                        <div className="min-w-0 flex-1">
-                          <p className="text-sm font-semibold truncate">{item.guest_name}</p>
-                          <p className="text-xs text-white/50 truncate">{item.guest_email || item.guest_phone || "—"}</p>
-                        </div>
-                        <div className="text-right flex-shrink-0">
-                          <div className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-green-900/40 text-green-400 text-[10px] font-medium">
-                            <Check className="w-2.5 h-2.5" /> In
-                          </div>
-                          <p className="text-[10px] text-white/40 mt-0.5">
-                            {item.checked_in_at ? new Date(item.checked_in_at).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }) : ""}
-                          </p>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                )}
-                {activity.length > 0 && (
-                  <button onClick={() => selectedEvent && loadActivity(selectedEvent.id)} className="mt-3 w-full flex items-center justify-center gap-1.5 py-2.5 rounded-xl bg-white/5 hover:bg-white/10 text-xs font-semibold transition min-h-[44px]">
-                    <RefreshCw className="w-3 h-3" />
-                    Refresh
-                  </button>
-                )}
-              </div>
-            </div>
-          </>
-        )}
-      </main>
+        </div>
+      </div>
     </div>
   );
 }
