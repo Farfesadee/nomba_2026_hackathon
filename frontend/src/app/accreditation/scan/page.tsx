@@ -239,14 +239,11 @@ export default function AccreditationScanPage() {
             <div className="w-16 h-16 mx-auto mb-4 rounded-2xl bg-white/5 flex items-center justify-center">
               <CalendarIcon className="w-8 h-8 text-white/20" />
             </div>
-            <h2 className="text-xl font-bold mb-2">No Events</h2>
+            <h2 className="text-xl font-bold mb-2">No Events Available</h2>
             <p className="text-white/50 text-sm leading-relaxed">
-              You don't have any events to check guests into. Create an event from your dashboard first.
+              This account has no events to check guests into. Sign in with an organizer account that has events.
             </p>
             <div className="flex flex-col sm:flex-row gap-3 mt-6 justify-center">
-              <button onClick={() => router.push("/dashboard/create")} className="px-6 py-3 rounded-xl bg-pink-600 hover:bg-pink-700 font-semibold text-sm transition min-h-[44px]">
-                Create an Event
-              </button>
               <button onClick={handleLogout} className="px-6 py-3 rounded-xl bg-white/10 hover:bg-white/20 font-semibold text-sm transition min-h-[44px]">
                 Sign Out
               </button>

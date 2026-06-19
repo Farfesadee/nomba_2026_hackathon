@@ -3,7 +3,7 @@
 import { useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
-import { Eye, EyeOff, QrCode } from "lucide-react";
+import { Eye, EyeOff, Shield } from "lucide-react";
 import { apiClient } from "@/lib/api-client";
 
 export default function AccreditationLoginPage() {
@@ -36,11 +36,11 @@ export default function AccreditationLoginPage() {
     <div className="min-h-screen flex flex-col items-center justify-center bg-white px-4 py-4">
       <Link href="/" className="mb-8 hover:opacity-80 transition-opacity">
         <Image
-          src="/logo.png"
+          src="/logo-trim.png"
           alt="accredit.vip"
           width={4071}
           height={761}
-          className="h-24 w-auto object-contain"
+          className="h-16 w-auto object-contain"
         />
       </Link>
 
@@ -129,11 +129,11 @@ export default function AccreditationLoginPage() {
         </div>
 
         <div className="mt-6 p-4 rounded-xl bg-[#0D1B2A] flex gap-3 shadow-lg">
-          <QrCode className="w-5 h-5 text-[#E91E8C] flex-shrink-0 mt-0.5" />
+          <Shield className="w-5 h-5 text-[#E91E8C] flex-shrink-0 mt-0.5" />
           <div>
-            <p className="text-sm font-bold text-white mb-1">Venue Check-in Portal</p>
+            <p className="text-sm font-bold text-white mb-1">Secure Access Required</p>
             <p className="text-xs text-white/70 leading-snug">
-              Use this portal to scan guest QR codes, verify identities, and manage event entry at the venue.
+              This portal is for authorized event staff only. Sign in with your organizer account to scan guest QR codes and manage check-ins.
             </p>
           </div>
         </div>
