@@ -213,10 +213,21 @@ export default function AccreditationScanPage() {
   const startScanner = async () => {
     setError("");
     setScanResult(null);
+    // Render qr-reader div first, then create the scanner once DOM is updated
+    setScannerStarted(true);
+    await new Promise((r) => setTimeout(r, 100));
+
     try {
       const { Html5Qrcode } = await import("html5-qrcode");
       const scanner = new Html5Qrcode("qr-reader");
       scannerRef.current = scanner;
+
+      // Scroll scanner into view on mobile
+      setTimeout(() => {
+        const el = document.getElementById("qr-reader");
+        el?.scrollIntoView({ behavior: "smooth", block: "start" });
+      }, 100);
+
       await scanner.start(
         { facingMode: "environment" },
         { fps: 10, qrbox: { width: 250, height: 250 } },
@@ -228,8 +239,8 @@ export default function AccreditationScanPage() {
         },
         () => {}
       );
-      setScannerStarted(true);
     } catch (err: any) {
+      setScannerStarted(false);
       const errorMsg = err.message || "";
       let userMessage = "Camera access denied. Use manual search instead.";
 
@@ -434,11 +445,12 @@ export default function AccreditationScanPage() {
   return (
     <div className="min-h-screen bg-[#0D1B2A] text-white flex flex-col">
       <header className="border-b border-white/10 bg-[#0D1B2A]/95 sticky top-0 z-30">
-        <div className="max-w-7xl mx-auto px-4 py-3 flex items-center justify-between">
-          <Image src="/logo-dark-trim.png" alt="accredit.vip" width={480} height={90} className="h-14 w-auto object-contain flex-shrink-0" />
-          <button onClick={handleLogout} className="flex items-center gap-1.5 px-4 py-2 rounded-xl bg-pink-600 hover:bg-pink-700 text-white text-sm font-semibold transition min-h-[44px]">
+        <div className="max-w-7xl mx-auto px-4 py-3 flex items-center justify-between gap-4">
+          <Image src="/logo-dark-trim.png" alt="accredit.vip" width={480} height={90} className="h-12 sm:h-14 w-auto object-contain flex-shrink-0" />
+          <button onClick={handleLogout} className="flex items-center gap-1 sm:gap-1.5 px-3 sm:px-4 py-2 rounded-xl bg-pink-600 hover:bg-pink-700 text-white text-xs sm:text-sm font-semibold transition min-h-[44px] flex-shrink-0">
             <LogOut className="w-4 h-4" />
-            Sign Out
+            <span className="hidden sm:inline">Sign Out</span>
+            <span className="sm:hidden">Out</span>
           </button>
         </div>
       </header>
@@ -507,73 +519,130 @@ export default function AccreditationScanPage() {
                   </h2>
                   <div className="rounded-2xl bg-white/5 border border-white/10 overflow-hidden">
                     {scannerStarted && (
-                      <div className="p-4 border-b border-white/10 flex items-center justify-end">
+                      <div className="p-4 border-b border-white/10 flex items-center justify-between">
+                        <p className="text-xs font-semibold text-green-400 flex items-center gap-1.5">
+                          <div className="w-2 h-2 rounded-full bg-green-400 animate-pulse" />
+                          SCANNING
+                        </p>
                         <button onClick={stopScanner} className="flex items-center gap-1.5 px-4 py-2.5 rounded-xl bg-red-600/80 hover:bg-red-700 text-sm font-semibold transition min-h-[44px]">
                           <X className="w-4 h-4" />
                           Stop
                         </button>
                       </div>
                     )}
-                  <div className="p-4">
-                    <div className="relative w-full max-w-sm mx-auto min-h-[280px]">
-                      <div id="qr-reader" className="w-full rounded-xl overflow-hidden [&_video]:rounded-xl [&_img]:rounded-xl" />
-                      <button
-                        onClick={startScanner}
-                        className={`absolute inset-0 flex flex-col items-center justify-center text-white/30 cursor-pointer hover:bg-white/[0.02] transition rounded-xl group ${scannerStarted ? "hidden" : ""}`}
-                      >
-                        <div className="relative mb-4">
-                          <Camera className="w-20 h-20 text-pink-500/60 group-hover:text-pink-400/80 transition" style={{ animation: "breathe 2.5s ease-in-out infinite" }} />
-                          <div className="absolute inset-0 rounded-full bg-pink-500/10 blur-xl" style={{ animation: "breathe 2.5s ease-in-out infinite" }} />
+                    <div className={`relative w-full ${scannerStarted ? "min-h-[350px]" : "min-h-[280px]"}`}>
+                      {scannerStarted ? (
+                        <div className="relative w-full h-full">
+                          <div id="qr-reader" className="w-full h-full [&_video]:w-full [&_video]:h-full [&_img]:w-full [&_img]:h-full" />
+                          <div className="absolute inset-0 pointer-events-none overflow-hidden">
+                            <div
+                              className="absolute left-0 right-0 h-1 bg-gradient-to-b from-pink-500 to-transparent"
+                              style={{
+                                animation: "scannerLine 2s ease-in-out infinite",
+                                boxShadow: "0 0 20px rgba(236, 72, 153, 0.8)"
+                              }}
+                            />
+                          </div>
+                          <style>{`
+                            @keyframes scannerLine {
+                              0% { top: 5%; }
+                              50% { top: 95%; }
+                              100% { top: 5%; }
+                            }
+                          `}</style>
                         </div>
-                        <p className="font-semibold text-base text-white/60 group-hover:text-white/80 transition">Start Live Scanner</p>
-                        <p className="text-xs mt-1.5 text-white/30">Tap anywhere to activate the camera</p>
-                        <style>{`@keyframes breathe { 0%,100% { transform: scale(1); opacity: 0.6; } 50% { transform: scale(1.06); opacity: 1; } }`}</style>
-                      </button>
+                      ) : (
+                        <button
+                          onClick={startScanner}
+                          className="w-full h-full flex flex-col items-center justify-center text-white/30 cursor-pointer hover:bg-white/[0.02] transition group"
+                        >
+                          <div className="relative mb-4">
+                            <Camera className="w-20 h-20 text-pink-500/60 group-hover:text-pink-400/80 transition" style={{ animation: "breathe 2.5s ease-in-out infinite" }} />
+                            <div className="absolute inset-0 rounded-full bg-pink-500/10 blur-xl" style={{ animation: "breathe 2.5s ease-in-out infinite" }} />
+                          </div>
+                          <p className="font-semibold text-base text-white/60 group-hover:text-white/80 transition">Start Live Scanner</p>
+                          <p className="text-xs mt-1.5 text-white/30">Tap anywhere to activate the camera</p>
+                          <style>{`@keyframes breathe { 0%,100% { transform: scale(1); opacity: 0.6; } 50% { transform: scale(1.06); opacity: 1; } }`}</style>
+                        </button>
+                      )}
                     </div>
-                  </div>
                   </div>
                 </div>
 
+                {/* Scanner Result - Sticky Modal on Mobile */}
                 {scanResult && (
-                  <div className={`rounded-2xl border p-4 sm:p-5 ${
-                    scanResult.status === "approved" ? "bg-green-900/30 border-green-500/50" :
-                    scanResult.status === "found" ? "bg-blue-900/30 border-blue-500/50" :
-                    scanResult.status === "declined" ? "bg-amber-900/30 border-amber-500/50" :
-                    "bg-red-900/30 border-red-500/50"
-                  }`}>
-                    <div className="flex items-start justify-between gap-3">
-                      <div className="min-w-0 flex-1">
+                  <div className="fixed top-0 left-0 right-0 z-40 p-4 lg:static lg:p-0">
+                    <div className={`rounded-2xl border p-4 sm:p-5 lg:rounded-b-none lg:border-b-0 ${
+                      scanResult.status === "approved" ? "bg-green-900/30 border-green-500/50" :
+                      scanResult.status === "found" ? "bg-blue-900/30 border-blue-500/50" :
+                      scanResult.status === "declined" ? "bg-amber-900/30 border-amber-500/50" :
+                      "bg-red-900/30 border-red-500/50"
+                    }`} style={{ marginTop: "60px" }}>
+                      <div className="space-y-3">
+                        {/* Header */}
                         <div className="flex items-center gap-2">
                           {scanResult.status === "approved" ? <Check className="w-5 h-5 text-green-400 flex-shrink-0" /> :
                            scanResult.status === "found" ? <User className="w-5 h-5 text-blue-400 flex-shrink-0" /> :
                            scanResult.status === "declined" ? <X className="w-5 h-5 text-amber-400 flex-shrink-0" /> :
                            <X className="w-5 h-5 text-red-400 flex-shrink-0" />}
-                          <p className="font-bold text-base sm:text-lg truncate">
+                          <p className="font-bold text-base sm:text-lg">
                             {scanResult.status === "approved" ? "Checked In" :
                              scanResult.status === "found" ? "Guest Found" :
                              scanResult.status === "declined" ? "Invitation Declined" :
                              scanResult.status === "error" ? "Error" : scanResult.message}
                           </p>
                         </div>
+
+                        {/* Guest Info */}
                         {scanResult.guest && (
-                          <div className="mt-2 space-y-1 text-sm text-white/70">
-                            <p className="font-semibold text-white">{scanResult.guest.name}</p>
-                            {scanResult.guest.phone && <p>{scanResult.guest.phone}</p>}
-                            {scanResult.guest.email && <p className="truncate">{scanResult.guest.email}</p>}
-                            <p className="capitalize">RSVP: {scanResult.guest.rsvp_status}</p>
+                          <div className="space-y-2 bg-white/5 rounded-lg p-3 border border-white/10">
+                            <div>
+                              <p className="text-xs text-white/50 uppercase tracking-wide">Name</p>
+                              <p className="font-semibold text-white break-words">{scanResult.guest.name}</p>
+                            </div>
+                            {scanResult.guest.phone && (
+                              <div>
+                                <p className="text-xs text-white/50 uppercase tracking-wide">Phone</p>
+                                <p className="text-sm text-white/80 break-all">{scanResult.guest.phone}</p>
+                              </div>
+                            )}
+                            {scanResult.guest.email && (
+                              <div>
+                                <p className="text-xs text-white/50 uppercase tracking-wide">Email</p>
+                                <p className="text-sm text-white/80 break-all">{scanResult.guest.email}</p>
+                              </div>
+                            )}
+                            <div className="flex items-center justify-between pt-2 border-t border-white/10">
+                              <div>
+                                <p className="text-xs text-white/50 uppercase tracking-wide">RSVP Status</p>
+                                <span className={`inline-flex items-center gap-1 px-2 py-1 rounded text-xs font-medium mt-1 ${
+                                  scanResult.guest.rsvp_status === "accepted" ? "bg-green-900/50 text-green-400" :
+                                  scanResult.guest.rsvp_status === "declined" ? "bg-red-900/50 text-red-400" :
+                                  "bg-amber-900/50 text-amber-400"
+                                }`}>
+                                  {scanResult.guest.rsvp_status || "pending"}
+                                </span>
+                              </div>
+                              {scanResult.guest.checked_in && (
+                                <span className="inline-flex items-center gap-1 px-2 py-1 rounded text-xs font-medium bg-blue-900/50 text-blue-400">
+                                  <Check className="w-3 h-3" /> Already Checked In
+                                </span>
+                              )}
+                            </div>
                           </div>
                         )}
-                        <p className="text-sm text-white/60 mt-2">{scanResult.message}</p>
-                      </div>
-                      <div className="flex gap-2 flex-shrink-0">
-                        {scanResult.status === "found" && (
-                          <button onClick={handleScanCheckin} className="px-5 py-2.5 rounded-xl bg-green-600 hover:bg-green-700 font-semibold text-sm transition min-h-[44px]">
-                            Check In
+
+                        {/* Actions */}
+                        <div className="flex gap-2 flex-wrap pt-2">
+                          {scanResult.status === "found" && !scanResult.guest?.checked_in && (
+                            <button onClick={handleScanCheckin} className="flex-1 sm:flex-none px-5 py-2.5 rounded-xl bg-green-600 hover:bg-green-700 font-semibold text-sm transition min-h-[44px]">
+                              Check In
+                            </button>
+                          )}
+                          <button onClick={() => setScanResult(null)} className="flex-1 sm:flex-none px-4 py-2.5 rounded-xl bg-white/10 hover:bg-white/20 font-semibold text-sm transition min-h-[44px]">
+                            {scanResult.status === "found" ? "Cancel" : "Dismiss"}
                           </button>
-                        )}
-                        <button onClick={() => setScanResult(null)} className="px-4 py-2.5 rounded-xl bg-white/10 hover:bg-white/20 font-semibold text-sm transition min-h-[44px]">
-                          {scanResult.status === "found" ? "Cancel" : "Dismiss"}
-                        </button>
+                        </div>
                       </div>
                     </div>
                   </div>
@@ -594,9 +663,9 @@ export default function AccreditationScanPage() {
                       placeholder="Search name, email, phone, or code..."
                       className="flex-1 min-w-0 rounded-xl bg-white/10 border border-white/20 px-4 py-3 text-sm placeholder:text-white/30 focus:outline-none focus:ring-2 focus:ring-pink-500/50 focus:border-pink-500"
                     />
-                    <button onClick={handleManualSearch} disabled={searching || !manualQuery.trim()} className="px-4 sm:px-5 py-3 rounded-xl bg-pink-600 hover:bg-pink-700 disabled:opacity-40 font-semibold text-sm transition flex items-center gap-1.5 min-h-[44px]">
+                    <button onClick={handleManualSearch} disabled={searching || !manualQuery.trim()} className="px-3 sm:px-5 py-3 rounded-xl bg-pink-600 hover:bg-pink-700 disabled:opacity-40 font-semibold text-sm transition flex items-center gap-1.5 min-h-[44px] flex-shrink-0">
                       {searching ? <Loader className="w-4 h-4 animate-spin" /> : <Search className="w-4 h-4" />}
-                      <span className="hidden sm:inline">Search</span>
+                      <span className="hidden xs:inline">Search</span>
                     </button>
                   </div>
 
