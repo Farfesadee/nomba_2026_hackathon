@@ -1,9 +1,9 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { useParams, useRouter } from "next/navigation";
 import Image from "next/image";
-import { Calendar, Clock, MapPin, Check, X } from "lucide-react";
+import { Calendar, Clock, MapPin, Check, X, Sparkles } from "lucide-react";
 import { apiClient } from "@/lib/api-client";
 
 interface RSVPData {
@@ -50,7 +50,14 @@ export default function RSVPPage() {
   const [guestName, setGuestName] = useState("");
   const [selectedResponse, setSelectedResponse] = useState<"yes" | "no" | null>(null);
   const [declineNote, setDeclineNote] = useState("");
+  const [showSplash, setShowSplash] = useState(true);
+  const splashTimer = useRef<ReturnType<typeof setTimeout>>();
   const themeColor = rsvpData?.event_theme_color || "#E91E8C";
+
+  useEffect(() => {
+    splashTimer.current = setTimeout(() => setShowSplash(false), 5500);
+    return () => clearTimeout(splashTimer.current);
+  }, []);
 
   useEffect(() => {
     const loadRsvpData = async () => {
@@ -89,6 +96,47 @@ export default function RSVPPage() {
       setSubmitting(false);
     }
   };
+
+  if (showSplash) {
+    return (
+      <div className="min-h-screen bg-[#0D1B2A] flex flex-col items-center justify-center px-6 relative overflow-hidden">
+        <div className="absolute inset-0 bg-gradient-to-b from-pink-600/10 via-transparent to-transparent pointer-events-none" />
+        <div className="absolute top-1/4 -left-20 w-60 h-60 rounded-full bg-pink-500/10 blur-3xl pointer-events-none" />
+        <div className="absolute bottom-1/4 -right-20 w-60 h-60 rounded-full bg-pink-500/10 blur-3xl pointer-events-none" />
+
+        <div className="relative z-10 flex flex-col items-center text-center motion-pop">
+          <div className="mb-8">
+            <Image
+              src="/logo-dark-trim.png"
+              alt="accredit.vip"
+              width={360}
+              height={68}
+              className="h-16 w-auto object-contain"
+              priority
+            />
+          </div>
+
+          <div className="flex items-center gap-2 text-pink-400/80 mb-3">
+            <Sparkles className="w-4 h-4" />
+            <span className="text-sm font-medium uppercase tracking-widest">Event Invitation</span>
+            <Sparkles className="w-4 h-4" />
+          </div>
+
+          <p className="text-white/60 text-sm max-w-xs leading-relaxed">
+            You have been invited to a special event. Preparing your invitation...
+          </p>
+
+          <div className="mt-10 flex items-center gap-2">
+            <div className="w-2 h-2 rounded-full bg-pink-500 animate-bounce" style={{ animationDelay: "0s" }} />
+            <div className="w-2 h-2 rounded-full bg-pink-500 animate-bounce" style={{ animationDelay: "0.15s" }} />
+            <div className="w-2 h-2 rounded-full bg-pink-500 animate-bounce" style={{ animationDelay: "0.3s" }} />
+          </div>
+        </div>
+
+        <p className="absolute bottom-8 text-white/20 text-xs">Powered by Accredit.vip</p>
+      </div>
+    );
+  }
 
   if (loading) {
     return (

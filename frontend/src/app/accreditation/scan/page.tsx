@@ -447,10 +447,9 @@ export default function AccreditationScanPage() {
       <header className="border-b border-white/10 bg-[#0D1B2A]/95 sticky top-0 z-30">
         <div className="max-w-7xl mx-auto px-4 py-3 flex items-center justify-between gap-4">
           <Image src="/logo-dark-trim.png" alt="accredit.vip" width={480} height={90} className="h-12 sm:h-14 w-auto object-contain flex-shrink-0" />
-          <button onClick={handleLogout} className="flex items-center gap-1 sm:gap-1.5 px-3 sm:px-4 py-2 rounded-xl bg-pink-600 hover:bg-pink-700 text-white text-xs sm:text-sm font-semibold transition min-h-[44px] flex-shrink-0">
+          <button onClick={handleLogout} className="flex items-center gap-1.5 px-4 sm:px-5 py-2.5 rounded-xl bg-pink-500 hover:bg-pink-600 text-white text-sm font-semibold transition min-h-[44px] flex-shrink-0 shadow-lg shadow-pink-500/30">
             <LogOut className="w-4 h-4" />
             <span className="hidden sm:inline">Sign Out</span>
-            <span className="sm:hidden">Out</span>
           </button>
         </div>
       </header>
@@ -663,9 +662,9 @@ export default function AccreditationScanPage() {
                       placeholder="Search name, email, phone, or code..."
                       className="flex-1 min-w-0 rounded-xl bg-white/10 border border-white/20 px-4 py-3 text-sm placeholder:text-white/30 focus:outline-none focus:ring-2 focus:ring-pink-500/50 focus:border-pink-500"
                     />
-                    <button onClick={handleManualSearch} disabled={searching || !manualQuery.trim()} className="px-3 sm:px-5 py-3 rounded-xl bg-pink-600 hover:bg-pink-700 disabled:opacity-40 font-semibold text-sm transition flex items-center gap-1.5 min-h-[44px] flex-shrink-0">
+                    <button onClick={handleManualSearch} disabled={searching || !manualQuery.trim()} className="px-4 sm:px-5 py-3 rounded-xl bg-pink-600 hover:bg-pink-700 disabled:opacity-40 font-semibold text-sm transition flex items-center justify-center sm:justify-start gap-2 min-h-[44px] flex-shrink-0">
                       {searching ? <Loader className="w-4 h-4 animate-spin" /> : <Search className="w-4 h-4" />}
-                      <span className="hidden xs:inline">Search</span>
+                      <span className="hidden sm:inline">Search</span>
                     </button>
                   </div>
 
