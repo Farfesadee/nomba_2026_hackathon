@@ -199,6 +199,14 @@ export default function GuestsTabContent({
   const searchTimerRef = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
   const [openMenuId, setOpenMenuId] = useState<number | null>(null);
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
+  const [revealedPhones, setRevealedPhones] = useState<Set<number>>(new Set());
+
+  function maskPhone(phone: string): string {
+    if (phone.length <= 6) return phone;
+    const start = phone.slice(0, 5);
+    const end = phone.slice(-4);
+    return `${start}***${end}`;
+  }
 
   useEffect(() => {
     if (openMenuId === null) return;
@@ -700,7 +708,7 @@ export default function GuestsTabContent({
                     <th className="px-4 py-3 text-center text-xs font-semibold text-slate-700">RSVP Status</th>
                     <th className="px-4 py-3 text-center text-xs font-semibold text-slate-700">QR</th>
                     <th className="px-4 py-3 text-center text-xs font-semibold text-slate-700">Message Status</th>
-                    <th className="px-4 py-3 text-center text-xs font-semibold text-slate-700">Added</th>
+
                     <th className="px-4 py-3 text-right text-xs font-semibold text-slate-700">Actions</th>
                   </tr>
                 </thead>
@@ -708,7 +716,7 @@ export default function GuestsTabContent({
                   {guests.map((guest) => (
                     <tr key={guest.id} className="hover:bg-slate-50 transition-colors">
                       {deleteConfirm === guest.id ? (
-                        <td colSpan={8} className="px-4 py-4">
+                        <td colSpan={7} className="px-4 py-4">
                           <div className="flex items-center justify-between p-4 bg-red-50 rounded-lg border border-red-200">
                             <p className="text-sm font-medium text-slate-900">Delete {guest.name}? This cannot be undone.</p>
                             <div className="flex gap-2">
@@ -750,7 +758,15 @@ export default function GuestsTabContent({
                           <td className="px-4 py-4">
                             <div className="space-y-1">
                               {guest.email && <p className="text-xs text-slate-600">{guest.email}</p>}
-                              {guest.phone && <p className="text-xs text-slate-600">{guest.phone}</p>}
+                              {guest.phone && (
+                                <button
+                                  onClick={(e) => { e.stopPropagation(); setRevealedPhones((prev) => { const next = new Set(prev); if (next.has(guest.id)) next.delete(guest.id); else next.add(guest.id); return next; }); }}
+                                  className="text-xs text-slate-600 hover:text-slate-900 cursor-pointer text-left underline decoration-dotted underline-offset-2"
+                                  title={revealedPhones.has(guest.id) ? "Hide number" : "Tap to reveal"}
+                                >
+                                  {revealedPhones.has(guest.id) ? guest.phone : maskPhone(guest.phone)}
+                                </button>
+                              )}
                               {!guest.email && !guest.phone && <p className="text-xs text-slate-400">No contact</p>}
                             </div>
                           </td>
@@ -815,13 +831,6 @@ export default function GuestsTabContent({
                               )}
                             </div>
                           </td>
-                          <td className="px-4 py-4 text-center">
-                            <span className="text-xs text-slate-500">
-                              {guest.created_at
-                                ? new Date(guest.created_at).toLocaleDateString("en-US", { weekday: "short", year: "numeric", month: "short", day: "numeric" })
-                                : "—"}
-                            </span>
-                          </td>
                           <td className="px-4 py-4">
                             <div className="flex items-center justify-end gap-1">
                               <Button
@@ -829,7 +838,7 @@ export default function GuestsTabContent({
                                 variant="ghost"
                                 onClick={() => setSendReviewGuest(guest)}
                                 title="Send message"
-                                className="h-10 w-10 p-0 hover:bg-blue-50"
+                                className="h-11 w-11 p-0 hover:bg-blue-50"
                               >
                                 <Mail className="w-4 h-4 text-blue-600" />
                               </Button>
@@ -838,7 +847,7 @@ export default function GuestsTabContent({
                                 variant="ghost"
                                 onClick={() => startEdit(guest)}
                                 title="Edit"
-                                className="h-10 w-10 p-0 hover:bg-slate-100"
+                                className="h-11 w-11 p-0 hover:bg-slate-100"
                               >
                                 <Edit2 className="w-4 h-4 text-slate-600" />
                               </Button>
@@ -847,7 +856,7 @@ export default function GuestsTabContent({
                                 variant="ghost"
                                 onClick={() => setDeleteConfirm(guest.id)}
                                 title="Delete"
-                                className="h-10 w-10 p-0 hover:bg-red-50"
+                                className="h-11 w-11 p-0 hover:bg-red-50"
                               >
                                 <Trash2 className="w-4 h-4 text-red-600" />
                               </Button>
