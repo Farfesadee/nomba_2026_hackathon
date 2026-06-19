@@ -160,7 +160,7 @@ export default function RSVPPage() {
 
   if (submitted) {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-[#0D1B2A] px-4">
+      <div className="flex min-h-screen items-start justify-center bg-[#0D1B2A] px-4 pt-16 sm:pt-24">
         <div className="max-w-md w-full rounded-2xl bg-white pt-6 pb-8 px-8 text-center shadow-lg">
           {submittedResponse === "yes" ? (
             <>
