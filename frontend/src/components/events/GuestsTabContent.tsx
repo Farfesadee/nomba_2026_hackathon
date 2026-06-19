@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef, useState, useEffect, useCallback, type FormEvent } from "react";
+import { useRef, useState, useEffect, useCallback, useMemo, type FormEvent } from "react";
 import { Button } from "@/components/ui/button";
 import { apiClient, API_BASE } from "@/lib/api-client";
 import Link from "next/link";
@@ -240,14 +240,30 @@ export default function GuestsTabContent({
   };
 
   const toggleAllSelection = () => {
-    selectedGuests.size === guests.length
+    selectedGuests.size === displayedGuests.length
       ? setSelectedGuests(new Set())
-      : setSelectedGuests(new Set(guests.map(g => g.id)));
+      : setSelectedGuests(new Set(displayedGuests.map(g => g.id)));
   };
 
   const acceptedCount = guests.filter(g => g.rsvp_status === "accepted").length;
   const declinedCount = guests.filter(g => g.rsvp_status === "declined").length;
   const pendingCount = guests.filter(g => g.rsvp_status === "pending").length;
+
+  const displayedGuests = useMemo(() => {
+    if (!guestRsvpFilter) return guests;
+    if (["accepted", "pending", "declined"].includes(guestRsvpFilter)) return guests;
+    return guests.filter((g) => {
+      switch (guestRsvpFilter) {
+        case "sent": return g.invite_sent;
+        case "not_sent": return !g.invite_sent;
+        case "viewed": return !!g.invite_viewed_at;
+        case "delivered": return g.communication_status && Object.values(g.communication_status).some((s: any) => s.status === "delivered" || s.status === "read" || s.status === "opened");
+        case "failed": return g.communication_status && Object.values(g.communication_status).some((s: any) => s.status === "failed");
+        case "no_contact": return !g.email && !g.phone;
+        default: return true;
+      }
+    });
+  }, [guests, guestRsvpFilter]);
 
   const renderCustomField = (field: CustomField, value: any, onChange: (val: any) => void) => {
     const baseClasses = "flex h-10 w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary";
@@ -372,6 +388,10 @@ export default function GuestsTabContent({
           if (!guestName.trim()) errors.name = "Name is required";
           if (guestPhone && !/^\+?\d{7,15}$/.test(guestPhone.replace(/[\s().-]/g, ""))) errors.phone = "Invalid phone format (e.g. +2348012345678)";
           if (guestEmail && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(guestEmail)) errors.email = "Invalid email format";
+          const existingEmail = guestEmail && guests.find((g) => g.email?.toLowerCase() === guestEmail.toLowerCase());
+          const existingPhone = guestPhone && guests.find((g) => g.phone === guestPhone);
+          if (existingEmail) errors.email = `"${existingEmail.name}" already has this email`;
+          if (existingPhone) errors.phone = `"${existingPhone.name}" already has this phone`;
           setFieldErrors(errors);
           if (Object.keys(errors).length === 0) addGuest(e, customFieldValues);
         }} className="space-y-4">
@@ -627,15 +647,30 @@ export default function GuestsTabContent({
                 <select
                   value={guestRsvpFilter}
                   onChange={(e) => {
-                    setGuestRsvpFilter(e.target.value);
-                    triggerSearch(guestSearch, e.target.value, 0);
+                    const val = e.target.value;
+                    setGuestRsvpFilter(val);
+                    const backendFilter = ["accepted", "pending", "declined"].includes(val) ? val : "";
+                    triggerSearch(guestSearch, backendFilter, 0);
                   }}
                   className="flex h-10 rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary"
+                  title="Filter by status"
                 >
-                  <option value="">All Guests</option>
-                  <option value="accepted">Accepted</option>
-                  <option value="pending">Pending</option>
-                  <option value="declined">Declined</option>
+                  <option value="">RSVP: All</option>
+                  <optgroup label="RSVP Status">
+                    <option value="accepted">Accepted</option>
+                    <option value="pending">Pending</option>
+                    <option value="declined">Declined</option>
+                  </optgroup>
+                  <optgroup label="Delivery Status">
+                    <option value="sent">Invite Sent</option>
+                    <option value="not_sent">Not Sent</option>
+                    <option value="viewed">Invite Viewed</option>
+                    <option value="delivered">Delivered</option>
+                    <option value="failed">Delivery Failed</option>
+                  </optgroup>
+                  <optgroup label="Contact">
+                    <option value="no_contact">No Contact Info</option>
+                  </optgroup>
                 </select>
                 {(guestSearch || guestRsvpFilter) && (
                   <Button variant="ghost" size="sm" onClick={resetGuestFilter} className="text-xs h-10">
@@ -646,44 +681,45 @@ export default function GuestsTabContent({
             </div>
 
             {/* Batch Audit Summary */}
-            {guests.length > 0 && (
+            {displayedGuests.length > 0 && (
               <div className="flex items-center gap-4 text-xs text-slate-500 px-1 flex-wrap">
-                <span className="font-medium text-slate-700">{guests.length} on this page</span>
-                <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-blue-50 text-blue-700">
-                  Sent: {guests.filter(g => g.invite_sent).length}
+                <span className="font-medium text-slate-700">{displayedGuests.length} guest{displayedGuests.length !== 1 ? "s" : ""} shown</span>
+                <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-blue-50 text-blue-700" title="Guests who have been sent an invite">
+                  Sent: {displayedGuests.filter(g => g.invite_sent).length}
                 </span>
-                <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-700">
-                  Viewed: {guests.filter(g => g.invite_viewed_at).length}
+                <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-700" title="Guests who have viewed their invite">
+                  Viewed: {displayedGuests.filter(g => g.invite_viewed_at).length}
                 </span>
-                <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-amber-50 text-amber-700">
-                  Issue: {guests.filter(g => g.rsvp_status === "" || g.rsvp_status === "pending").length}
+                <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-amber-50 text-amber-700" title="Guests who haven't responded yet">
+                  Pending: {displayedGuests.filter(g => g.rsvp_status === "" || g.rsvp_status === "pending").length}
                 </span>
-                <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-red-50 text-red-700">
-                  No contact: {guests.filter(g => !g.email && !g.phone).length}
+                <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-red-50 text-red-700" title="Guests with no email or phone number">
+                  No contact: {displayedGuests.filter(g => !g.email && !g.phone).length}
                 </span>
               </div>
             )}
 
             {/* Bulk Actions */}
             {selectedGuests.size > 0 && (
-              <div className="bg-secondary text-white rounded-lg p-3 flex items-center justify-between">
-                <p className="text-sm font-medium">{selectedGuests.size} guest{selectedGuests.size !== 1 ? 's' : ''} selected</p>
-                <div className="flex gap-2">
-                  <Button
-                    size="sm"
-                    onClick={() => setSelectedGuests(new Set())}
-                    className="bg-white/20 hover:bg-white/30 text-white"
-                  >
-                    Deselect
-                  </Button>
-                  <Button
-                    size="sm"
-                    onClick={() => setShowChannelModal(true)}
-                    className="bg-emerald-600 hover:bg-emerald-700 text-white flex items-center gap-1"
-                  >
-                    <Mail className="w-4 h-4" />
-                    Send Message
-                  </Button>
+              <div className="bg-secondary text-white rounded-lg p-3">
+                <div className="flex items-center justify-between mb-2">
+                  <p className="text-sm font-semibold">{selectedGuests.size} of {displayedGuests.length} selected</p>
+                  <button onClick={() => setSelectedGuests(new Set())} className="text-xs text-white/70 hover:text-white underline">Deselect all</button>
+                </div>
+                <div className="flex items-center gap-2 text-xs text-white/70">
+                  <span className="inline-flex items-center gap-1"><Mail className="w-3 h-3" /> Send message</span>
+                  {selectedGuests.size > 0 && (
+                    <span className="inline-flex items-center gap-1 ml-auto text-white">
+                      <Button
+                        size="sm"
+                        onClick={() => setShowChannelModal(true)}
+                        className="bg-emerald-500 hover:bg-emerald-600 text-white flex items-center gap-1 text-xs h-9"
+                      >
+                        <Mail className="w-3.5 h-3.5" />
+                        Send Message
+                      </Button>
+                    </span>
+                  )}
                 </div>
               </div>
             )}
@@ -697,7 +733,7 @@ export default function GuestsTabContent({
                       <label className="flex items-center justify-center w-11 h-11 -ml-2.5 cursor-pointer">
                         <input
                           type="checkbox"
-                          checked={selectedGuests.size === guests.length && guests.length > 0}
+                          checked={selectedGuests.size === displayedGuests.length && displayedGuests.length > 0}
                           onChange={toggleAllSelection}
                           className="rounded border-slate-300 cursor-pointer w-4 h-4"
                         />
@@ -713,7 +749,7 @@ export default function GuestsTabContent({
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-200">
-                  {guests.map((guest) => (
+                  {displayedGuests.map((guest) => (
                     <tr key={guest.id} className="hover:bg-slate-50 transition-colors">
                       {deleteConfirm === guest.id ? (
                         <td colSpan={7} className="px-4 py-4">
@@ -767,7 +803,7 @@ export default function GuestsTabContent({
                                   {revealedPhones.has(guest.id) ? guest.phone : maskPhone(guest.phone)}
                                 </button>
                               )}
-                              {!guest.email && !guest.phone && <p className="text-xs text-slate-400">No contact</p>}
+                              {!guest.email && !guest.phone && <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-medium bg-red-50 text-red-600 border border-red-200">No contact info</span>}
                             </div>
                           </td>
                           <td className="px-4 py-4 text-center">
@@ -873,12 +909,12 @@ export default function GuestsTabContent({
             {/* Guest Cards (mobile) */}
             <div className="sm:hidden space-y-3">
               {/* Select All */}
-              {guests.length > 0 && (
+              {displayedGuests.length > 0 && (
                 <div className="flex items-center gap-2 px-1 py-1">
                   <label className="flex items-center justify-center w-11 h-11 -ml-2.5 cursor-pointer">
                     <input
                       type="checkbox"
-                      checked={selectedGuests.size === guests.length}
+                      checked={selectedGuests.size === displayedGuests.length}
                       onChange={toggleAllSelection}
                       className="rounded border-slate-300 cursor-pointer w-4 h-4"
                     />
@@ -886,11 +922,11 @@ export default function GuestsTabContent({
                   <span className="text-xs font-medium text-slate-600">
                     {selectedGuests.size === 0
                       ? "Select all"
-                      : `${selectedGuests.size} of ${guests.length} selected`}
+                      : `${selectedGuests.size} of ${displayedGuests.length} selected`}
                   </span>
                 </div>
               )}
-              {guests.map((guest) => (
+              {displayedGuests.map((guest) => (
                 <div key={guest.id} className="rounded-lg border border-slate-200 bg-white p-4">
                   {deleteConfirm === guest.id ? (
                     <div className="space-y-3">
@@ -917,7 +953,7 @@ export default function GuestsTabContent({
                           <div className="text-xs text-slate-500 space-y-0.5 mt-0.5">
                             {guest.email && <p className="truncate">{guest.email}</p>}
                             {guest.phone && <p>{guest.phone}</p>}
-                            {!guest.email && !guest.phone && <p className="text-slate-400">No contact</p>}
+                            {!guest.email && !guest.phone && <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-medium bg-red-50 text-red-600 border border-red-200">No contact info</span>}
                           </div>
                           {guest.tags && guest.tags.length > 0 && (
                             <div className="flex gap-1 mt-1 flex-wrap">
