@@ -230,7 +230,20 @@ export default function AccreditationScanPage() {
       );
       setScannerStarted(true);
     } catch (err: any) {
-      setError(err.message || "Camera access denied. Use manual search instead.");
+      const errorMsg = err.message || "";
+      let userMessage = "Camera access denied. Use manual search instead.";
+
+      if (errorMsg.includes("NotAllowedError") || errorMsg.includes("Permission denied")) {
+        userMessage = "Camera permission denied. Please enable camera access in your browser settings and try again.";
+      } else if (errorMsg.includes("NotFoundError") || errorMsg.includes("No camera")) {
+        userMessage = "No camera found. Please use manual search to check in guests.";
+      } else if (errorMsg.includes("NotSupportedError")) {
+        userMessage = "Your browser doesn't support camera access. Use manual search instead.";
+      } else if (errorMsg.includes("HTTPS")) {
+        userMessage = "Camera access requires HTTPS. Please ensure you're using a secure connection.";
+      }
+
+      setError(userMessage);
     }
   };
 
@@ -432,10 +445,10 @@ export default function AccreditationScanPage() {
 
       <main className="flex-1 max-w-7xl w-full mx-auto p-4">
         {error && (
-          <div className="mb-4 rounded-xl bg-red-900/40 border border-red-500/50 p-3 flex items-center gap-2 text-sm">
-            <X className="w-4 h-4 text-red-400 flex-shrink-0" />
-            <span className="flex-1">{error}</span>
-            <button onClick={() => setError("")} className="text-red-400 hover:text-red-300 flex-shrink-0 text-sm font-semibold">Dismiss</button>
+          <div className="mb-4 rounded-xl bg-red-900/50 border border-red-500/60 p-4 flex items-center gap-3 text-sm">
+            <X className="w-5 h-5 text-red-400 flex-shrink-0" />
+            <span className="flex-1 text-white font-medium">{error}</span>
+            <button onClick={() => setError("")} className="text-red-400 hover:text-red-300 flex-shrink-0 text-xs font-semibold whitespace-nowrap ml-2">Dismiss</button>
           </div>
         )}
 
@@ -469,9 +482,9 @@ export default function AccreditationScanPage() {
                     </p>
                     <p className="text-sm font-semibold text-white">{checkInPercentage}%</p>
                   </div>
-                  <div className="w-full bg-white/10 rounded-full h-2 overflow-hidden">
+                  <div className="w-full bg-white/20 rounded-full h-3 overflow-hidden">
                     <div
-                      className="h-full bg-gradient-to-r from-pink-500 to-pink-600 transition-all duration-500"
+                      className="h-full bg-gradient-to-r from-pink-500 to-pink-600 transition-all duration-500 rounded-full"
                       style={{ width: `${checkInPercentage}%` }}
                     />
                   </div>
@@ -502,9 +515,8 @@ export default function AccreditationScanPage() {
                       </div>
                     )}
                   <div className="p-4 relative">
-                    {scannerStarted ? (
-                      <div id="qr-reader" className="w-full max-w-sm mx-auto rounded-xl overflow-hidden [&_video]:rounded-xl [&_img]:rounded-xl" />
-                    ) : (
+                    <div id="qr-reader" className={`w-full max-w-sm mx-auto rounded-xl overflow-hidden [&_video]:rounded-xl [&_img]:rounded-xl ${scannerStarted ? "" : "hidden"}`} />
+                    {!scannerStarted && (
                       <button
                         onClick={startScanner}
                         className="w-full flex flex-col items-center justify-center py-12 sm:py-16 text-white/30 relative cursor-pointer hover:bg-white/[0.02] transition rounded-xl group"
