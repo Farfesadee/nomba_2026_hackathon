@@ -100,7 +100,7 @@ export default function RSVPPage() {
     return (
       <div className="min-h-screen bg-white relative overflow-hidden">
         <iframe src="/" className="absolute inset-0 w-full h-full border-0" title="accredit.vip" />
-        <div className="absolute inset-0 bg-black/10 pointer-events-none" />
+        <div className="absolute inset-0 bg-black/10 z-[1]" onClick={(e) => e.preventDefault()} />
         <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-[#0D1B2A] via-[#0D1B2A]/90 to-transparent pb-8 pt-24 px-6 text-center z-10">
           <Image
             src="/logo-dark-trim.png"

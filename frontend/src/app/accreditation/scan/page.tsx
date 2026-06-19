@@ -102,7 +102,7 @@ export default function AccreditationScanPage() {
   const [Html5QrcodeLib, setHtml5QrcodeLib] = useState<any>(null);
 
   useEffect(() => {
-    import("html5-qrcode").then((mod) => setHtml5QrcodeLib(mod.Html5Qrcode));
+    import("html5-qrcode").then((mod) => setHtml5QrcodeLib(mod.Html5Qrcode)).catch(() => {});
   }, []);
   const [statusFilter, setStatusFilter] = useState<string | null>(null);
   const [selectedManualGuests, setSelectedManualGuests] = useState<Set<number>>(new Set());
