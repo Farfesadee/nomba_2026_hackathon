@@ -13,12 +13,14 @@ import {
   Plus,
   Wallet,
   X,
+  Scan,
 } from "lucide-react";
 import { useAuth } from "@/contexts/auth-context";
 
 const NAV_ITEMS = [
   { href: "/dashboard", label: "Dashboard", icon: LayoutGrid },
   { href: "/dashboard/events", label: "Events", icon: CalendarDays },
+  { href: "/accreditation", label: "Accreditation", icon: Scan },
   { href: "/dashboard/create", label: "Create Event", icon: Plus },
   { href: "/dashboard/wallet", label: "Wallet", icon: Wallet },
 ];

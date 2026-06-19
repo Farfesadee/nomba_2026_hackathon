@@ -137,3 +137,77 @@ async def scanner_event_stats(event_id: int, user: User = Depends(get_current_us
     checked_in = await db.scalar(select(func.count(CheckIn.id)).where(CheckIn.event_id == event_id))
     total = await db.scalar(select(func.count(Guest.id)).where(Guest.event_id == event_id))
     return {"checked_in": checked_in or 0, "total_guests": total or 0}
+
+
+@router.get("/scanner/events/{event_id}/guests")
+async def scanner_search_guests(
+    event_id: int,
+    q: str = "",
+    user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+):
+    event = await db.get(Event, event_id)
+    if not event or event.organizer_id != user.id:
+        raise HTTPException(status_code=404, detail="Event not found")
+    if not q.strip():
+        return {"guests": []}
+    stmt = select(Guest).where(
+        Guest.event_id == event_id,
+        Guest.deleted_at == None,
+        (Guest.name.ilike(f"%{q}%")) | (Guest.rsvp_token.ilike(f"%{q}%")) | (Guest.email.ilike(f"%{q}%")) | (Guest.phone.ilike(f"%{q}%")),
+    ).limit(20)
+    result = await db.execute(stmt)
+    guests = result.scalars().all()
+    checked_in_ids = set()
+    if guests:
+        checkin_result = await db.execute(
+            select(CheckIn.guest_id).where(CheckIn.event_id == event_id, CheckIn.guest_id.in_([g.id for g in guests]))
+        )
+        checked_in_ids = {row[0] for row in checkin_result.all()}
+    return {
+        "guests": [
+            {
+                "id": g.id,
+                "name": g.name,
+                "phone": g.phone,
+                "email": g.email,
+                "rsvp_status": g.rsvp_status,
+                "rsvp_token": g.rsvp_token,
+                "checked_in": g.id in checked_in_ids,
+            }
+            for g in guests
+        ]
+    }
+
+
+@router.get("/scanner/events/{event_id}/activity")
+async def scanner_recent_activity(
+    event_id: int,
+    limit: int = 20,
+    user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+):
+    event = await db.get(Event, event_id)
+    if not event or event.organizer_id != user.id:
+        raise HTTPException(status_code=404, detail="Event not found")
+    result = await db.execute(
+        select(CheckIn, Guest.name, Guest.phone, Guest.email)
+        .join(Guest, CheckIn.guest_id == Guest.id)
+        .where(CheckIn.event_id == event_id)
+        .order_by(CheckIn.created_at.desc())
+        .limit(limit)
+    )
+    rows = result.all()
+    return {
+        "activity": [
+            {
+                "id": r.CheckIn.id,
+                "guest_id": r.CheckIn.guest_id,
+                "guest_name": r.name,
+                "guest_phone": r.phone,
+                "guest_email": r.email,
+                "checked_in_at": r.CheckIn.created_at.isoformat() if r.CheckIn.created_at else None,
+            }
+            for r in rows
+        ]
+    }
