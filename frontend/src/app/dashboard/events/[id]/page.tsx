@@ -529,19 +529,28 @@ function EventDetailContent() {
     setSending(false);
   };
 
-  const testSend = async () => {
-    try {
-      for (const ch of channels) {
+  const testSend = async (messageSubject?: string, messageBody?: string) => {
+    const results: string[] = [];
+    for (const ch of channels) {
+      try {
         await apiClient("/events/test-send", {
           method: "POST",
           body: {
             channel: ch,
             email: ch === "email" ? (user?.email || "") : undefined,
             phone: ch !== "email" ? (user?.phone || "") : undefined,
+            ...(messageSubject ? { message_subject: messageSubject } : {}),
+            ...(messageBody ? { message_body: messageBody } : {}),
           },
         });
+        results.push(`${ch}: OK`);
+      } catch (err: any) {
+        results.push(`${ch}: ${err.message || "FAILED"}`);
       }
-    } catch {}
+    }
+    const allOk = results.every((r) => r.includes("OK"));
+    showToast(allOk ? `Test sent! ${results.join(", ")}` : `Test result: ${results.join(", ")}`, allOk ? "success" : "error");
+    if (!allOk) throw new Error(results.join(", "));
   };
 
   const toggleSelect = (guestId: number) => {

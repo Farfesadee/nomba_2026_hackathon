@@ -44,7 +44,7 @@ type InvitesTabContentProps = {
   canSendInvites: boolean;
   sendInvites: (force?: boolean) => Promise<void>;
   sendAllQrs: () => Promise<void>;
-  testSend: () => Promise<void>;
+  testSend: (messageSubject?: string, messageBody?: string) => Promise<void>;
   sendResult: SendResult | null;
   sendError: string | null;
   logs: any[];
@@ -115,7 +115,7 @@ export default function InvitesTabContent({
   const [qrBatchResult, setQrBatchResult] = useState<BatchResult | null>(null);
   const [qrBatchSending, setQrBatchSending] = useState(false);
   const [testResult, setTestResult] = useState<string | null>(null);
-  const [testSending, setTestSending] = useState(false);
+  const [testLoading, setTestLoading] = useState(false);
   const [resendSending, setResendSending] = useState(false);
   const [resendResult, setResendResult] = useState<SendResult | null>(null);
   const [resendError, setResendError] = useState<string | null>(null);
@@ -183,22 +183,15 @@ export default function InvitesTabContent({
   };
 
   const handleTestSend = async () => {
-    setTestSending(true);
+    setTestLoading(true);
     setTestResult(null);
     try {
-      for (const ch of channels) {
-        const body: any = { channel: ch };
-        if (ch === "email") body.email = guests[0]?.email || "";
-        else body.phone = guests[0]?.phone || "";
-        if (customSubject) body.message_subject = customSubject;
-        if (customBody) body.message_body = customBody;
-        await apiClient("/events/test-send", { method: "POST", body });
-      }
+      await testSend(customSubject || undefined, customBody || undefined);
       setTestResult("Test message sent! Check your inbox/phone.");
     } catch (err: any) {
-      setTestResult(err.message || "Test send failed.");
+      setTestResult(err.message || "Test send failed. Check your contact info.");
     }
-    setTestSending(false);
+    setTestLoading(false);
   };
 
   const matchedGuests = guests.filter((g) => {
@@ -480,10 +473,10 @@ export default function InvitesTabContent({
           <Button
             variant="outline"
             onClick={handleTestSend}
-            disabled={testSending}
+            disabled={testLoading}
             className="h-10 font-medium"
           >
-            {testSending ? <><Loader className="w-4 h-4 animate-spin" /> Testing...</> : "Test Send"}
+            {testLoading ? <><Loader className="w-4 h-4 animate-spin" /> Testing...</> : "Test Send"}
           </Button>
         </div>
 
