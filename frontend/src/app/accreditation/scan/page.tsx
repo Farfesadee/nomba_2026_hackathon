@@ -262,9 +262,9 @@ export default function AccreditationScanPage() {
   return (
     <div className="min-h-screen bg-[#0D1B2A] text-white flex flex-col">
       <header className="border-b border-white/10 bg-[#0D1B2A]/95 sticky top-0 z-30">
-        <div className="max-w-7xl mx-auto px-4 py-3 flex items-center justify-between gap-3">
-          <div className="flex items-center gap-3 min-w-0">
-            <Image src="/logo-dark-trim.png" alt="accredit.vip" width={480} height={90} className="h-20 w-auto object-contain flex-shrink-0" />
+        <div className="max-w-7xl mx-auto pl-2 pr-4 py-3 flex items-center justify-between gap-2">
+          <div className="flex items-center gap-2 min-w-0">
+            <Image src="/logo-dark-trim.png" alt="accredit.vip" width={480} height={90} className="h-20 w-auto object-contain flex-shrink-0 ml-1" />
             {selectedEvent && (
               <div className="hidden sm:flex items-center gap-3 min-w-0">
                 <span className="text-white/20">|</span>
@@ -284,20 +284,18 @@ export default function AccreditationScanPage() {
                 <span className="flex items-center gap-1"><User className="w-3 h-3" /> {stats.total_guests}</span>
               </div>
             )}
-            {events.length > 1 && !selectedEvent ? (
-              <input
-                value={eventSearch}
-                onChange={(e) => setEventSearch(e.target.value)}
-                placeholder="Search events..."
-                className="bg-white/10 border border-white/20 rounded-xl px-3 py-2 text-sm text-white placeholder:text-white/30 w-40 focus:outline-none focus:border-pink-500"
-              />
-            ) : null}
-            {events.length > 1 && filteredEvents.length > 0 && (
+            {events.length > 1 && (
               <div className="relative">
+                <input
+                  value={eventSearch}
+                  onChange={(e) => setEventSearch(e.target.value)}
+                  placeholder="Search events..."
+                  className="hidden sm:block absolute -top-10 right-0 bg-white/10 border border-white/20 rounded-lg px-2 py-1 text-xs text-white placeholder:text-white/30 w-32 focus:outline-none focus:border-pink-500"
+                />
                 <select
                   value={selectedEvent?.id || ""}
                   onChange={(e) => handleEventChange(Number(e.target.value))}
-                  className="appearance-none bg-white/10 border border-white/20 rounded-xl pl-3 pr-8 py-2 text-sm text-white max-w-[200px] truncate cursor-pointer"
+                  className="appearance-none bg-white/10 border border-white/20 rounded-xl pl-3 pr-8 py-2 text-sm text-white max-w-[200px] truncate cursor-pointer hover:bg-white/20 transition"
                 >
                   {!selectedEvent && <option value="">Select event</option>}
                   {filteredEvents.map((ev) => (
@@ -360,26 +358,28 @@ export default function AccreditationScanPage() {
                       <QrCode className="w-4 h-4 text-pink-400" />
                       Live Scanner
                     </h2>
-                    {!scannerStarted ? (
-                      <button onClick={startScanner} className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-white hover:bg-white/90 text-[#0D1B2A] text-sm font-semibold transition min-h-[44px] shadow-lg">
-                        <Camera className="w-4 h-4" />
-                        Start Live Scanner
-                      </button>
-                    ) : (
+                    {scannerStarted && (
                       <button onClick={stopScanner} className="flex items-center gap-1.5 px-4 py-2.5 rounded-xl bg-red-600/80 hover:bg-red-700 text-sm font-semibold transition min-h-[44px]">
                         <X className="w-4 h-4" />
                         Stop
                       </button>
                     )}
                   </div>
-                  <div className="p-4">
+                  <div className="p-4 relative">
                     {scannerStarted ? (
                       <div id="qr-reader" className="w-full max-w-sm mx-auto rounded-xl overflow-hidden [&_video]:rounded-xl [&_img]:rounded-xl" />
                     ) : (
-                      <div className="flex flex-col items-center justify-center py-12 sm:py-16 text-white/30">
-                        <Camera className="w-12 h-12 mb-3" />
+                      <div className="flex flex-col items-center justify-center py-12 sm:py-16 text-white/30 relative">
+                        <Camera className="w-16 h-16 mb-4 opacity-40" />
                         <p className="font-medium text-white/50">Scanner idle</p>
-                        <p className="text-sm mt-1 text-center px-4">Tap "Start Live Scanner" to open the camera</p>
+                        <p className="text-sm mt-1 text-center px-4">Point your camera at a guest's QR code</p>
+                        <button
+                          onClick={startScanner}
+                          className="mt-6 flex items-center gap-2.5 px-8 py-3.5 rounded-xl bg-pink-600 hover:bg-pink-500 text-white text-base font-bold transition min-h-[52px] shadow-lg shadow-pink-600/30 animate-pulse hover:animate-none"
+                        >
+                          <Camera className="w-5 h-5" />
+                          Start Live Scanner
+                        </button>
                       </div>
                     )}
                   </div>
