@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useRef } from "react";
+import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import Image from "next/image";
 import { Calendar, Clock, MapPin, Check, X, Sparkles } from "lucide-react";
@@ -51,12 +51,11 @@ export default function RSVPPage() {
   const [selectedResponse, setSelectedResponse] = useState<"yes" | "no" | null>(null);
   const [declineNote, setDeclineNote] = useState("");
   const [showSplash, setShowSplash] = useState(true);
-  const splashTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const themeColor = rsvpData?.event_theme_color || "#E91E8C";
 
   useEffect(() => {
-    splashTimer.current = setTimeout(() => setShowSplash(false), 5500);
-    return () => clearTimeout(splashTimer.current);
+    const timer = setTimeout(() => setShowSplash(false), 5500);
+    return () => { clearTimeout(timer); };
   }, []);
 
   useEffect(() => {
