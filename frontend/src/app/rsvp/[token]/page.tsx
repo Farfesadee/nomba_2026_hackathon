@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import Image from "next/image";
-import { Calendar, Clock, MapPin, Check, X, Sparkles } from "lucide-react";
+import { Calendar, Clock, MapPin, Check, X } from "lucide-react";
 import { apiClient } from "@/lib/api-client";
 
 interface RSVPData {
@@ -98,41 +98,17 @@ export default function RSVPPage() {
 
   if (showSplash) {
     return (
-      <div className="min-h-screen bg-[#0D1B2A] flex flex-col items-center justify-center px-6 relative overflow-hidden">
-        <div className="absolute inset-0 bg-gradient-to-b from-pink-600/10 via-transparent to-transparent pointer-events-none" />
-        <div className="absolute top-1/4 -left-20 w-60 h-60 rounded-full bg-pink-500/10 blur-3xl pointer-events-none" />
-        <div className="absolute bottom-1/4 -right-20 w-60 h-60 rounded-full bg-pink-500/10 blur-3xl pointer-events-none" />
-
-        <div className="relative z-10 flex flex-col items-center text-center motion-pop">
-          <div className="mb-8">
-            <Image
-              src="/logo-dark-trim.png"
-              alt="accredit.vip"
-              width={360}
-              height={68}
-              className="h-16 w-auto object-contain"
-              priority
-            />
-          </div>
-
-          <div className="flex items-center gap-2 text-pink-400/80 mb-3">
-            <Sparkles className="w-4 h-4" />
-            <span className="text-sm font-medium uppercase tracking-widest">Event Invitation</span>
-            <Sparkles className="w-4 h-4" />
-          </div>
-
-          <p className="text-white/60 text-sm max-w-xs leading-relaxed">
-            You have been invited to a special event. Preparing your invitation...
-          </p>
-
-          <div className="mt-10 flex items-center gap-2">
-            <div className="w-2 h-2 rounded-full bg-pink-500 animate-bounce" style={{ animationDelay: "0s" }} />
-            <div className="w-2 h-2 rounded-full bg-pink-500 animate-bounce" style={{ animationDelay: "0.15s" }} />
-            <div className="w-2 h-2 rounded-full bg-pink-500 animate-bounce" style={{ animationDelay: "0.3s" }} />
+      <div className="min-h-screen bg-white relative overflow-hidden">
+        <iframe src="/" className="absolute inset-0 w-full h-full border-0" title="accredit.vip" />
+        <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-white via-white/80 to-transparent pb-6 pt-20 px-4 text-center z-10">
+          <p className="text-sm text-[#64748b] mb-1">You have been invited to a special event.</p>
+          <p className="text-xs text-[#94a3b8]">Preparing your invitation...</p>
+          <div className="mt-3 flex items-center justify-center gap-2">
+            <div className="w-2 h-2 rounded-full bg-[#E91E8C] animate-bounce" style={{ animationDelay: "0s" }} />
+            <div className="w-2 h-2 rounded-full bg-[#E91E8C] animate-bounce" style={{ animationDelay: "0.15s" }} />
+            <div className="w-2 h-2 rounded-full bg-[#E91E8C] animate-bounce" style={{ animationDelay: "0.3s" }} />
           </div>
         </div>
-
-        <p className="absolute bottom-8 text-white/20 text-xs">Powered by Accredit.vip</p>
       </div>
     );
   }
@@ -170,12 +146,7 @@ export default function RSVPPage() {
   if (submitted) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-gradient-to-br from-[#f0fdf4] to-[#ecfdf5] px-4">
-        <div className="max-w-md w-full rounded-2xl bg-white p-8 border border-[#d1fae5] text-center shadow-lg">
-          <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-[#f0fdf4]">
-            <svg className="h-8 w-8 text-[#10b981]" fill="none" stroke="currentColor" strokeWidth={2.5} viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
-            </svg>
-          </div>
+        <div className="max-w-md w-full rounded-2xl bg-white pt-6 pb-8 px-8 border border-[#d1fae5] text-center shadow-lg">
           {submittedResponse === "yes" ? (
             <>
               <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-[#f0fdf4]">
