@@ -230,7 +230,7 @@ export default function AccreditationScanPage() {
 
       await scanner.start(
         { facingMode: "environment" },
-        { fps: 10, qrbox: { width: 250, height: 250 } },
+        { fps: 15, qrbox: { width: 280, height: 280 } },
         async (decodedText: string) => {
           scanner.stop().catch(() => {});
           setScannerStarted(false);
@@ -570,8 +570,12 @@ export default function AccreditationScanPage() {
 
                 {/* Scanner Result - Sticky Modal on Mobile */}
                 {scanResult && (
-                  <div className="fixed top-0 left-0 right-0 z-40 p-4 lg:static lg:p-0">
-                    <div className={`rounded-2xl border p-4 sm:p-5 lg:rounded-b-none lg:border-b-0 ${
+                  <>
+                    {/* Mobile backdrop overlay */}
+                    <div className="fixed inset-0 bg-black/60 z-30 lg:hidden" onClick={() => setScanResult(null)} />
+                    {/* Modal */}
+                    <div className="fixed top-0 left-0 right-0 z-40 p-4 lg:static lg:p-0">
+                      <div className={`rounded-2xl border p-4 sm:p-5 lg:rounded-b-none lg:border-b-0 ${
                       scanResult.status === "approved" ? "bg-green-900/30 border-green-500/50" :
                       scanResult.status === "found" ? "bg-blue-900/30 border-blue-500/50" :
                       scanResult.status === "declined" ? "bg-amber-900/30 border-amber-500/50" :
@@ -644,7 +648,8 @@ export default function AccreditationScanPage() {
                         </div>
                       </div>
                     </div>
-                  </div>
+                    </div>
+                  </>
                 )}
 
                 <div>
@@ -662,9 +667,9 @@ export default function AccreditationScanPage() {
                       placeholder="Search name, email, phone, or code..."
                       className="flex-1 min-w-0 rounded-xl bg-white/10 border border-white/20 px-4 py-3 text-sm placeholder:text-white/30 focus:outline-none focus:ring-2 focus:ring-pink-500/50 focus:border-pink-500"
                     />
-                    <button onClick={handleManualSearch} disabled={searching || !manualQuery.trim()} className="px-4 sm:px-5 py-3 rounded-xl bg-pink-600 hover:bg-pink-700 disabled:opacity-40 font-semibold text-sm transition flex items-center justify-center sm:justify-start gap-2 min-h-[44px] flex-shrink-0">
+                    <button onClick={handleManualSearch} disabled={searching || !manualQuery.trim()} className="px-4 sm:px-5 py-3 rounded-xl bg-pink-600 hover:bg-pink-700 disabled:opacity-40 font-semibold text-sm transition flex items-center gap-2 min-h-[44px] flex-shrink-0 whitespace-nowrap">
                       {searching ? <Loader className="w-4 h-4 animate-spin" /> : <Search className="w-4 h-4" />}
-                      <span className="hidden sm:inline">Search</span>
+                      <span>Search</span>
                     </button>
                   </div>
 

@@ -209,6 +209,18 @@ export default function RSVPPage() {
               </p>
             </>
           )}
+          {/* Back to Home - advert */}
+          <div className="mt-8 pt-6 border-t border-[#e8edf2]">
+            <a
+              href="https://accredit.vip"
+              className="inline-flex items-center gap-2 px-6 py-3 rounded-xl bg-[#0D1B2A] text-white font-semibold text-sm hover:bg-[#1a2940] transition"
+            >
+              Back to Home
+            </a>
+            <p className="mt-3 text-xs text-[#94a3b8]">
+              Powered by <span className="font-semibold text-[#E91E8C]">Accredit.vip</span>
+            </p>
+          </div>
         </div>
       </div>
     );
