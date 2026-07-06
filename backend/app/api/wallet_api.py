@@ -115,7 +115,7 @@ async def fund_wallet(
 
         auth_url = None
         if result and result.get("data"):
-            auth_url = result["data"].get("checkout_link") or result["data"].get("authorization_url")
+            auth_url = result["data"].get("checkoutLink")
 
         return {
             "reference": reference,

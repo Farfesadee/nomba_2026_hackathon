@@ -38,6 +38,7 @@ class NombaWithdrawRequest(BaseModel):
     bank_code: str
     account_number: str
     account_name: str
+    amount: float
 
 
 async def get_or_create_wallet(user: User, db: AsyncSession) -> Wallet:
@@ -98,10 +99,15 @@ async def nomba_checkout(
     db.add(tx)
     await db.commit()
 
+    checkout_link = data.get("checkoutLink")
+    if not checkout_link:
+        logger.error(f"Nomba checkout response missing checkoutLink: {result}")
+        raise HTTPException(status_code=502, detail="No payment URL returned")
+
     return {
-        "authorization_url": data.get("checkout_link") or data.get("authorization_url"),
+        "authorization_url": checkout_link,
         "order_reference": order_reference,
-        "checkout_link": data.get("checkout_link"),
+        "checkout_link": checkout_link,
     }
 
 
@@ -217,11 +223,14 @@ async def nomba_withdraw(
         result = await transfer_to_bank(
             bank_code=req.bank_code,
             account_number=req.account_number,
+            account_name=req.account_name,
             amount=req.amount,
+            merchant_tx_ref=reference,
             narration=f"Wallet withdrawal by {user.full_name or user.email}",
         )
-        if result and result.get("status") == "success":
-            tx.status = "completed"
+        tx_status = (result or {}).get("data", {}).get("status", "")
+        if result and tx_status in ("SUCCESS", "PENDING_BILLING"):
+            tx.status = "completed" if tx_status == "SUCCESS" else "pending"
             await db.commit()
         else:
             balances["NGN"] += req.amount

@@ -11,8 +11,7 @@ logger = logging.getLogger(__name__)
 NOMBA_AUTH_URL = f"{settings.NOMBA_BASE_URL}/v1/auth/token/issue"
 NOMBA_CHECKOUT_URL = f"{settings.NOMBA_BASE_URL}/v1/checkout/order"
 NOMBA_REQUERY_URL = f"{settings.NOMBA_BASE_URL}/v1/transaction/requery"
-NOMBA_TRANSFER_BANK_URL = f"{settings.NOMBA_BASE_URL}/v1/transfer/bank"
-NOMBA_TRANSFER_SUBACCOUNT_URL = f"{settings.NOMBA_BASE_URL}/v1/transfer/subaccount/bank"
+NOMBA_TRANSFER_BANK_URL = f"{settings.NOMBA_BASE_URL}/v2/transfers/bank"
 
 
 async def get_access_token() -> str | None:
@@ -104,7 +103,9 @@ async def verify_transaction(session_id: str) -> dict | None:
 async def transfer_to_bank(
     bank_code: str,
     account_number: str,
+    account_name: str,
     amount: float,
+    merchant_tx_ref: str,
     narration: str = "Wallet withdrawal",
 ) -> dict | None:
     token = await get_access_token()
@@ -120,9 +121,11 @@ async def transfer_to_bank(
                     "Authorization": f"Bearer {token}",
                 },
                 json={
-                    "bank_code": bank_code,
-                    "account_number": account_number,
-                    "amount": f"{amount:.2f}",
+                    "amount": amount,
+                    "accountNumber": account_number,
+                    "accountName": account_name,
+                    "bankCode": bank_code,
+                    "merchantTxRef": merchant_tx_ref,
                     "narration": narration,
                 },
             )
