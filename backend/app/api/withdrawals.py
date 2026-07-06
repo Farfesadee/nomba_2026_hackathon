@@ -304,7 +304,7 @@ async def request_withdrawal(
         currency=wallet.currency,
         type="debit",
         reference=reference,
-        description=f"Withdrawal to {bank_account.bank_name} ({bank_account.masked_account})",
+        description=f"Withdrawal to {bank_account.bank_name} (****{bank_account.account_number[-4:]})",
         status="completed",
     )
     db.add(tx)
