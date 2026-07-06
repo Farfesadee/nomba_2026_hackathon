@@ -1,6 +1,6 @@
 """Anti-Money Laundering (AML) compliance checks"""
 
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from typing import Dict, Any
 from app.models.user import User
 from app.models.wallet import BankAccount, SUPPORTED_CURRENCIES
@@ -75,7 +75,7 @@ class AMLChecker:
             reasons.append(f"High withdrawal amount ({amount} {currency})")
 
         # ✅ Check 3: New bank account (less than 7 days old)
-        if bank_account.created_at > datetime.utcnow() - timedelta(days=7):
+        if bank_account.created_at > datetime.now(timezone.utc) - timedelta(days=7):
             risk_score += AMLChecker.RISK_SCORES["new_account"]
             reasons.append("Recently linked bank account")
 

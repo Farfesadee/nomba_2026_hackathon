@@ -254,7 +254,7 @@ async def purchase_ticket(
         }
 
     paystack_url = None
-    if settings.PAYSTACK_SECRET_KEY:
+    if req.payment_method != "nomba" and settings.PAYSTACK_SECRET_KEY:
         try:
             async with httpx.AsyncClient() as client:
                 resp = await client.post(
@@ -275,6 +275,32 @@ async def purchase_ticket(
                     paystack_url = data["data"]["authorization_url"]
         except Exception:
             pass
+
+    if req.payment_method == "nomba" and settings.NOMBA_CLIENT_ID:
+        from app.services.nomba_service import create_checkout_order
+
+        callback_url = f"{settings.FRONTEND_URL}/events/{event.id}?purchase={reference}"
+        nomba_result = await create_checkout_order(
+            amount=total,
+            currency="NGN",
+            customer_email=req.buyer_email,
+            order_reference=reference,
+            callback_url=callback_url,
+            sub_account_id=settings.NOMBA_SUB_ACCOUNT_ID or None,
+        )
+        if nomba_result and nomba_result.get("data"):
+            nomba_url = nomba_result["data"].get("checkoutLink")
+            return {
+                "purchase_id": purchase.id,
+                "reference": reference,
+                "amount": total,
+                "base_amount": base_amount,
+                "platform_fee": platform_fee,
+                "vat": vat,
+                "quantity": req.quantity,
+                "authorization_url": nomba_url,
+                "method": "nomba",
+            }
 
     return {
         "purchase_id": purchase.id,

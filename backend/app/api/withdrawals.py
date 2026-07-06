@@ -52,6 +52,7 @@ class BankAccountResponse(BaseModel):
 class WithdrawalRequest(BaseModel):
     bank_account_id: int
     amount: float
+    currency: Optional[str] = None
     description: Optional[str] = None
 
 
@@ -300,6 +301,7 @@ async def request_withdrawal(
     currency = bank_account.currency
     balances[currency] = balances.get(currency, 0.0) - req.amount
     wallet.balances = balances
+    wallet.balance = balances.get(currency, 0.0)
     db.add(wallet)
 
     await db.commit()

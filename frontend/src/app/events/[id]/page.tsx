@@ -581,7 +581,7 @@ function PublicEventContent() {
                       </form>
                     </div>
                   )}
-                  <div className="space-y-2">
+                    <div className="space-y-2">
                     <button
                       type="submit"
                       disabled={purchasing}
@@ -598,6 +598,16 @@ function PublicEventContent() {
                         ? "Save My Spot — Free"
                         : `Pay with Card ${cs}${Math.round(event.ticket_price! * quantity * (1 + VAT_PERCENT / 100)).toLocaleString()}`}
                     </button>
+                    {!isFreeEvent && (
+                      <button
+                        type="button"
+                        disabled={purchasing}
+                        onClick={() => handlePurchase("nomba")}
+                        className="w-full rounded-xl font-semibold text-sm py-3 transition-all border-2 border-pink-200 text-pink-700 hover:bg-pink-50 disabled:opacity-40 disabled:cursor-not-allowed"
+                      >
+                        Pay with Nomba
+                      </button>
+                    )}
                     {!isFreeEvent && walletBalance !== null && (
                       <button
                         type="button"
