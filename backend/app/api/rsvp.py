@@ -97,7 +97,7 @@ async def _send_qr_after_rsvp(guest_id: int, event_id: int):
 
                 try:
                     if ch == "email" and guest.email:
-                        from_addr = f"{(event.host_name or 'Accredit.vip')} via Accredit.vip <noreply@wristbandsng.com>"
+                        from_addr = f"{event.title} <noreply@wristbandsng.com>"
                         ok = await asyncio.wait_for(send_email(guest.email, subject, html, from_addr=from_addr), timeout=15)
                     elif ch == "whatsapp" and guest.phone:
                         ok, provider_id = await _send_whatsapp(guest.phone, body, media_url=_absolute_url(qr_image_url))

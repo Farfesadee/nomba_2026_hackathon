@@ -37,6 +37,14 @@ class Settings(BaseSettings):
     PAYSTACK_SECRET_KEY: str = ""
     PAYSTACK_PUBLIC_KEY: str = ""
     FLUTTERWAVE_SECRET_KEY: str = ""
+
+    # Nomba payment gateway
+    NOMBA_ACCOUNT_ID: str = ""
+    NOMBA_CLIENT_ID: str = ""
+    NOMBA_CLIENT_SECRET: str = ""
+    NOMBA_BASE_URL: str = "https://sandbox.nomba.com"
+    NOMBA_WEBHOOK_SECRET: str = ""
+
     OPENAI_API_KEY: str = ""
     TWILIO_ACCOUNT_SID: str = ""
     TWILIO_AUTH_TOKEN: str = ""

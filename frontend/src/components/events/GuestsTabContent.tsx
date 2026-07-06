@@ -4,7 +4,7 @@ import { useRef, useState, useEffect, useCallback, useMemo, type FormEvent } fro
 import { Button } from "@/components/ui/button";
 import { apiClient, API_BASE } from "@/lib/api-client";
 import Link from "next/link";
-import { Plus, Upload, Users, Mail, Trash2, Edit2, Loader, Search, Check, Download, QrCode, Tag, Send, Eye, X, Circle, Minus, Printer, ChevronDown, MoreHorizontal } from "lucide-react";
+import { Plus, Upload, Users, Mail, Trash2, Edit2, Loader, Search, Check, Download, QrCode, Tag, Send, Eye, X, Circle, Minus, Printer, ChevronDown, MoreHorizontal, Calendar, Clock } from "lucide-react";
 
 type Guest = {
   id: number;
@@ -15,13 +15,15 @@ type Guest = {
   rsvp_note?: string | null;
   invite_sent: boolean;
   invite_attempts?: number;
+  std_count?: number;
   invite_viewed_at?: string | null;
   tags?: string[];
   notes?: string | null;
   qr_token?: string | null;
   custom_data?: Record<string, any>;
   created_at?: string | null;
-  communication_status?: Record<string, { status: string; sent_count: number; last_sent?: string }>;
+  qr_count?: number;
+  communication_status?: Record<string, { status: string; sent_at?: string; delivered_at?: string; opened_at?: string; error?: string }>;
 };
 
 type CustomField = {
@@ -35,6 +37,7 @@ type CustomField = {
 
 type GuestsTabContentProps = {
   eventId: number;
+  eventType?: string;
   guestLimit: number | null;
   totalGuests: number;
   remainingGuests: number | null;
@@ -87,6 +90,7 @@ type GuestsTabContentProps = {
   canSendInvites: boolean;
   sendInvites: (force?: boolean) => Promise<void>;
   sendAllQrs: () => Promise<void>;
+  sendStdToGuest?: (guestId: number) => Promise<void>;
   testSend: () => Promise<void>;
   sendResult: { channels?: Record<string, any>; total_sent?: number; total_guests?: number } | null;
   sendError: string | null;
@@ -170,6 +174,7 @@ export default function GuestsTabContent({
   canSendInvites,
   sendInvites,
   sendAllQrs,
+  sendStdToGuest,
   testSend,
   sendResult,
   sendError,
@@ -200,6 +205,17 @@ export default function GuestsTabContent({
   const [openMenuId, setOpenMenuId] = useState<number | null>(null);
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
   const [revealedPhones, setRevealedPhones] = useState<Set<number>>(new Set());
+  const [sendingStdId, setSendingStdId] = useState<number | null>(null);
+
+  const handleSendStd = async (guestId: number) => {
+    if (sendingStdId) return;
+    setSendingStdId(guestId);
+    try {
+      await sendStdToGuest?.(guestId);
+    } finally {
+      setSendingStdId(null);
+    }
+  };
 
   function maskPhone(phone: string): string {
     if (phone.length <= 6) return phone;
@@ -832,20 +848,24 @@ export default function GuestsTabContent({
                           <td className="px-4 py-4 text-center">
                             <div className="flex items-center justify-center gap-1 flex-wrap text-xs">
                               {guest.communication_status && Object.entries(guest.communication_status).map(([ch, info]: [string, any]) => {
-                                const statusColor = info.status === "read" || info.status === "opened" ? "bg-emerald-50 text-emerald-700"
-                                  : info.status === "delivered" || info.status === "sent" ? "bg-blue-50 text-blue-700"
-                                  : info.status === "failed" ? "bg-red-50 text-red-700"
+                                const s = info.status;
+                                const statusColor = s === "read" || s === "opened" ? "bg-emerald-50 text-emerald-700"
+                                  : s === "delivered" || s === "sent" ? "bg-blue-50 text-blue-700"
+                                  : s === "failed" ? "bg-red-50 text-red-700"
+                                  : s === "queued" || s === "pending" ? "bg-amber-50 text-amber-700"
                                   : "bg-slate-50 text-slate-500";
-                                const statusIcon = info.status === "read" || info.status === "opened" ? <Eye className="w-3 h-3" />
-                                  : info.status === "delivered" ? <Check className="w-3 h-3" />
-                                  : info.status === "sent" ? <Circle className="w-3 h-3" />
-                                  : info.status === "failed" ? <X className="w-3 h-3" />
+                                const statusIcon = s === "read" || s === "opened" ? <Eye className="w-3 h-3" />
+                                  : s === "delivered" ? <Check className="w-3 h-3" />
+                                  : s === "sent" ? <Circle className="w-3 h-3" />
+                                  : s === "failed" ? <X className="w-3 h-3" />
+                                  : (s === "queued" || s === "pending") ? <Clock className="w-3 h-3" />
                                   : <Minus className="w-3 h-3" />;
                                 const ts = info.delivered_at || info.opened_at || info.sent_at;
                                 const timeStr = ts ? (() => { const d = new Date(ts); const now = new Date(); const diff = now.getTime() - d.getTime(); if (diff < 60000) return "now"; if (diff < 3600000) return `${Math.floor(diff / 60000)}m`; if (diff < 86400000) return `${Math.floor(diff / 3600000)}h`; if (diff < 172800000) return "yesterday"; return d.toLocaleDateString(); })() : null;
+                                const label = ch.startsWith("std_") ? `STD ${ch.replace("std_", "")}` : ch;
                                 return (
                                   <span key={ch} className={`px-2 py-1 rounded-full font-medium flex items-center gap-1 ${statusColor}`}>
-                                    {statusIcon} <span className="capitalize">{ch}</span>
+                                    {statusIcon} <span className="capitalize">{label}</span>
                                     {timeStr && <span className="text-[10px] opacity-70">{timeStr}</span>}
                                   </span>
                                 );
@@ -869,15 +889,56 @@ export default function GuestsTabContent({
                           </td>
                           <td className="px-4 py-4">
                             <div className="flex items-center justify-end gap-1">
-                              <Button
-                                size="sm"
-                                variant="ghost"
-                                onClick={() => setSendReviewGuest(guest)}
-                                title="Send message"
-                                className="h-11 w-11 p-0 hover:bg-blue-50"
-                              >
-                                <Mail className="w-4 h-4 text-blue-600" />
-                              </Button>
+                              <div className="relative">
+                                <Button
+                                  size="sm"
+                                  variant="ghost"
+                                  onClick={() => handleSendStd(guest.id)}
+                                  disabled={sendingStdId === guest.id}
+                                  title="STD"
+                                  className="h-11 w-11 p-0 hover:bg-amber-50"
+                                >
+                                  {sendingStdId === guest.id ? <Loader className="w-4 h-4 text-amber-600 animate-spin" /> : <Calendar className="w-4 h-4 text-amber-600" />}
+                                </Button>
+                                {(guest.std_count ?? 0) > 0 && (
+                                  <span className="absolute -top-0.5 -right-0.5 bg-amber-500 text-white text-[9px] font-bold rounded-full min-w-[14px] h-[14px] flex items-center justify-center px-1 leading-none">
+                                    {guest.std_count}
+                                  </span>
+                                )}
+                              </div>
+                              <div className="relative">
+                                <Button
+                                  size="sm"
+                                  variant="ghost"
+                                  onClick={() => setSendReviewGuest(guest)}
+                                  title="Send message"
+                                  className="h-11 w-11 p-0 hover:bg-blue-50"
+                                >
+                                  <Mail className="w-4 h-4 text-blue-600" />
+                                </Button>
+                                {(guest.invite_attempts ?? 0) > 0 && (
+                                  <span className="absolute -top-0.5 -right-0.5 bg-blue-500 text-white text-[9px] font-bold rounded-full min-w-[14px] h-[14px] flex items-center justify-center px-1 leading-none">
+                                    {guest.invite_attempts}
+                                  </span>
+                                )}
+                              </div>
+                              <div className="relative">
+                                <Button
+                                  size="sm"
+                                  variant="ghost"
+                                  onClick={() => generateQR(guest.id)}
+                                  disabled={generatingQR === guest.id}
+                                  title="QR"
+                                  className="h-11 w-11 p-0 hover:bg-violet-50"
+                                >
+                                  {generatingQR === guest.id ? <Loader className="w-4 h-4 text-violet-600 animate-spin" /> : <QrCode className="w-4 h-4 text-violet-600" />}
+                                </Button>
+                                {(guest.qr_count ?? 0) > 0 && (
+                                  <span className="absolute -top-0.5 -right-0.5 bg-violet-500 text-white text-[9px] font-bold rounded-full min-w-[14px] h-[14px] flex items-center justify-center px-1 leading-none">
+                                    {guest.qr_count}
+                                  </span>
+                                )}
+                              </div>
                               <Button
                                 size="sm"
                                 variant="ghost"
@@ -987,20 +1048,24 @@ export default function GuestsTabContent({
                       {/* Message status */}
                       <div className="flex items-center gap-1.5 mt-2 flex-wrap">
                         {guest.communication_status && Object.entries(guest.communication_status).map(([ch, info]: [string, any]) => {
-                          const statusColor = info.status === "read" || info.status === "opened" ? "bg-emerald-50 text-emerald-700"
-                            : info.status === "delivered" || info.status === "sent" ? "bg-blue-50 text-blue-700"
-                            : info.status === "failed" ? "bg-red-50 text-red-700"
+                          const s = info.status;
+                          const statusColor = s === "read" || s === "opened" ? "bg-emerald-50 text-emerald-700"
+                            : s === "delivered" || s === "sent" ? "bg-blue-50 text-blue-700"
+                            : s === "failed" ? "bg-red-50 text-red-700"
+                            : s === "queued" || s === "pending" ? "bg-amber-50 text-amber-700"
                             : "bg-slate-50 text-slate-500";
-                          const statusIcon = info.status === "read" || info.status === "opened" ? <Eye className="w-2.5 h-2.5" />
-                            : info.status === "delivered" ? <Check className="w-2.5 h-2.5" />
-                            : info.status === "sent" ? <Circle className="w-2.5 h-2.5" />
-                            : info.status === "failed" ? <X className="w-2.5 h-2.5" />
+                          const statusIcon = s === "read" || s === "opened" ? <Eye className="w-2.5 h-2.5" />
+                            : s === "delivered" ? <Check className="w-2.5 h-2.5" />
+                            : s === "sent" ? <Circle className="w-2.5 h-2.5" />
+                            : s === "failed" ? <X className="w-2.5 h-2.5" />
+                            : (s === "queued" || s === "pending") ? <Clock className="w-2.5 h-2.5" />
                             : <Minus className="w-2.5 h-2.5" />;
                           const ts = info.delivered_at || info.opened_at || info.sent_at;
                           const timeStr = ts ? (() => { const d = new Date(ts); const now = new Date(); const diff = now.getTime() - d.getTime(); if (diff < 60000) return "now"; if (diff < 3600000) return `${Math.floor(diff / 60000)}m`; if (diff < 86400000) return `${Math.floor(diff / 3600000)}h`; if (diff < 172800000) return "yesterday"; return d.toLocaleDateString(); })() : null;
+                          const label = ch.startsWith("std_") ? `STD ${ch.replace("std_", "")}` : ch;
                           return (
                             <span key={ch} className={`inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded-full text-[10px] font-medium ${statusColor}`}>
-                              {statusIcon} <span className="capitalize">{ch}</span>
+                              {statusIcon} <span className="capitalize">{label}</span>
                               {timeStr && <span className="opacity-70">{timeStr}</span>}
                             </span>
                           );
@@ -1022,20 +1087,50 @@ export default function GuestsTabContent({
                       </div>
                       {/* Action buttons */}
                       <div className="flex items-center gap-1.5 mt-3 pt-3 border-t border-slate-100">
-                        <button
-                          onClick={() => setSendReviewGuest(guest)}
-                          className="h-11 w-11 flex items-center justify-center rounded-lg hover:bg-blue-50 transition-colors"
-                          title="Send Invite"
-                        >
-                          <Send className="w-4 h-4 text-blue-600" />
-                        </button>
-                        <button
-                          onClick={() => generateQR(guest.id)}
-                          className="h-11 w-11 flex items-center justify-center rounded-lg hover:bg-violet-50 transition-colors"
-                          title="Generate QR"
-                        >
-                          <QrCode className="w-4 h-4 text-violet-600" />
-                        </button>
+                        <div className="relative">
+                          <button
+                            onClick={() => handleSendStd(guest.id)}
+                            disabled={sendingStdId === guest.id}
+                            className="h-11 w-11 flex items-center justify-center rounded-lg hover:bg-amber-50 transition-colors disabled:opacity-50"
+                            title="STD"
+                          >
+                            {sendingStdId === guest.id ? <Loader className="w-4 h-4 text-amber-600 animate-spin" /> : <Calendar className="w-4 h-4 text-amber-600" />}
+                          </button>
+                          {(guest.std_count ?? 0) > 0 && (
+                            <span className="absolute -top-0.5 -right-0.5 bg-amber-500 text-white text-[9px] font-bold rounded-full min-w-[14px] h-[14px] flex items-center justify-center px-1 leading-none">
+                              {guest.std_count}
+                            </span>
+                          )}
+                        </div>
+                        <div className="relative">
+                          <button
+                            onClick={() => setSendReviewGuest(guest)}
+                            className="h-11 w-11 flex items-center justify-center rounded-lg hover:bg-blue-50 transition-colors"
+                            title="Send Invite"
+                          >
+                            <Send className="w-4 h-4 text-blue-600" />
+                          </button>
+                          {(guest.invite_attempts ?? 0) > 0 && (
+                            <span className="absolute -top-0.5 -right-0.5 bg-blue-500 text-white text-[9px] font-bold rounded-full min-w-[14px] h-[14px] flex items-center justify-center px-1 leading-none">
+                              {guest.invite_attempts}
+                            </span>
+                          )}
+                        </div>
+                        <div className="relative">
+                          <button
+                            onClick={() => generateQR(guest.id)}
+                            disabled={generatingQR === guest.id}
+                            className="h-11 w-11 flex items-center justify-center rounded-lg hover:bg-violet-50 transition-colors disabled:opacity-50"
+                            title="Generate QR"
+                          >
+                            {generatingQR === guest.id ? <Loader className="w-4 h-4 text-violet-600 animate-spin" /> : <QrCode className="w-4 h-4 text-violet-600" />}
+                          </button>
+                          {(guest.qr_count ?? 0) > 0 && (
+                            <span className="absolute -top-0.5 -right-0.5 bg-violet-500 text-white text-[9px] font-bold rounded-full min-w-[14px] h-[14px] flex items-center justify-center px-1 leading-none">
+                              {guest.qr_count}
+                            </span>
+                          )}
+                        </div>
                         <button
                           onClick={() => startEdit(guest)}
                           className="h-11 w-11 flex items-center justify-center rounded-lg hover:bg-slate-100 transition-colors"

@@ -1,9 +1,10 @@
-from sqlalchemy import Column, Integer, String, Text, DateTime, ForeignKey, func
+from sqlalchemy import Column, Integer, String, DateTime, ForeignKey, func
+
 from app.core.database import Base
 
 
-class InviteBatch(Base):
-    __tablename__ = "invite_batches"
+class STDMessageBatch(Base):
+    __tablename__ = "std_message_batches"
 
     id = Column(Integer, primary_key=True, index=True)
     event_id = Column(Integer, ForeignKey("events.id"), nullable=False)
@@ -13,11 +14,11 @@ class InviteBatch(Base):
     created_at = Column(DateTime(timezone=True), server_default=func.now())
 
 
-class InviteMessage(Base):
-    __tablename__ = "invite_messages"
+class STDMessage(Base):
+    __tablename__ = "std_messages"
 
     id = Column(Integer, primary_key=True, index=True)
-    batch_id = Column(Integer, ForeignKey("invite_batches.id"), nullable=False)
+    batch_id = Column(Integer, ForeignKey("std_message_batches.id"), nullable=False)
     guest_id = Column(Integer, ForeignKey("guests.id"), nullable=False)
     channel = Column(String, nullable=False)
     status = Column(String, default="queued")
@@ -26,6 +27,5 @@ class InviteMessage(Base):
     opened_at = Column(DateTime(timezone=True), nullable=True)
     error = Column(String, nullable=True)
     provider_message_id = Column(String, nullable=True)
-    webhook_payload = Column(Text, nullable=True)
-    message_type = Column(String, nullable=True)
+    webhook_payload = Column(String, nullable=True)
     created_at = Column(DateTime(timezone=True), server_default=func.now())

@@ -164,16 +164,10 @@ async def send_guest_invitation(
     event_time = f"{h12}{m_str} {ampm}{tz_str}"
 
     dress_rows = ""
-    # Add dress code section header if any dress code exists
-    if dress_code or female_dress_code or male_dress_code:
-        dress_rows += f'<div style="margin-top: 15px; padding-top: 15px; border-top: 1px solid #e8edf2;"><p style="margin: 0 0 10px 0; font-size: 13px; color: #64748b; font-weight: bold; text-transform: uppercase; letter-spacing: 0.5px;">DRESS CODE</p>'
-        if dress_code:
-            dress_rows += f'<div class="detail-row"><span class="detail-label">👔 Code:</span><span class="detail-value">{dress_code}</span></div>'
-        if female_dress_code:
-            dress_rows += f'<div class="detail-row"><span class="detail-label">👗 Women:</span><span class="detail-value">{female_dress_code}</span></div>'
-        if male_dress_code:
-            dress_rows += f'<div class="detail-row"><span class="detail-label">👔 Men:</span><span class="detail-value">{male_dress_code}</span></div>'
-        dress_rows += '</div>'
+    if dress_code:
+        dress_rows = f'<div style="margin-top: 15px; padding-top: 15px; border-top: 1px solid #e8edf2;"><p style="margin: 0; font-size: 13px; color: #64748b; font-weight: bold; text-transform: uppercase; letter-spacing: 0.5px;">DRESS CODE: {dress_code}</p></div>'
+
+    tracking_pixel = f'<img src="{settings.FRONTEND_URL}/api/v1/track/open/{message_id}" alt="" width="1" height="1" style="display:none" />' if message_id else ''
 
     # Generate styled QR code if image data is available
     qr_code_html = ""

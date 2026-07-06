@@ -22,6 +22,7 @@ router = APIRouter()
 class FundRequest(BaseModel):
     amount: float
     currency: str = "NGN"
+    provider: str = "paystack"
 
 
 class WalletPayRequest(BaseModel):
@@ -85,6 +86,44 @@ async def fund_wallet(
         raise HTTPException(status_code=400, detail=f"Minimum funding amount for {currency} is {SUPPORTED_CURRENCIES[currency]['symbol']}{min_fund}")
 
     wallet = await get_or_create_wallet(user, db)
+
+    if req.provider == "nomba":
+        reference = f"NMB-{secrets.token_hex(8).upper()}"
+        callback_url = f"{settings.FRONTEND_URL}/dashboard/wallet?reference={reference}&provider=nomba"
+
+        from app.services.nomba_service import create_checkout_order
+
+        result = await create_checkout_order(
+            amount=req.amount,
+            currency=currency,
+            customer_email=user.email,
+            order_reference=reference,
+            callback_url=callback_url,
+        )
+
+        tx = WalletTransaction(
+            wallet_id=wallet.id,
+            amount=req.amount,
+            currency=currency,
+            type="credit",
+            reference=reference,
+            description=f"Wallet top-up via Nomba ({currency})",
+            status="pending",
+        )
+        db.add(tx)
+        await db.commit()
+
+        auth_url = None
+        if result and result.get("data"):
+            auth_url = result["data"].get("checkout_link") or result["data"].get("authorization_url")
+
+        return {
+            "reference": reference,
+            "amount": req.amount,
+            "currency": currency,
+            "authorization_url": auth_url,
+        }
+
     reference = f"WAL-{secrets.token_hex(8).upper()}"
 
     tx = WalletTransaction(

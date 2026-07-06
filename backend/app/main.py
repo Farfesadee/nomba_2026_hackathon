@@ -12,7 +12,7 @@ from app.core.database import init_db
 from app.core.rate_limit import RateLimitMiddleware
 
 logger = logging.getLogger(__name__)
-from app.api import auth, events, guests, qr_codes, verification, payments, admin, rsvp, messaging, tickets, uploads, contact, trials, subscriptions, posts, ai, notifications, tracking, webhooks, guest_management, invite_sending, admin_dashboard, checkin_scanner, waitlist_api, coupons_api, rsvp_questions_api, event_templates_api, wallet_api, trial_migration, withdrawals, admin_events, admin_audience
+from app.api import auth, events, guests, qr_codes, verification, payments, admin, rsvp, messaging, tickets, uploads, contact, trials, subscriptions, posts, ai, notifications, tracking, webhooks, guest_management, invite_sending, admin_dashboard, checkin_scanner, waitlist_api, coupons_api, rsvp_questions_api, event_templates_api, wallet_api, trial_migration, withdrawals, admin_events, admin_audience, nomba_api
 
 
 @asynccontextmanager
@@ -147,6 +147,7 @@ app.include_router(wallet_api.router, prefix="/api/v1", tags=["Wallet"])
 app.include_router(withdrawals.router, prefix="/api/v1", tags=["Withdrawals"])
 app.include_router(trial_migration.router, prefix="/api/v1", tags=["Trial Migration"])
 app.include_router(admin_audience.router, prefix="/api/v1", tags=["Admin Audience"])
+app.include_router(nomba_api.router, tags=["Nomba"])
 
 
 @app.get("/api/v1/assets/banner.gif")

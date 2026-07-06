@@ -1,8 +1,34 @@
-# Accredit.vip
+# Accredit.vip — Nomba Hackathon 2026
 
-Premium event infrastructure platform — invitation distribution, guest management, QR accreditation, ticketing, event discovery, and event operations.
+**Track:** Payments & Financial Inclusion
 
-**Live:** [https://accredit.vip](https://accredit.vip)
+**Live Demo:** [https://accredit.vip](https://accredit.vip)
+**Test Account:** `demo@accredit.vip` / `demo1234`
+
+A premium event infrastructure platform with **Nomba** as a primary payment gateway for wallet funding, ticket purchases, and automated bank transfers. Built for the DevCareer x Nomba Hackathon 2026.
+
+---
+
+## Nomba Integration
+
+| Feature | Endpoint | Status |
+|---------|----------|--------|
+| Checkout Order | `POST /api/v1/nomba/checkout` | ✅ Live |
+| Transaction Verification | `GET /api/v1/nomba/verify/{reference}` | ✅ Live |
+| Bank Transfer (Withdrawal) | `POST /api/v1/nomba/withdraw` | ✅ Live |
+| Webhook Processing | `POST /api/v1/nomba/webhook` | ✅ Live |
+| Wallet Deposit via Nomba | `POST /api/v1/wallet/fund` (with `provider: "nomba"`) | ✅ Live |
+
+### How It Works
+
+1. **Deposit** — User selects "Nomba" as payment method on the Wallet page → backend creates a Nomba checkout order → user is redirected to Nomba's secure checkout → on success, the wallet is credited via webhook
+2. **Withdraw** — User requests a withdrawal → backend initiates a Nomba transfer to the user's bank account → wallet is debited atomically
+3. **Ticket Purchase** — Event tickets can be paid for via Nomba checkout (same flow as wallet deposit)
+4. **Webhook Security** — All Nomba webhooks are verified using HMAC-SHA256 signature verification
+
+### Nomba API Reference
+
+See `test_nomba.sh` and `test_verify.sh` for sandbox test commands.
 
 ---
 
@@ -12,9 +38,9 @@ Premium event infrastructure platform — invitation distribution, guest managem
 |-------|-----------|
 | Frontend | Next.js 16, React 19, TypeScript, TailwindCSS v4, ShadCN UI |
 | Backend | Python 3.12, FastAPI, SQLAlchemy 2.0 (async), Pydantic v2 |
-| Database | Supabase PostgreSQL (production), SQLite (development) |
-| Payments | Paystack (primary), Flutterwave (fallback) |
-| Email | SMTP (primary), SendGrid, Resend |
+| Database | Supabase PostgreSQL |
+| Payments | **Nomba** (primary), Paystack (fallback), Flutterwave (fallback) |
+| Email | SMTP, SendGrid, Resend |
 | SMS/WhatsApp | Twilio, WhatsApp Cloud API, Termii, Africa's Talking |
 | AI | OpenAI (GPT-4o, DALL-E 3) |
 | Auth | Supabase Auth, Google OAuth, bcrypt |
@@ -27,72 +53,65 @@ Premium event infrastructure platform — invitation distribution, guest managem
 ```
 backend/                          # FastAPI backend (port 8000)
 ├── app/
-│   ├── api/                      # Route handlers
-│   │   ├── auth.py               # Login, register, OAuth, password management
-│   │   ├── events.py             # Event CRUD, submit-approval, public listing
-│   │   ├── admin.py              # Admin CRUD, event list, role management
-│   │   ├── admin_events.py       # Approve/reject events, pending/flagged lists
-│   │   ├── admin_audience.py     # Audience data marketplace (super_admin only)
-│   │   ├── admin_dashboard.py    # Admin analytics dashboard
-│   │   ├── guests.py             # Guest CRUD, CSV import
-│   │   ├── invite_sending.py     # Invitation delivery (email/WhatsApp/SMS)
-│   │   ├── guest_management.py   # Guest batch operations
-│   │   ├── qr_codes.py           # QR generation
-│   │   ├── rsvp.py               # RSVP handling
-│   │   ├── messaging.py          # Twilio/WhatsApp messaging
-│   │   ├── payments.py           # Paystack checkout, verification
-│   │   ├── tickets.py            # PDF ticket generation
-│   │   ├── checkin_scanner.py    # QR scan & validate at entry
-│   │   ├── trials.py             # Trial enforcement
-│   │   ├── webhooks.py           # Paystack/Supabase webhook handlers
-│   │   ├── reviews.py            # Event review module
-│   │   ├── ai.py                 # AI flier parsing & generation
-│   │   ├── notifications.py      # In-app notification endpoints
-│   │   ├── uploads.py            # File upload
-│   │   ├── tracking.py           # Event tracking
-│   │   ├── watchlist.py          # API for waitlist
-│   │   ├── wallet_api.py         # Wallet operations
-│   │   ├── withdrawals.py        # Withdrawal management
-│   │   └── ...                   # Coupons, event templates, posts, etc.
-│   ├── core/                     # Config, DB, security, rate limiting
-│   ├── models/                   # SQLAlchemy ORM models
-│   ├── services/                 # Business logic (email, QR, AI, audience sync)
-│   └── main.py                   # FastAPI app entry point
-├── alembic/                      # Database migrations
+│   ├── api/
+│   │   ├── nomba_api.py          # Nomba payment routes (checkout, webhook, verify, withdraw)
+│   │   ├── wallet_api.py         # Wallet operations (fund, pay, multi-currency)
+│   │   ├── withdrawals.py        # AML-compliant withdrawal management
+│   │   ├── payments.py           # Paystack/Flutterwave payment processing
+│   │   └── ...                   # Event, guest, QR, RSVP, etc.
+│   ├── services/
+│   │   ├── nomba_service.py      # Nomba HTTP client (auth, checkout, transfer, verify)
+│   │   └── ...                   # Email, QR, messaging, AI services
+│   ├── core/config.py            # All env vars including NOMBA_*
+│   ├── models/wallet.py          # Wallet, WalletTransaction, BankAccount, Withdrawal
+│   └── main.py                   # FastAPI app entry point (nomba_api mounted)
 ├── uploads/                      # QRs, fliers, event images
 ├── requirements.txt
 └── .env.example
 
 frontend/                         # Next.js frontend (port 3000)
 ├── src/
-│   ├── app/
-│   │   ├── admin/                # Admin panel (super_admin + admin)
-│   │   │   ├── page.tsx          # Admin dashboard
-│   │   │   ├── audience/         # Audience data marketplace (super_admin only)
-│   │   │   ├── events/           # Event moderation (approve/reject)
-│   │   │   ├── users/            # User management
-│   │   │   ├── sessions/         # Active sessions
-│   │   │   ├── payments/         # Payment transactions
-│   │   │   ├── withdrawals/      # Withdrawal management
-│   │   │   ├── fraud/            # Fraud detection
-│   │   │   └── settings/         # Admin profile + admin management
-│   │   ├── dashboard/            # Organizer dashboard
-│   │   ├── attend/               # Event discovery
-│   │   ├── events/[id]/          # Event detail
-│   │   ├── e/[slug]/             # Slug-based event pages
-│   │   ├── login/                # User login
-│   │   ├── register/             # User registration
-│   │   └── auth/google/          # Google OAuth callback
-│   ├── components/
-│   │   ├── shared/               # Navbar, footer, carousel, venue-input, etc.
-│   │   ├── ui/                   # ShadCN primitives (button, card, dialog, etc.)
-│   │   └── wallet/               # Wallet components
-│   ├── contexts/                 # Auth context
-│   └── lib/api/                  # API client modules
-├── .env.local
-├── next.config.ts
+│   ├── app/dashboard/wallet/     # Wallet page with Nomba/Paystack payment method selection
+│   └── components/wallet/        # Wallet dashboard, deposit, withdrawal, bank account UI
 └── package.json
 ```
+
+---
+
+## Features
+
+### Payment & Wallet (Nomba Focus)
+- **Multi-Currency Wallet** — 10 currencies (NGN, USD, GBP, EUR, KES, GHS, ZAR, RWF, UGX, TZS)
+- **Deposit via Nomba** — Select Nomba as payment method, redirected to Nomba checkout
+- **Deposit via Paystack** — Fallback payment provider
+- **Auto-Withdraw to Bank** — Nomba Transfers API for instant bank payouts
+- **AML Compliance** — Name verification, daily limits, velocity checks on withdrawals
+- **Transaction History** — Full audit trail of deposits, withdrawals, and payments
+
+### Event Management
+- **Create Event** — Public or private; flier upload, ticket tiers, lineup, after-party toggle
+- **Post Event** — One-click publish with admin review workflow
+- **AI Flier Parsing** — Upload a flier image, AI extracts title, date, venue, lineup, ticket info
+- **AI Flier Generation** — Generate event fliers from text description (DALL-E 3)
+
+### Guest & Invitation Management
+- **Guest Import** — CSV upload with column mapping
+- **Multi-Channel Invitations** — Email, WhatsApp, SMS
+- **QR Accreditation** — Per-guest animated QR GIFs, single-use validation
+- **RSVP** — Token-based accept/decline/maybe with live stats
+
+### Ticketing & Check-in
+- **Ticket Sales** — Paystack/Nomba checkout with PDF ticket generation
+- **QR Check-in** — Staff scanning with duplicate detection, real-time activity feed
+
+### Public Discovery
+- **Browse Events** (`/attend`) — Filter by location, category, date, price
+- **Near Me** — Geolocation-based proximity sorting (Haversine)
+
+### Admin Panel
+- Dashboard, Event Moderation, User Management, Payment Management
+- Withdrawal Management, Fraud Detection, Audience Data Marketplace
+- Admin Account Management (super_admin only)
 
 ---
 
@@ -103,10 +122,9 @@ frontend/                         # Next.js frontend (port 3000)
 ```bash
 cd backend
 python -m venv venv
-source venv/bin/activate          # Linux/macOS
-# venv\Scripts\activate           # Windows
+source venv/bin/activate
 pip install -r requirements.txt
-cp .env.example .env              # edit with your settings
+cp .env.example .env              # edit with your Nomba sandbox keys
 alembic upgrade head
 uvicorn app.main:app --reload --port 8000
 ```
@@ -119,78 +137,27 @@ npm install
 npm run dev                       # runs on :3000
 ```
 
----
+### Test Nomba Integration
 
-## Features
+```bash
+# Test sandbox auth + checkout
+bash test_nomba.sh
 
-### Event Management
-- **Create Event** — public or private; flier upload, ticket tiers, lineup, after-party toggle
-- **Post Event** — one-click "Post Event" from dashboard; triggers admin review workflow
-- **AI Flier Parsing** — upload a flier image, AI extracts title, date, venue, lineup, ticket info
-- **AI Flyer Generation** — generate event fliers from a text description (DALL-E 3)
-- **AI Chatbot** — draggable AI assistant on the organizer dashboard
-
-### Guest & Invitation Management
-- **Guest Import** — CSV upload with column mapping
-- **Invitation Delivery** — email (SMTP/SendGrid/Resend), WhatsApp (Cloud API/Twilio), SMS (Termii)
-- **Premium Email Design** — MIME-embedded flier and animated QR GIF
-- **QR Accreditation** — per-guest animated QR GIFs, 30-day expiry, single-use validation
-- **RSVP** — token-based accept/decline/maybe with live stats
-- **Reminders** — automated reminder scheduling before event date
-
-### Ticketing & Check-in
-- **Ticket Sales** — Paystack checkout with PDF ticket generation
-- **QR Check-in** — staff scanning with duplicate detection
-- **Event Detail Page** — full event info + **Get Directions** (Google Maps)
-
-### Public Discovery
-- **Landing Page Carousel** — auto-displays 10 most recent approved public events
-- **Discover Events** (`/attend`) — browse by location, category, date, price
-- **Near Me** — geolocation-based proximity sorting (Haversine)
-
-### Admin Panel
-- **Two Roles:** `admin` (general) and `super_admin` (full access)
-- **Dashboard** — revenue analytics, user growth, event stats
-- **Event Moderation** — approve/reject pending and flagged events
-- **User Management** — view/manage users
-- **Payment Management** — transaction history
-- **Withdrawal Management** — process organizer withdrawals
-- **Fraud Detection** — suspicious activity monitoring
-- **Audience Data Marketplace** (`super_admin` only) — synced audience profiles with filters, demographic breakdowns, watermarked CSV/JSON export, export audit trail
-- **Admin Management** (`super_admin` only) — create/update/delete admin accounts; control admin credentials
-- **Login Banner** — styled "Secure Access" on admin login page
-
-### Security & Compliance
-- **Audit Logging** — all admin actions logged
-- **Audience Export Watermarking** — every export row tagged with exporter identity + timestamp
-- **Rate Limiting** — per-endpoint request throttling
-- **Trial Abuse Prevention** — device fingerprint + email dedup + rate limits
+# Test transaction requery
+bash test_verify.sh
+```
 
 ---
 
-## Environment Variables
-
-See `backend/.env.example` for all variables. Key ones:
+## Environment Variables (Nomba)
 
 | Variable | Description |
 |----------|-------------|
-| `DATABASE_URL` | Async PostgreSQL connection string (`postgresql+asyncpg://...`) |
-| `SECRET_KEY` | JWT signing secret (32+ bytes, URL-safe) |
-| `ENCRYPTION_KEY` | Fernet key for symmetric encryption |
-| `PAYSTACK_SECRET_KEY` | Paystack live secret |
-| `PAYSTACK_PUBLIC_KEY` | Paystack live public key |
-| `OPENAI_API_KEY` | OpenAI key (GPT-4o, DALL-E 3) |
-| `SMTP_HOST` / `SMTP_PORT` / `SMTP_USERNAME` / `SMTP_PASSWORD` | Email delivery |
-| `SENDGRID_API_KEY` | SendGrid API key (email fallback) |
-| `TWILIO_ACCOUNT_SID` / `TWILIO_AUTH_TOKEN` | Twilio for WhatsApp/SMS |
-| `WHATSAPP_CLOUD_TOKEN` / `WHATSAPP_CLOUD_PHONE_ID` | WhatsApp Cloud API |
-| `GOOGLE_CLIENT_ID` / `GOOGLE_CLIENT_SECRET` | Google OAuth |
-| `FRONTEND_URL` | CORS origin (`https://accredit.vip` in production) |
-| `BACKEND_URL` | Backend URL for callback URLs |
-| `PLATFORM_FEE_PERCENT` | Platform commission (default: 5.0) |
-| `VAT_PERCENT` | VAT rate (default: 2.5) |
-
-Frontend: `NEXT_PUBLIC_API_URL=https://accredit.vip/api/v1`
+| `NOMBA_ACCOUNT_ID` | Nomba account UUID |
+| `NOMBA_CLIENT_ID` | Nomba client ID for OAuth |
+| `NOMBA_CLIENT_SECRET` | Nomba client secret |
+| `NOMBA_BASE_URL` | `https://sandbox.nomba.com` (sandbox) or `https://api.nomba.com` (production) |
+| `NOMBA_WEBHOOK_SECRET` | Secret for HMAC webhook verification |
 
 ---
 
@@ -199,43 +166,12 @@ Frontend: `NEXT_PUBLIC_API_URL=https://accredit.vip/api/v1`
 The application runs on a Namecheap VPS (Ubuntu 24.04) behind nginx with Let's Encrypt SSL.
 
 **Infrastructure:**
-
-| Service | Port | Process |
-|---------|------|---------|
-| API | 8000 | `uvicorn app.main:app` (4 workers) via systemd |
-| Web | 3000 | `node .next/standalone/server.js` via nohup |
-| nginx | 443/80 | reverse proxies `/api/v1/` → 8000, `/uploads/` → files, `/` → 3000 |
-
-**Start/stop services:**
-```bash
-systemctl start accredit-api      # FastAPI backend
-systemctl stop accredit-api
-nginx -s reload                   # after config changes
-```
-
-**Deploy updates:**
-```bash
-cd /home/deploy/accredit.vip
-git pull origin main
-cd frontend && npm run build
-systemctl restart accredit-api
-# restart frontend process
-```
-
----
-
-## Roles
-
-| Role | Privileges |
-|------|-----------|
-| **User** | Create events, manage guests, send invites, sell tickets |
-| **Admin** | Moderate events, view users/transactions/withdrawals, fraud monitoring |
-| **Super Admin** | All admin privileges + audience data marketplace, admin account management, credential changes |
+- API (port 8000) — `uvicorn` via systemd
+- Web (port 3000) — `next start` via systemd
+- nginx — reverse proxies `/api/v1/` → 8000, `/` → 3000
 
 ---
 
 ## Project Status
 
-Live in production at [accredit.vip](https://accredit.vip). Actively maintained.
-
-See `README_AccreditVIP.md` for the full product specification.
+Live in production at [accredit.vip](https://accredit.vip). Submitted for **DevCareer x Nomba Hackathon 2026** — Payments & Financial Inclusion Track.

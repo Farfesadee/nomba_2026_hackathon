@@ -15,6 +15,7 @@ import { AlertTriangle, ArrowLeft, BarChart3, Users, Mail, Send, Settings, Share
 import { DashboardSidebar } from "@/components/dashboard/sidebar";
 import { DashboardTopbar } from "@/components/dashboard/topbar";
 import GuestsTabContent from "@/components/events/GuestsTabContent";
+import BurialHostDashboard from "@/components/burial/BurialHostDashboard";
 import QuestionsTabContent from "@/components/events/QuestionsTabContent";
 import RemindersTabContent from "@/components/events/RemindersTabContent";
 import CouponsTabContent from "@/components/events/CouponsTabContent";
@@ -81,7 +82,7 @@ function EventDetailContent() {
   const [sending, setSending] = useState(false);
   const [sendResult, setSendResult] = useState<SendResult | null>(null);
   const [sendError, setSendError] = useState<string | null>(null);
-  const [channels, setChannels] = useState<string[]>(["email"]);
+  const [channels, setChannels] = useState<string[]>(["email", "whatsapp"]);
   const [logs, setLogs] = useState<any[]>([]);
   const [rsvpStats, setRsvpStats] = useState<RSVPStats | null>(null);
   const [csvFile, setCsvFile] = useState<File | null>(null);
@@ -428,7 +429,13 @@ function EventDetailContent() {
     try {
       const qr = await apiClient<{ token: string }>(`/events/${id}/guests/${guestId}/qr`, { method: "POST" });
       setQrMap((prev) => ({ ...prev, [guestId]: qr.token }));
-    } catch {}
+      await apiClient(`/events/${id}/guests/${guestId}/send-qr`, { method: "POST", body: { channels } });
+      showToast("QR code sent to guest!");
+      loadGuests();
+    } catch (err: any) {
+      const msg = err.detail || err.message || "Could not send QR";
+      showToast(msg, "error");
+    }
     setGeneratingQR(null);
   };
 
@@ -462,16 +469,39 @@ function EventDetailContent() {
     setSending(false);
   };
 
+  const sendStdToGuest = async (guestId: number) => {
+    try {
+      const res = await apiClient<any>(`/events/${id}/send-std`, {
+        method: "POST",
+        body: { channels: ["email", "whatsapp"], guest_ids: [guestId], force_resend: true },
+      });
+      const ch = res?.channels || {};
+      const parts: string[] = [];
+      if (ch.email?.sent) parts.push("Email");
+      if (ch.whatsapp?.sent) parts.push("WhatsApp");
+      showToast(parts.length ? `Save the Date sent via ${parts.join(" & ")}!` : "Save the Date sent!");
+      loadGuests();
+    } catch (err: any) {
+      const msg = err.detail || err.message || "Could not send Save the Date";
+      showToast(msg, "error");
+    }
+  };
+
   const sendGuestInvite = async (guestId: number) => {
     setSendError(null);
     setSendResult(null);
     try {
       const res = await apiClient<any>(`/events/${id}/guests/${guestId}/send-invite?force=true`, { method: "POST", body: { channels } });
-      if (res.channels?.some((c: any) => c.status === "max_attempts")) {
+      const chs = res.channels || [];
+      if (chs.some((c: any) => c.status === "max_attempts")) {
         setSendError("Maximum invite attempts reached for some channels.");
         showToast("Maximum invite attempts reached", "error");
       } else {
-        showToast("Invite sent successfully");
+        const sent = chs.filter((c: any) => c.sent).map((c: any) => c.channel);
+        const failed = chs.filter((c: any) => !c.sent && c.status !== "skipped").map((c: any) => c.channel);
+        if (sent.length) showToast(`Invite sent via ${sent.join(" & ")}`);
+        if (failed.length) showToast(`${failed.join(" & ")} failed`, "error");
+        if (!sent.length && !failed.length) showToast("Invite sent successfully");
       }
       loadGuests();
     } catch (err: any) {
@@ -1026,7 +1056,9 @@ function EventDetailContent() {
               </div>
             )}
 
-            {activeTab === "guests" && (
+            {activeTab === "guests" && (event?.event_type === "burial" ? (
+              <BurialHostDashboard eventId={Number(id)} />
+            ) : (
               <GuestsTabContent
                 eventId={Number(id)}
                 guestLimit={guestLimit}
@@ -1072,6 +1104,7 @@ function EventDetailContent() {
                 triggerSearch={loadGuests}
                 generateQR={generateQR}
                 generatingQR={generatingQR}
+                sendStdToGuest={sendStdToGuest}
                 currentPage={currentPage}
                 pageCount={pageCount}
                 goToPage={goToPage}
@@ -1099,7 +1132,7 @@ function EventDetailContent() {
                 setExportMsgChannel={setExportMsgChannel}
                 exportMessages={exportMessages}
               />
-            )}
+            ))}
 
             {activeTab === "questions" && (
               <QuestionsTabContent eventId={id} />

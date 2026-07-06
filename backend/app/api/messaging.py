@@ -165,16 +165,10 @@ def _build_invite_message(
             flyer_html = f'<img src="{absolute_flyer}" alt="{event.title}" style="width:100%;max-width:600px;max-height:400px;height:auto;display:block;border-radius:0" />'
     host_section = f'<p style="margin:0 0 4px;font-size:14px;font-weight:bold;color:#fff">Hosted by {event.host_name}</p>' if event.host_name else ''
 
-    # Build dress code section with header if any dress codes exist
+    # Build dress code section
     dress_code_section = ''
-    if event.dress_code or getattr(event, 'female_dress_code', None) or getattr(event, 'male_dress_code', None):
-        dress_code_section = '<tr><td colspan="2" style="padding:12px 0 8px;border-top:1px solid #e8edf2;font-size:12px;color:#888;font-weight:bold;text-transform:uppercase;letter-spacing:1px">DRESS CODE</td></tr>'
-        if event.dress_code:
-            dress_code_section += '<tr><td style="padding:8px 0;color:#888;font-size:12px;text-transform:uppercase;letter-spacing:1px;width:100px;vertical-align:top">Code:</td><td style="padding:8px 0;font-size:14px;font-weight:bold;color:#07182f">' + event.dress_code + '</td></tr>'
-        if getattr(event, 'female_dress_code', None):
-            dress_code_section += '<tr><td style="padding:8px 0;color:#888;font-size:12px;text-transform:uppercase;letter-spacing:1px;width:100px;vertical-align:top">Women:</td><td style="padding:8px 0;font-size:14px;font-weight:bold;color:#07182f">' + event.female_dress_code + '</td></tr>'
-        if getattr(event, 'male_dress_code', None):
-            dress_code_section += '<tr><td style="padding:8px 0;color:#888;font-size:12px;text-transform:uppercase;letter-spacing:1px;width:100px;vertical-align:top">Men:</td><td style="padding:8px 0;font-size:14px;font-weight:bold;color:#07182f">' + event.male_dress_code + '</td></tr>'
+    if event.dress_code:
+        dress_code_section = '<tr><td colspan="2" style="padding:12px 0 8px;border-top:1px solid #e8edf2;font-size:12px;color:#888;font-weight:bold;text-transform:uppercase;letter-spacing:1px">DRESS CODE: ' + event.dress_code + '</td></tr>'
 
     dress_code_row = ''
     female_row = ''
@@ -237,7 +231,7 @@ async def _send_to_guest(
 
     try:
         if channel == "email" and guest.email:
-            from_addr = f"{(event.host_name or 'Accredit.vip')} via Accredit.vip <noreply@wristbandsng.com>"
+            from_addr = f"{event.title} <noreply@wristbandsng.com>"
             ok = await asyncio.wait_for(send_email(guest.email, subject, html, from_addr=from_addr), timeout=15)
         elif channel == "whatsapp" and guest.phone:
             media_to_send = _absolute_url(flyer_url) if flyer_url else None
@@ -266,9 +260,9 @@ async def _send_to_guest(
         return False, "failed"
 
 
-def _build_qr_message(guest: Guest, event: Event, qr_image_url: str | None = None) -> tuple[str, str, str]:
+def _build_qr_message(guest: Guest, event: Event, qr_image_url: str | None = None, custom_message: str | None = None, qr_message: str | None = None, message_type: str = "qr_only") -> tuple[str, str, str]:
     subject = f"Your QR Access Code: {event.title}"
-    body = (
+    body = custom_message or (
         f"==============================\n"
         f"{event.title.upper()}\n"
         f"QR Access Code for {guest.name}\n"
@@ -326,7 +320,7 @@ async def _send_qr_to_guest(
 
     try:
         if channel == "email" and guest.email:
-            from_addr = f"{(event.host_name or 'Accredit.vip')} via Accredit.vip <noreply@wristbandsng.com>"
+            from_addr = f"{event.title} <noreply@wristbandsng.com>"
             ok = await asyncio.wait_for(send_email(guest.email, subject, html, from_addr=from_addr), timeout=15)
         elif channel == "whatsapp" and guest.phone:
             ok, provider_id = await _send_whatsapp(guest.phone, body, media_url=_absolute_url(qr_image_url))

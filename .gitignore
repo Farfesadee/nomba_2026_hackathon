@@ -64,8 +64,10 @@ frontend/screenshot-*.png
 /TRIAL_ENFORCEMENT_SUMMARY.md
 /TRIAL_IMPLEMENTATION_FRONTEND.md
 
-# Root scripts
+# Root scripts (except Nomba test scripts)
 /*.sh
+!/test_nomba.sh
+!/test_verify.sh
 
 # Root images
 /*.png
