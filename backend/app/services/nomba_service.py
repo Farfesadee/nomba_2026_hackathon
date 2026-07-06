@@ -79,6 +79,29 @@ async def create_checkout_order(
         return None
 
 
+async def get_checkout_status(order_reference: str) -> dict | None:
+    """Query Nomba checkout status by orderReference."""
+    token = await get_access_token()
+    if not token:
+        return None
+    try:
+        async with httpx.AsyncClient(timeout=15) as client:
+            resp = await client.get(
+                f"{settings.NOMBA_BASE_URL}/v1/checkout/transaction",
+                params={"idType": "orderReference", "id": order_reference},
+                headers={
+                    "accountId": settings.NOMBA_ACCOUNT_ID,
+                    "Authorization": f"Bearer {token}",
+                },
+            )
+            data = resp.json()
+            logger.info(f"Nomba checkout status response: {data}")
+            return data
+    except Exception as e:
+        logger.error(f"Nomba checkout status error: {e}")
+        return None
+
+
 async def verify_transaction(session_id: str) -> dict | None:
     token = await get_access_token()
     if not token:

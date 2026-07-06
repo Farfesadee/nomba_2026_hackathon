@@ -49,7 +49,13 @@ export default function WalletPage() {
   const [bankAccounts, setBankAccounts] = useState<BankAccount[]>([]);
   const [transactions, setTransactions] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
-  const [activeTab, setActiveTab] = useState<"overview" | "deposit" | "withdraw" | "accounts" | "history">("overview");
+  const getTabFromUrl = () => {
+    if (typeof window === "undefined") return "overview";
+    const params = new URLSearchParams(window.location.search);
+    const tab = params.get("tab") as "overview" | "deposit" | "withdraw" | "accounts" | "history" | null;
+    return tab || "overview";
+  };
+  const [activeTab, setActiveTab] = useState<"overview" | "deposit" | "withdraw" | "accounts" | "history">(getTabFromUrl);
   const [selectedCurrency, setSelectedCurrency] = useState("");
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
   const [sidebarOpen, setSidebarOpen] = useState(true);
@@ -151,7 +157,7 @@ export default function WalletPage() {
       }
 
       await fetchBankAccounts();
-      setActiveTab("overview");
+      switchTab("overview");
     } finally {
       setLoading(false);
     }
@@ -174,19 +180,27 @@ export default function WalletPage() {
     }
   };
 
+  const switchTab = (tab: "overview" | "deposit" | "withdraw" | "accounts" | "history") => {
+    setActiveTab(tab);
+    const url = new URL(window.location.href);
+    if (tab === "overview") url.searchParams.delete("tab");
+    else url.searchParams.set("tab", tab);
+    window.history.replaceState({}, "", url.toString());
+  };
+
   const handleDepositCurrency = async (currency: string) => {
     if (!currency) {
-      setActiveTab("deposit");
+      switchTab("deposit");
       setSelectedCurrency("");
     } else {
       setSelectedCurrency(currency);
-      setActiveTab("deposit");
+      switchTab("deposit");
     }
   };
 
   const handleWithdrawCurrency = async (currency: string) => {
     setSelectedCurrency(currency);
-    setActiveTab("withdraw");
+    switchTab("withdraw");
   };
 
   const handleCurrencySelect = async (currency: string) => {
@@ -206,7 +220,7 @@ export default function WalletPage() {
 
         if (res.ok) {
           await fetchWallets();
-          setActiveTab("overview");
+          switchTab("overview");
         }
       } finally {
         setLoading(false);
@@ -235,7 +249,7 @@ export default function WalletPage() {
       }
 
       await fetchWallets();
-      setActiveTab("overview");
+      switchTab("overview");
       setSelectedCurrency("");
     } finally {
       setLoading(false);
@@ -408,6 +422,10 @@ export default function WalletPage() {
                 key={tab}
                 onClick={() => {
                   setActiveTab(tab as any);
+                  const url = new URL(window.location.href);
+                  if (tab === "overview") url.searchParams.delete("tab");
+                  else url.searchParams.set("tab", tab);
+                  window.history.replaceState({}, "", url.toString());
                   if (tab !== "deposit" && tab !== "withdraw") setSelectedCurrency("");
                 }}
                 className={`px-4 py-3 font-semibold text-sm transition-all border-b-2 ${
@@ -432,7 +450,7 @@ export default function WalletPage() {
                 />
                 <BankAccountManager
                   accounts={bankAccounts}
-                  onAdd={() => setActiveTab("accounts")}
+                  onAdd={() => switchTab("accounts")}
                   onDelete={handleDeleteBankAccount}
                   loading={loading}
                 />
@@ -592,7 +610,7 @@ export default function WalletPage() {
                   <div className="text-center py-8">
                     <p className="text-[#64748b] mb-4">Add a bank account first to withdraw funds</p>
                     <button
-                      onClick={() => setActiveTab("accounts")}
+                      onClick={() => switchTab("accounts")}
                       className="inline-flex items-center gap-2 rounded-lg bg-[#E91E8C] px-4 py-2 text-sm font-bold text-white hover:bg-[#C4166F] transition-colors"
                     >
                       Add Bank Account

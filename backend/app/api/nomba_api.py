@@ -17,6 +17,7 @@ from app.models.user import User
 from app.models.wallet import Wallet, WalletTransaction, DEFAULT_BALANCES
 from app.services.nomba_service import (
     create_checkout_order,
+    get_checkout_status,
     verify_transaction,
     transfer_to_bank,
     verify_webhook_signature,
@@ -70,7 +71,7 @@ async def nomba_checkout(
         raise HTTPException(status_code=503, detail="Nomba payment is not configured")
 
     order_reference = f"NMB-{secrets.token_hex(8).upper()}"
-    callback_url = f"{settings.FRONTEND_URL}/dashboard/wallet?reference={order_reference}&provider=nomba"
+    callback_url = f"{settings.FRONTEND_URL}/dashboard/wallet?reference={order_reference}&provider=nomba&tab=history"
 
     result = await create_checkout_order(
         amount=req.amount,
@@ -168,7 +169,9 @@ async def nomba_verify(
     reference: str,
     db: AsyncSession = Depends(get_db),
 ):
-    """Verify a Nomba transaction status by order reference."""
+    """Verify a Nomba transaction status by order reference.
+    Calls Nomba API to check actual payment status and credits wallet if paid.
+    """
     tx_result = await db.execute(
         select(WalletTransaction).where(WalletTransaction.reference == reference)
     )
@@ -176,6 +179,36 @@ async def nomba_verify(
 
     if not tx:
         raise HTTPException(status_code=404, detail="Transaction not found")
+
+    if tx.status == "completed":
+        return {
+            "status": "completed",
+            "reference": reference,
+            "amount": tx.amount,
+            "currency": tx.currency,
+        }
+
+    checkout_data = await get_checkout_status(reference)
+    if checkout_data and checkout_data.get("data"):
+        nomba_status = checkout_data["data"].get("transactionStatus", "")
+        if nomba_status.upper() in ("SUCCESS", "COMPLETED", "PAID"):
+            tx.status = "completed"
+            wallet_result = await db.execute(
+                select(Wallet).where(Wallet.id == tx.wallet_id)
+            )
+            wallet = wallet_result.scalar_one_or_none()
+            if wallet:
+                cur = tx.currency or "NGN"
+                balances = wallet.balances or dict(DEFAULT_BALANCES)
+                balances[cur] = balances.get(cur, 0.0) + tx.amount
+                wallet.balances = balances
+            await db.commit()
+            return {
+                "status": "completed",
+                "reference": reference,
+                "amount": tx.amount,
+                "currency": tx.currency,
+            }
 
     return {
         "status": tx.status,

@@ -89,7 +89,7 @@ async def fund_wallet(
 
     if req.provider == "nomba":
         reference = f"NMB-{secrets.token_hex(8).upper()}"
-        callback_url = f"{settings.FRONTEND_URL}/dashboard/wallet?reference={reference}&provider=nomba"
+        callback_url = f"{settings.FRONTEND_URL}/dashboard/wallet?reference={reference}&provider=nomba&tab=history"
 
         from app.services.nomba_service import create_checkout_order
 
