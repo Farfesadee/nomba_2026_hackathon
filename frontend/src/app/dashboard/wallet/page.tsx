@@ -11,6 +11,7 @@ import { WithdrawalForm } from "@/components/wallet/withdrawal-form";
 import { CurrencySelector } from "@/components/wallet/currency-selector";
 import { TransactionHistory } from "@/components/wallet/transaction-history";
 import { SUPPORTED_CURRENCIES, formatCurrencyAmount as formatAmount } from "@/lib/currencies";
+import { Toast } from "@/components/shared/toast";
 import { Menu, X, LayoutGrid, Calendar, Plus, Wallet as WalletIcon, Compass, LogOut, Lock, RefreshCw } from "lucide-react";
 import { useAuth } from "@/contexts/auth-context";
 
@@ -69,6 +70,9 @@ export default function WalletPage() {
   };
   const [depositError, setDepositError] = useState<string | null>(null);
   const [depositProvider, setDepositProvider] = useState("nomba");
+  const [toastMessage, setToastMessage] = useState("");
+  const [toastType, setToastType] = useState<"success" | "error">("success");
+  const [toastVisible, setToastVisible] = useState(false);
 
   // Verify Nomba transaction on mount (redirect from payment)
   useEffect(() => {
@@ -253,11 +257,19 @@ export default function WalletPage() {
       }
 
       await fetchWallets();
-      switchTab("overview");
+      await fetchTransactions();
+      showToast("Withdrawal request submitted successfully", "success");
+      switchTab("history");
       setSelectedCurrency("");
     } finally {
       setLoading(false);
     }
+  };
+
+  const showToast = (message: string, type: "success" | "error" = "success") => {
+    setToastMessage(message);
+    setToastType(type);
+    setToastVisible(true);
   };
 
   const handleLogout = async () => {
@@ -653,6 +665,7 @@ export default function WalletPage() {
           </div>
         </main>
       </div>
+      <Toast message={toastMessage} type={toastType} visible={toastVisible} onClose={() => setToastVisible(false)} />
     </div>
   );
 }

@@ -12,7 +12,7 @@ from app.core.database import get_db
 from app.core.security import get_current_user
 from app.core.config import settings
 from app.models.user import User
-from app.models.wallet import Wallet, BankAccount, Withdrawal, SUPPORTED_CURRENCIES
+from app.models.wallet import Wallet, BankAccount, Withdrawal, WalletTransaction, SUPPORTED_CURRENCIES
 from app.lib.aml import check_aml_risks
 
 router = APIRouter()
@@ -296,6 +296,18 @@ async def request_withdrawal(
     )
 
     db.add(withdrawal)
+
+    # Create wallet transaction record for history
+    tx = WalletTransaction(
+        wallet_id=wallet.id,
+        amount=-req.amount,
+        currency=wallet.currency,
+        type="debit",
+        reference=reference,
+        description=f"Withdrawal to {bank_account.bank_name} ({bank_account.masked_account})",
+        status="completed",
+    )
+    db.add(tx)
 
     # Deduct from wallet immediately (will be refunded if withdrawal fails)
     currency = bank_account.currency
