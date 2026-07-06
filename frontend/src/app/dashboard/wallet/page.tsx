@@ -129,7 +129,7 @@ export default function WalletPage() {
           if (!tx || typeof tx !== "object") return null;
           return {
             id: String(tx.id ?? ""),
-            type: ["deposit", "withdrawal", "transfer"].includes(tx.type) ? tx.type : "deposit",
+            type: tx.type === "credit" ? "deposit" : tx.type === "debit" ? "withdrawal" : ["deposit", "withdrawal", "transfer"].includes(tx.type) ? tx.type : "deposit",
             amount: Number(tx.amount) || 0,
             currency: String(tx.currency ?? "NGN"),
             status: ["completed", "pending", "failed"].includes(tx.status) ? tx.status : "pending",
@@ -244,8 +244,12 @@ export default function WalletPage() {
       });
 
       if (!res.ok) {
-        const error = await res.json();
-        throw new Error(error.detail || "Failed to process withdrawal");
+        let msg = "Something went wrong. Please try again.";
+        try {
+          const error = await res.json();
+          msg = error.detail || msg;
+        } catch (_) {}
+        throw new Error(msg);
       }
 
       await fetchWallets();

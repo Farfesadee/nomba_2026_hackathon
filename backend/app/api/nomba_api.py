@@ -73,12 +73,14 @@ async def nomba_checkout(
     order_reference = f"NMB-{secrets.token_hex(8).upper()}"
     callback_url = f"{settings.FRONTEND_URL}/dashboard/wallet?reference={order_reference}&provider=nomba&tab=history"
 
+    sub_account_id = req.sub_account_id or settings.NOMBA_SUB_ACCOUNT_ID or None
     result = await create_checkout_order(
         amount=req.amount,
         currency=req.currency,
         customer_email=user.email,
         order_reference=order_reference,
         callback_url=callback_url,
+        sub_account_id=sub_account_id,
     )
 
     if not result or not result.get("data"):

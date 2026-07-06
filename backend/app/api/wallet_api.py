@@ -99,6 +99,7 @@ async def fund_wallet(
             customer_email=user.email,
             order_reference=reference,
             callback_url=callback_url,
+            sub_account_id=settings.NOMBA_SUB_ACCOUNT_ID or None,
         )
 
         tx = WalletTransaction(

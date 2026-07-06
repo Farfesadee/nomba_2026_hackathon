@@ -20,6 +20,12 @@ export function WithdrawalForm({
 }: WithdrawalFormProps) {
   const [selectedAccountId, setSelectedAccountId] = useState<number | null>(null);
   const [amount, setAmount] = useState("");
+  const formatCommas = (v: string) => {
+    const cleaned = v.replace(/[^\d.]/g, "").replace(/(\..*)\./g, "$1");
+    const parts = cleaned.split(".");
+    parts[0] = parts[0].replace(/\B(?=(\d{3})+(?!\d))/g, ",");
+    return parts.join(".");
+  };
   const [description, setDescription] = useState("");
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
@@ -140,13 +146,11 @@ export function WithdrawalForm({
                 {selectedCurrency?.symbol}
               </span>
               <input
-                type="number"
-                value={amount}
-                onChange={(e) => setAmount(e.target.value)}
+                type="text"
+                inputMode="decimal"
+                value={formatCommas(amount)}
+                onChange={(e) => setAmount(e.target.value.replace(/,/g, ""))}
                 disabled={loading}
-                min={selectedCurrency?.min_fund || 0}
-                max={selectedWallet.balance}
-                step={selectedCurrency?.symbol === "₦" ? "1" : "0.01"}
                 placeholder="0.00"
                 className="w-full h-12 rounded-xl border border-[#d9e2ec] px-3 pl-10 text-base font-semibold outline-none focus:border-[#E91E8C] focus:ring-1 focus:ring-[#E91E8C] disabled:bg-[#f8fafc]"
               />

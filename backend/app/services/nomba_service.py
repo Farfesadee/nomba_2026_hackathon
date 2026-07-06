@@ -48,11 +48,22 @@ async def create_checkout_order(
     customer_email: str,
     order_reference: str,
     callback_url: str,
+    sub_account_id: str | None = None,
 ) -> dict | None:
     token = await get_access_token()
     if not token:
         return None
     try:
+        order = {
+            "orderReference": order_reference,
+            "amount": f"{amount:.2f}",
+            "currency": currency,
+            "customerEmail": customer_email,
+            "callbackUrl": callback_url,
+        }
+        if sub_account_id:
+            order["accountId"] = sub_account_id
+
         async with httpx.AsyncClient(timeout=15) as client:
             resp = await client.post(
                 NOMBA_CHECKOUT_URL,
@@ -61,15 +72,7 @@ async def create_checkout_order(
                     "accountId": settings.NOMBA_ACCOUNT_ID,
                     "Authorization": f"Bearer {token}",
                 },
-                json={
-                    "order": {
-                        "orderReference": order_reference,
-                        "amount": f"{amount:.2f}",
-                        "currency": currency,
-                        "customerEmail": customer_email,
-                        "callbackUrl": callback_url,
-                    }
-                },
+                json={"order": order},
             )
             data = resp.json()
             logger.info(f"Nomba checkout response: {data}")
