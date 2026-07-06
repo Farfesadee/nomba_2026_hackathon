@@ -217,11 +217,13 @@ async def request_withdrawal(
             detail=f"You don't have a {bank_account.currency} wallet",
         )
 
-    # ✅ Check balance
-    if wallet.balance < req.amount:
+    # ✅ Check balance (multi-currency via balances JSON)
+    balances = wallet.balances or {}
+    currency_balance = balances.get(bank_account.currency, 0.0)
+    if currency_balance < req.amount:
         raise HTTPException(
             status_code=400,
-            detail=f"Insufficient balance. You have {wallet.balance} {wallet.currency}",
+            detail=f"Insufficient balance. You have {currency_balance} {bank_account.currency}",
         )
 
     # ✅ AML Check: Minimum withdrawal amount
@@ -295,7 +297,9 @@ async def request_withdrawal(
     db.add(withdrawal)
 
     # Deduct from wallet immediately (will be refunded if withdrawal fails)
-    wallet.balance -= req.amount
+    currency = bank_account.currency
+    balances[currency] = balances.get(currency, 0.0) - req.amount
+    wallet.balances = balances
     db.add(wallet)
 
     await db.commit()
