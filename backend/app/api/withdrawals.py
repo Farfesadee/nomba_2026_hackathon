@@ -219,7 +219,7 @@ async def request_withdrawal(
         )
 
     # ✅ Check balance (multi-currency via balances JSON)
-    balances = wallet.balances or {}
+    balances = dict(wallet.balances or {})
     currency_balance = balances.get(bank_account.currency, 0.0)
     if currency_balance < req.amount:
         raise HTTPException(

@@ -214,7 +214,7 @@ async def pay_with_wallet(
         raise HTTPException(status_code=400, detail=f"Unsupported currency: {currency}")
 
     wallet = await get_or_create_wallet(user, db)
-    balances = wallet.balances or dict(DEFAULT_BALANCES)
+    balances = dict(wallet.balances or DEFAULT_BALANCES)
     current_balance = balances.get(currency, 0.0)
 
     if current_balance < req.amount:
@@ -287,7 +287,7 @@ async def wallet_webhook(
             wallet = wallet_result.scalar_one_or_none()
             if wallet:
                 cur = tx.currency or "NGN"
-                balances = wallet.balances or dict(DEFAULT_BALANCES)
+                balances = dict(wallet.balances or DEFAULT_BALANCES)
                 balances[cur] = balances.get(cur, 0.0) + tx.amount
                 wallet.balances = balances
                 wallet.balance = balances.get(cur, 0.0)
@@ -320,7 +320,7 @@ async def wallet_webhook(
                 wallet = wallet_result.scalar_one_or_none()
                 if wallet:
                     cur = tx.currency or "NGN"
-                    balances = wallet.balances or dict(DEFAULT_BALANCES)
+                    balances = dict(wallet.balances or DEFAULT_BALANCES)
                     balances[cur] = balances.get(cur, 0.0) + tx.amount
                     wallet.balances = balances
                     wallet.balance = balances.get(cur, 0.0)

@@ -111,7 +111,7 @@ async def initiate_payment(
         wallet = wallet_result.scalar_one_or_none()
         if not wallet:
             raise HTTPException(status_code=400, detail="Wallet not found")
-        balances = wallet.balances or dict(DEFAULT_BALANCES)
+        balances = dict(wallet.balances or DEFAULT_BALANCES)
         if (balances.get("NGN", 0)) < amount:
             raise HTTPException(status_code=400, detail="Insufficient wallet balance")
         balances["NGN"] = balances.get("NGN", 0) - amount

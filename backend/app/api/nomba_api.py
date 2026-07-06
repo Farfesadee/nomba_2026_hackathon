@@ -157,7 +157,7 @@ async def nomba_webhook(
                 wallet = wallet_result.scalar_one_or_none()
                 if wallet:
                     cur = tx.currency or "NGN"
-                    balances = wallet.balances or dict(DEFAULT_BALANCES)
+                    balances = dict(wallet.balances or DEFAULT_BALANCES)
                     balances[cur] = balances.get(cur, 0.0) + tx.amount
                     wallet.balances = balances
                 await db.commit()
@@ -175,7 +175,7 @@ async def _credit_wallet(tx, db):
     wallet = wallet_result.scalar_one_or_none()
     if wallet:
         cur = tx.currency or "NGN"
-        balances = wallet.balances or dict(DEFAULT_BALANCES)
+        balances = dict(wallet.balances or DEFAULT_BALANCES)
         balances[cur] = balances.get(cur, 0.0) + tx.amount
         wallet.balances = balances
         wallet.balance = balances.get(cur, 0.0)
@@ -254,7 +254,7 @@ async def nomba_withdraw(
         raise HTTPException(status_code=503, detail="Nomba not configured")
 
     wallet = await get_or_create_wallet(user, db)
-    balances = wallet.balances or dict(DEFAULT_BALANCES)
+    balances = dict(wallet.balances or DEFAULT_BALANCES)
     current_balance = balances.get("NGN", 0.0)
 
     if req.amount > current_balance:
