@@ -178,6 +178,7 @@ async def _credit_wallet(tx, db):
         balances = wallet.balances or dict(DEFAULT_BALANCES)
         balances[cur] = balances.get(cur, 0.0) + tx.amount
         wallet.balances = balances
+        wallet.balance = balances.get(cur, 0.0)
     await db.commit()
 
 

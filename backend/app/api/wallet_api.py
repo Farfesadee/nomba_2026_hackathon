@@ -290,6 +290,7 @@ async def wallet_webhook(
                 balances = wallet.balances or dict(DEFAULT_BALANCES)
                 balances[cur] = balances.get(cur, 0.0) + tx.amount
                 wallet.balances = balances
+                wallet.balance = balances.get(cur, 0.0)
 
             await db.commit()
 
@@ -322,6 +323,7 @@ async def wallet_webhook(
                     balances = wallet.balances or dict(DEFAULT_BALANCES)
                     balances[cur] = balances.get(cur, 0.0) + tx.amount
                     wallet.balances = balances
+                    wallet.balance = balances.get(cur, 0.0)
 
                 await db.commit()
 

@@ -1,7 +1,7 @@
 """Withdrawal management with anti-money laundering controls"""
 
 import secrets
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select, func
@@ -258,7 +258,7 @@ async def request_withdrawal(
     recent_count = await db.execute(
         select(func.count(Withdrawal.id)).where(
             Withdrawal.user_id == user.id,
-            Withdrawal.created_at >= datetime.utcnow() - timedelta(hours=1),
+            Withdrawal.created_at >= datetime.now(timezone.utc) - timedelta(hours=1),
             Withdrawal.status != "failed",
         )
     )
