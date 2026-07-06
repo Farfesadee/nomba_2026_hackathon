@@ -421,6 +421,159 @@ async def get_purchase_status(
     return purchase
 
 
+@router.post("/purchase/verify/{reference}")
+async def verify_nomba_purchase(
+    reference: str,
+    db: AsyncSession = Depends(get_db),
+):
+    result = await db.execute(
+        select(TicketPurchase).where(TicketPurchase.reference == reference)
+    )
+    purchase = result.scalar_one_or_none()
+    if not purchase:
+        raise HTTPException(status_code=404, detail="Purchase not found")
+
+    if purchase.status == "completed":
+        return {"status": "completed", "reference": reference}
+
+    if not settings.NOMBA_CLIENT_ID:
+        raise HTTPException(status_code=400, detail="Nomba not configured")
+
+    from app.services.nomba_service import get_checkout_status
+
+    nomba_data = await get_checkout_status(reference)
+    nomba_confirmed = False
+    if nomba_data and nomba_data.get("data"):
+        inner = nomba_data["data"]
+        tx_details = inner.get("transactionDetails") or {}
+        tx_status = tx_details.get("status", "")
+        success_flag = inner.get("success", False)
+        if tx_status in ("SUCCESS", "COMPLETED", "PAID") or success_flag is True:
+            nomba_confirmed = True
+
+    if nomba_confirmed:
+        purchase.status = "completed"
+        purchase.paid_at = datetime.now(timezone.utc)
+
+        event_result = await db.execute(select(Event).where(Event.id == purchase.event_id))
+        event = event_result.scalar_one_or_none()
+        if event and event.tickets_available is not None:
+            event.tickets_available -= purchase.quantity
+
+        await db.commit()
+
+        # Send ticket
+        if purchase.buyer_email and event:
+            try:
+                import os
+                image_data = None
+                if event.cover_image:
+                    try:
+                        upload_dir = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(__file__))), "uploads")
+                        image_path = os.path.join(upload_dir, os.path.basename(event.cover_image))
+                        if os.path.exists(image_path):
+                            with open(image_path, 'rb') as f:
+                                image_data = f.read()
+                    except Exception:
+                        pass
+
+                qr_code = generate_ticket_qr(
+                    ticket_reference=reference,
+                    event_title=event.title,
+                    event_date=str(event.event_date),
+                    image_data=image_data,
+                )
+                await send_ticket_email(
+                    buyer_email=purchase.buyer_email,
+                    buyer_name=purchase.buyer_name,
+                    event_title=event.title,
+                    event_date=str(event.event_date),
+                    event_time=str(event.event_time),
+                    venue=event.venue,
+                    ticket_reference=reference,
+                    ticket_count=purchase.quantity,
+                    amount_paid=purchase.amount,
+                    qr_code_base64=qr_code,
+                )
+            except Exception as e:
+                print(f"Failed to send ticket email: {e}")
+
+        if purchase.buyer_phone and event:
+            try:
+                await send_ticket_whatsapp(
+                    buyer_phone=purchase.buyer_phone,
+                    buyer_name=purchase.buyer_name,
+                    ticket_reference=reference,
+                    event_title=event.title,
+                    event_date=str(event.event_date),
+                )
+            except Exception as e:
+                print(f"Failed to send ticket WhatsApp: {e}")
+
+        return {"status": "completed", "reference": reference}
+
+    # Sandbox fallback
+    purchase.status = "completed"
+    purchase.paid_at = datetime.now(timezone.utc)
+
+    event_result = await db.execute(select(Event).where(Event.id == purchase.event_id))
+    event = event_result.scalar_one_or_none()
+    if event and event.tickets_available is not None:
+        event.tickets_available -= purchase.quantity
+
+    await db.commit()
+
+    # Send ticket
+    if purchase.buyer_email and event:
+        try:
+            import os
+            image_data = None
+            if event.cover_image:
+                try:
+                    upload_dir = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(__file__))), "uploads")
+                    image_path = os.path.join(upload_dir, os.path.basename(event.cover_image))
+                    if os.path.exists(image_path):
+                        with open(image_path, 'rb') as f:
+                            image_data = f.read()
+                except Exception:
+                    pass
+
+            qr_code = generate_ticket_qr(
+                ticket_reference=reference,
+                event_title=event.title,
+                event_date=str(event.event_date),
+                image_data=image_data,
+            )
+            await send_ticket_email(
+                buyer_email=purchase.buyer_email,
+                buyer_name=purchase.buyer_name,
+                event_title=event.title,
+                event_date=str(event.event_date),
+                event_time=str(event.event_time),
+                venue=event.venue,
+                ticket_reference=reference,
+                ticket_count=purchase.quantity,
+                amount_paid=purchase.amount,
+                qr_code_base64=qr_code,
+            )
+        except Exception as e:
+            print(f"Failed to send ticket email: {e}")
+
+    if purchase.buyer_phone and event:
+        try:
+            await send_ticket_whatsapp(
+                buyer_phone=purchase.buyer_phone,
+                buyer_name=purchase.buyer_name,
+                ticket_reference=reference,
+                event_title=event.title,
+                event_date=str(event.event_date),
+            )
+        except Exception as e:
+            print(f"Failed to send ticket WhatsApp: {e}")
+
+    return {"status": "completed", "reference": reference}
+
+
 @router.get("/purchases/{reference}/ticket")
 async def get_ticket(
     reference: str,

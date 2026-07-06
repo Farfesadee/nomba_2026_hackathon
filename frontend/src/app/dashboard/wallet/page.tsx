@@ -84,7 +84,8 @@ export default function WalletPage() {
         const res = await fetch(`/api/v1/nomba/verify/${ref}`);
         if (res.ok) {
           await fetchWallets();
-          window.history.replaceState({}, "", "/dashboard/wallet");
+          window.history.replaceState({}, "", "/dashboard/wallet?tab=history");
+          setActiveTab("history");
         }
       })();
     }

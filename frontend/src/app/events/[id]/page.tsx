@@ -116,12 +116,19 @@ function PublicEventContent() {
   useEffect(() => {
     const ref = searchParams.get("purchase") || searchParams.get("trxref");
     if (ref) {
-      apiClient<PurchaseStatus>(`/tickets/purchases/${ref}`)
+      apiClient<PurchaseStatus>(`/tickets/purchase/verify/${ref}`, { method: "POST" })
         .then((s) => {
-          setPurchaseStatus(s);
+          setPurchaseStatus({ ...s, reference: ref, id: 0, buyer_name: "", quantity: 0, amount: 0 });
           if (s.status === "completed") router.push(`/ticket/${ref}`);
         })
-        .catch(() => {});
+        .catch(() => {
+          apiClient<PurchaseStatus>(`/tickets/purchases/${ref}`)
+            .then((s) => {
+              setPurchaseStatus(s);
+              if (s.status === "completed") router.push(`/ticket/${ref}`);
+            })
+            .catch(() => {});
+        });
     }
   }, [searchParams, router]);
 
@@ -582,6 +589,21 @@ function PublicEventContent() {
                     </div>
                   )}
                     <div className="space-y-2">
+                    {!isFreeEvent && (
+                      <button
+                        type="button"
+                        disabled={purchasing}
+                        onClick={() => handlePurchase("nomba")}
+                        className="w-full rounded-xl font-black text-sm py-3.5 transition-all disabled:opacity-60 disabled:cursor-not-allowed"
+                        style={{
+                          background: purchasing ? "#94a3b8" : "#0D1B2A",
+                          color: "white",
+                          boxShadow: purchasing ? "none" : "0 6px 20px rgba(0,0,0,0.25)",
+                        }}
+                      >
+                        {purchasing ? "Processing..." : `Pay with Nomba ${cs}${Math.round(event.ticket_price! * quantity * (1 + VAT_PERCENT / 100)).toLocaleString()}`}
+                      </button>
+                    )}
                     <button
                       type="submit"
                       disabled={purchasing}
@@ -598,16 +620,6 @@ function PublicEventContent() {
                         ? "Save My Spot — Free"
                         : `Pay with Card ${cs}${Math.round(event.ticket_price! * quantity * (1 + VAT_PERCENT / 100)).toLocaleString()}`}
                     </button>
-                    {!isFreeEvent && (
-                      <button
-                        type="button"
-                        disabled={purchasing}
-                        onClick={() => handlePurchase("nomba")}
-                        className="w-full rounded-xl font-semibold text-sm py-3 transition-all border-2 border-pink-200 text-pink-700 hover:bg-pink-50 disabled:opacity-40 disabled:cursor-not-allowed"
-                      >
-                        Pay with Nomba
-                      </button>
-                    )}
                     {!isFreeEvent && walletBalance !== null && (
                       <button
                         type="button"
